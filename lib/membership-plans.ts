@@ -1,66 +1,73 @@
 export type PlanCategory = "food-only" | "food-drinks" | "family" | "executive" | "corporate";
+export type PlanLevel = "budget" | "standard" | "premium" | "vip";
+
+export type PackageItem = {
+  name: string;
+  quantity: number | string;
+  alcohol?: boolean;
+};
 
 export type MembershipPlan = {
   id: string;
   slug: string;
   name: string;
   category: PlanCategory;
-  tier: "budget" | "standard" | "premium" | "vip" | "custom";
-  price: number | null;
+  level: PlanLevel;
+  price: number;
   cadence: "monthly";
-  deliveryDays: number | null;
-  portions: string;
-  description: string;
+  deliveryDays: number;
+  items: PackageItem[];
   benefits: string[];
-  beverageAllocation: "none" | "selected" | "premium" | "custom";
   featured?: boolean;
 };
 
-// Planning catalogue. Prices, delivery counts, products, and benefits are data-driven.
-const planRows: [string, string, string, PlanCategory, MembershipPlan["tier"], number | null, number | null, string, string, string[], MembershipPlan["beverageAllocation"]][] = [
-  ["01", "budget-starter", "Budget Starter", "food-only", "budget", 999, 4, "Basic Thai meal, rice, main, and small side", "An affordable first step into scheduled food delivery.", ["Standard delivery", "Rotating Thai menu"], "none"],
-  ["02", "thai-basic", "Thai Basic", "food-only", "budget", 1499, 6, "Thai main meal, rice, and side dish", "A simple Thai meal rhythm for busy weeks.", ["Choose available dates", "Standard delivery"], "none"],
-  ["03", "thai-plus", "Thai Plus", "food-only", "standard", 1999, 6, "Premium Thai meals with one drink", "A richer Thai menu with a small beverage included.", ["Premium Thai dishes", "Drink included"], "selected"],
-  ["04", "home-food", "Home Food", "food-only", "standard", 2499, 8, "Larger main, rice, side, and selected drink", "A dependable household package for recurring evenings.", ["Larger portions", "Flexible date selection"], "selected"],
-  ["05", "family-basic", "Family Basic", "family", "standard", 3499, 8, "Family-size meals with multiple portions", "Shared food for the household without daily ordering.", ["Family portions", "Standard delivery"], "none"],
-  ["06", "family-plus", "Family Plus", "family", "standard", 4499, 10, "Family meals, drinks, and selected desserts", "A fuller family rhythm with treats built in.", ["Drinks included", "Selected desserts"], "selected"],
-  ["07", "food-lover", "Food Lover", "food-only", "premium", 5499, 12, "Thai and international menu with premium portions", "More variety for members who want the kitchen to keep moving.", ["Premium portions", "Drinks included", "Member menu drops"], "selected"],
-  ["08", "premium-food", "Premium Food", "food-only", "premium", 6999, 12, "Premium Thai and international meals, drinks, and desserts", "A polished food programme for the full month.", ["Premium drinks", "Desserts included", "Priority delivery"], "premium"],
-  ["09", "executive-food", "Executive Food", "executive", "premium", 8499, 16, "Premium menu with seafood, steak, and desserts", "A generous programme for demanding schedules.", ["Seafood selections", "Steak selections", "Premium desserts"], "premium"],
-  ["10", "luxury-food", "Luxury Food", "executive", "vip", 12000, 20, "Premium seafood, steak, international food, and desserts", "Our most complete food-only programme.", ["Luxury menu", "Priority delivery", "Premium zero-proof drinks"], "premium"],
-  ["11", "social-starter", "Social Starter", "food-drinks", "budget", 1999, 6, "Food package with selected beverage allocation", "A modest food and social drinks rhythm where legally permitted.", ["Selected beverages", "Standard delivery"], "selected"],
-  ["12", "weekend-package", "Weekend Package", "food-drinks", "standard", 2999, 8, "Premium meals with selected beverages", "A weekend-led package for shared meals and gatherings.", ["Premium meals", "Selected beverages"], "selected"],
-  ["13", "dinner-club", "Dinner Club", "food-drinks", "standard", 3999, 8, "Eight premium dinner deliveries with beverage component", "Restaurant-style dinners delivered on a recurring plan.", ["Dinner menu", "Beverage component"], "selected"],
-  ["14", "premium-social", "Premium Social", "food-drinks", "premium", 5999, 12, "Premium food, selected beverages, and dessert", "A fuller social table for regular entertaining.", ["Premium food", "Dessert included", "Selected beverages"], "selected"],
-  ["15", "executive-club", "Executive Club", "executive", "premium", 7999, 12, "Premium seafood and meat with beverage allocation", "A serious recurring programme for hosts and executives.", ["Premium seafood", "Premium meat", "Premium dessert"], "premium"],
-  ["16", "luxury-club", "Luxury Club", "executive", "vip", 10000, 16, "Premium food, beverage allocation, and special menu", "A high-touch programme for frequent delivery.", ["Special menu", "Priority slots", "Premium allocation"], "premium"],
-  ["17", "vip-dining-club", "VIP Dining Club", "food-drinks", "vip", 15000, 20, "Premium seafood, steak, desserts, and beverage allocation", "A priority programme with dedicated member support.", ["VIP support", "Priority delivery", "Premium menu"], "premium"],
-  ["18", "vip-family-club", "VIP Family Club", "family", "vip", 20000, 20, "Family-size premium meals and beverage allocation", "A complete household programme with a family account.", ["Multiple portions", "Family account", "Priority delivery"], "premium"],
-  ["19", "black-label-dining", "Black Label Dining", "executive", "vip", 30000, 20, "Luxury food, premium seafood, steaks, and beverage allocation", "A tailored luxury menu for a private household or host.", ["Priority service", "Luxury selections", "Dedicated support"], "premium"],
-  ["20", "elite-membership", "Elite Membership", "corporate", "custom", 50000, null, "Bespoke chef-selected programme with premium allocation", "A custom food programme for high-touch households, teams, or hospitality.", ["Chef-selected menus", "Dedicated member support", "Priority delivery"], "custom"],
+// Fixed package catalogue. Prices and contents remain editable data, not checkout logic.
+const rows: [string, string, string, PlanCategory, PlanLevel, number, number, PackageItem[], string[]][] = [
+  ["01", "thai-starter", "Thai Starter", "food-only", "budget", 1490, 6, [["Pad Kra Pao Chicken", 2], ["Jasmine Rice", 2], ["Chicken Satay", 1], ["Som Tam", 1], ["Thai Iced Tea", 2], ["Bottled Water", 2]], ["Thai food-focused", "Standard delivery"]],
+  ["02", "bangkok-basic", "Bangkok Basic", "food-only", "budget", 1990, 6, [["Pad Thai Chicken", 2], ["Green Curry Chicken", 2], ["Jasmine Rice", 2], ["Spring Rolls", 2], ["Thai Iced Tea", 2], ["Soft Drinks", 2]], ["Thai food-focused", "Standard delivery"]],
+  ["03", "thai-food-club", "Thai Food Club", "food-only", "budget", 2490, 8, [["Pad Kra Pao Beef", 2], ["Tom Yum Chicken", 2], ["Fried Rice", 2], ["Chicken Satay", 2], ["Som Tam", 2], ["Thai Tea", 2], ["Soft Drinks", 2]], ["Thai food-focused", "Expanded delivery rhythm"]],
+  ["04", "thai-dinner", "Thai Dinner", "food-only", "budget", 2990, 8, [["Tom Yum Goong", 2], ["Green Curry Chicken", 2], ["Pad Thai Prawns", 2], ["Jasmine Rice", 2], ["Thai Fish Cakes", 2], ["Mango Sticky Rice", 2], ["Soft Drinks", 2]], ["Thai food-focused", "Dinner menu"]],
+  ["05", "bangkok-night", "Bangkok Night", "food-drinks", "standard", 3490, 8, [["Pad Kra Pao Beef", 2], ["Tom Yum Goong", 2], ["Thai BBQ Chicken", 2], ["Jasmine Rice", 2], ["Spring Rolls", 2], ["Mango Sticky Rice", 2], ["Thai Beer", 4, true]], ["Thai food", "Beer allocation where legally permitted"]],
+  ["06", "thai-beer-dinner", "Thai Beer Dinner", "food-drinks", "standard", 3990, 8, [["Thai BBQ Chicken", 2], ["Crispy Pork", 2], ["Som Tam", 2], ["Sticky Rice", 2], ["Chicken Satay", 2], ["French Fries", 1], ["Thai Beer", 6, true]], ["Dinner package", "Beer allocation where legally permitted"]],
+  ["07", "thai-wine-dinner", "Thai Wine Dinner", "food-drinks", "standard", 4990, 8, [["Tom Yum Goong", 2], ["Massaman Beef", 2], ["Pad Thai Prawns", 2], ["Seafood Salad", 1], ["Jasmine Rice", 2], ["Mango Sticky Rice", 2], ["House Red Wine", "1 bottle", true]], ["Thai dinner", "Wine allocation where legally permitted"]],
+  ["08", "seafood-club", "Seafood Club", "food-drinks", "standard", 5990, 10, [["Grilled Prawns", 2], ["Steamed Sea Bass with Lime", 2], ["Seafood Salad", 2], ["Tom Yum Seafood", 2], ["Garlic Rice", 2], ["Mango Sticky Rice", 2], ["Premium Beer", 6, true]], ["Seafood selections", "Premium beer allocation where legally permitted"]],
+  ["09", "thai-premium", "Thai Premium", "food-drinks", "premium", 6990, 10, [["Premium Beef Steak", 2], ["Tom Yum Goong", 2], ["Green Curry Seafood", 2], ["Grilled Squid", 2], ["Jasmine Rice", 2], ["Premium Dessert", 2], ["Premium Beer", 6, true], ["House Red Wine", "1 bottle", true]], ["Premium food", "Seafood and steak selections"]],
+  ["10", "executive-dinner", "Executive Dinner", "food-drinks", "premium", 7990, 10, [["Ribeye Steak", 2], ["Garlic Prawns", 2], ["Tom Yum Seafood", 2], ["Caesar Salad", 2], ["Garlic Bread", 2], ["Premium Dessert", 2], ["Red Wine", "1 bottle", true], ["Premium Beer", 6, true]], ["Premium dinner", "Wine and beer allocation where legally permitted"]],
+  ["11", "bangkok-executive", "Bangkok Executive", "executive", "premium", 9990, 12, [["Premium Ribeye", 2], ["Seafood Platter", 1], ["Tom Yum Goong", 2], ["Massaman Beef", 2], ["Caesar Salad", 2], ["Premium Dessert", 2], ["Red Wine", "1 bottle", true], ["Premium Beer", 6, true]], ["Premium collection", "Priority delivery"]],
+  ["12", "thai-luxury", "Thai Luxury", "executive", "premium", 12990, 12, [["Wagyu Beef Steak", 2], ["Premium Prawns", 2], ["Premium Seafood Platter", 1], ["Tom Yum Seafood", 2], ["Truffle Pasta", 2], ["Premium Dessert", 2], ["Premium Red Wine", "1 bottle", true], ["Premium White Wine", "1 bottle", true], ["Premium Beer", 6, true]], ["Premium collection", "Luxury menu"]],
+  ["13", "wine-steak-club", "Wine & Steak Club", "executive", "premium", 14990, 12, [["Wagyu Steak", 2], ["Ribeye Steak", 2], ["Garlic Prawns", 2], ["Seafood Salad", 2], ["Truffle Pasta", 2], ["Premium Dessert", 2], ["Premium Red Wine", "2 bottles", true], ["Premium White Wine", "1 bottle", true]], ["Premium collection", "Wine allocation where legally permitted"]],
+  ["14", "whisky-dinner-club", "Whisky Dinner Club", "executive", "premium", 17990, 12, [["Wagyu Steak", 2], ["Premium Seafood Platter", 1], ["Tom Yum Goong", 2], ["Premium Pasta", 2], ["Caesar Salad", 2], ["Premium Dessert", 2], ["Premium Whisky", "1 bottle", true], ["Premium Beer", 6, true]], ["Premium collection", "Whisky allocation where legally permitted"]],
+  ["15", "royal-thai-club", "Royal Thai Club", "executive", "premium", 19990, 14, [["Premium Wagyu Steak", 2], ["King Prawn Platter", 1], ["Premium Thai Seafood", 1], ["Massaman Beef", 2], ["Premium Thai Curry", 2], ["Premium Dessert Selection", 2], ["Premium Red Wine", "2 bottles", true], ["Premium Beer", 6, true]], ["Premium collection", "Royal Thai menu"]],
+  ["16", "vip-bangkok-club", "VIP Bangkok Club", "executive", "vip", 24990, 16, [["Premium Wagyu Steak", 2], ["Premium Seafood Platter", 2], ["King Prawns", 2], ["Premium Thai Curry", 2], ["Truffle Pasta", 2], ["Premium Dessert Selection", 2], ["Premium Red Wine", "2 bottles", true], ["Premium White Wine", "1 bottle", true], ["Premium Beer", 12, true]], ["VIP collection", "Priority delivery"]],
+  ["17", "vip-wine-steak", "VIP Wine & Steak", "executive", "vip", 29990, 16, [["Wagyu Tenderloin", 2], ["Wagyu Ribeye", 2], ["Premium Lobster / Seafood Selection", 2], ["King Prawns", 2], ["Truffle Pasta", 2], ["Premium Salad", 2], ["Premium Dessert", 2], ["Premium Red Wine", "3 bottles", true], ["Premium White Wine", "1 bottle", true]], ["VIP collection", "Wine allocation where legally permitted"]],
+  ["18", "vip-whisky-seafood", "VIP Whisky & Seafood", "executive", "vip", 34990, 16, [["Wagyu Steak", 2], ["Premium Seafood Platter", 2], ["King Prawns", 2], ["Premium Thai Seafood", 2], ["Truffle Pasta", 2], ["Premium Dessert", 2], ["Premium Whisky", "1 bottle", true], ["Premium Red Wine", "2 bottles", true], ["Premium Beer", 12, true]], ["VIP collection", "Whisky allocation where legally permitted"]],
+  ["19", "black-vip-club", "Black VIP Club", "executive", "vip", 39990, 18, [["Premium Wagyu Tenderloin", 2], ["Premium Wagyu Ribeye", 2], ["Premium Seafood Platter", 2], ["King Prawns", 2], ["Lobster / Seafood Selection", 1], ["Truffle Pasta", 2], ["Premium Dessert Selection", 2], ["Premium Red Wine", "3 bottles", true], ["Premium White Wine", "1 bottle", true], ["Premium Whisky", "1 bottle", true], ["Premium Beer", 12, true]], ["VIP collection", "Priority service"]],
+  ["20", "elite-royal-membership", "Elite Royal Membership", "executive", "vip", 49990, 20, [["Premium Wagyu Tenderloin", 2], ["Premium Wagyu Ribeye", 2], ["Premium Seafood Platter", 2], ["King Prawn Selection", 2], ["Premium Lobster / Seafood Selection", 2], ["Premium Thai Signature Dishes", 2], ["Truffle Pasta", 2], ["Premium Dessert Collection", 2], ["Premium Red Wine", "4 bottles", true], ["Premium White Wine", "2 bottles", true], ["Premium Whisky", "1 bottle", true], ["Premium Beer", 12, true]], ["Priority delivery", "VIP member support"]],
 ];
 
-export const membershipPlans: MembershipPlan[] = planRows.map(([id, slug, name, category, tier, price, deliveryDays, portions, description, benefits, beverageAllocation], index) => ({
+export const membershipPlans: MembershipPlan[] = rows.map(([id, slug, name, category, level, price, deliveryDays, items, benefits], index) => ({
   id,
   slug,
   name,
   category,
-  tier,
+  level,
   price,
   cadence: "monthly",
   deliveryDays,
-  portions,
-  description,
+  items: items.map(([itemName, quantity, alcohol]) => ({ name: itemName, quantity, alcohol })),
   benefits,
-  beverageAllocation,
-  featured: index === 6 || index === 12,
+  featured: index === 4 || index === 19,
 }));
 
+// Keep alcohol disabled until Thai licensing, age checks, permitted hours,
+// advertising, import, premises, and delivery requirements are verified.
+export const alcoholSalesEnabled = process.env.NEXT_PUBLIC_ALCOHOL_SALES_ENABLED === "true";
+
 export const membershipValueProps = [
-  ["Join", "Choose a predefined package with a clear number of delivery days, portions, and benefits."],
-  ["Subscribe", "Confirm your area, delivery dates, dietary needs, and recurring membership terms."],
-  ["Receive", "Scheduled food packages arrive with the care of the Sanbay Fusion kitchen."],
-  ["Enjoy", "Menus rotate with the season, while your membership keeps the next meal predictable."],
+  ["Join", "Choose one fixed package with fixed food, quantities, beverages, and delivery days."],
+  ["Subscribe", "Confirm your area, dates, dietary needs, and recurring membership terms."],
+  ["Receive", "Your predefined package arrives on scheduled delivery days."],
+  ["Enjoy", "The menu rotates, but your package stays clear and predictable."],
 ] as const;
 
 export const packageCategoryLabels: Record<PlanCategory, string> = {
