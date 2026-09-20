@@ -14,6 +14,8 @@ export const metadata: Metadata = {
   },
 };
 
+export const revalidate = 60;
+
 function DietaryTags({ dietary }: { dietary?: Dietary[] }) {
   if (!dietary?.length) return null;
   return (
