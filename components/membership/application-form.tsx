@@ -8,6 +8,35 @@ import type { MembershipApplicationInput, MembershipConfiguration } from "@/lib/
 
 const contactOptions = ["phone", "email", "line", "whatsapp"] as const;
 
+type ApplicationFormState = {
+  fullName: string;
+  phone: string;
+  email: string;
+  lineId: string;
+  addressLine1: string;
+  addressLine2: string;
+  subdistrict: string;
+  district: string;
+  province: string;
+  postalCode: string;
+  country: "Thailand";
+  deliveryInstructions: string;
+  contactPreferences: Array<(typeof contactOptions)[number]>;
+  notes: string;
+  allergies: string;
+  confirmsInformation: boolean;
+  reviewedMembership: boolean;
+  understandsRequest: boolean;
+  understandsInvoiceWindow: boolean;
+  understandsNonRefundable: boolean;
+  understandsPackageLock: boolean;
+  understandsDeliveryNotice: boolean;
+  agreesTerms: boolean;
+  acknowledgesPrivacy: boolean;
+  agreesContact: boolean;
+  confirmsAlcoholLaw: boolean;
+};
+
 export function ApplicationForm() {
   const [configuration, setConfiguration] = useState<MembershipConfiguration | null>(null);
   const [plan, setPlan] = useState<MembershipPlan | null>(null);
