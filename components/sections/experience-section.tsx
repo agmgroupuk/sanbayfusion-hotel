@@ -4,7 +4,7 @@ import { ScrollScale } from "@/components/motion/scroll-scale";
 import { KineticText } from "@/components/motion/kinetic-text";
 import { Reveal } from "@/components/motion/reveal";
 
-/** Beat 6 — The Experience. Full-bleed, confident reveal into reservation CTA. Dramatic. */
+/** Full-bleed subscription promise and primary conversion CTA. */
 export function ExperienceSection() {
   return (
     <section className="relative flex min-h-[100svh] w-full items-center justify-center py-32">
@@ -21,25 +21,25 @@ export function ExperienceSection() {
 
       <div className="relative z-10 mx-auto max-w-3xl px-5 text-center sm:px-8">
         <Reveal variant="fade" className="text-eyebrow text-gold">
-          The Experience
+          The Membership
         </Reveal>
         <KineticText
           as="h2"
-          text={"An evening,\nnot a meal"}
+          text={"A better rhythm\nfor every meal"}
           className="text-display mt-5 font-display font-light"
         />
         <Reveal variant="up" delay={0.15}>
           <p className="lead mx-auto mt-6 max-w-xl">
-            A single tasting menu, served over a slow and deliberate evening.
-            Reserve your table and let us take it from there.
+            Choose your plan, select your delivery days, and receive seasonal
+            food packages prepared with the care of the Sanbay Fusion kitchen.
           </p>
         </Reveal>
         <Reveal variant="up" delay={0.25}>
           <Link
-            href="/reservations"
+            href="/plans"
             className="mt-9 inline-flex items-center justify-center rounded-full bg-gold px-8 py-3.5 text-eyebrow text-gold-foreground transition-transform hover:-translate-y-0.5"
           >
-            Reserve a Table
+            Explore Memberships
           </Link>
         </Reveal>
       </div>

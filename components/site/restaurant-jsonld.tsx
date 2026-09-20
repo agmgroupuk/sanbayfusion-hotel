@@ -1,40 +1,29 @@
 import { site } from "@/lib/site";
+import { membershipPlans } from "@/lib/membership-plans";
 
-/** Restaurant structured data for rich results. Rendered once in the site layout. */
+/** Subscription business structured data. Rendered once in the site layout. */
 export function RestaurantJsonLd() {
   const data = {
     "@context": "https://schema.org",
-    "@type": "Restaurant",
+    "@type": "Organization",
     name: site.name,
     description: site.description,
     url: site.url,
     image: `${site.url}/images/nicely-plated-food-served-at-decorated-table.jpg`,
     telephone: site.phone,
     email: site.email,
-    servesCuisine: "Contemporary tasting menu",
-    priceRange: "€€€€",
-    acceptsReservations: `${site.url}/reservations`,
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: site.address.line1,
-      addressLocality: "Paris",
-      postalCode: "75001",
-      addressCountry: "FR",
+    areaServed: { "@type": "Country", name: "Thailand" },
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: "Food delivery memberships",
+      itemListElement: membershipPlans.map((plan) => ({
+        "@type": "Offer",
+        name: plan.name,
+        price: plan.price.replace(/[^0-9]/g, "") || undefined,
+        priceCurrency: "THB",
+        url: `${site.url}/join?plan=${plan.slug}`,
+      })),
     },
-    openingHoursSpecification: [
-      {
-        "@type": "OpeningHoursSpecification",
-        dayOfWeek: ["Tuesday", "Wednesday", "Thursday"],
-        opens: "18:00",
-        closes: "22:00",
-      },
-      {
-        "@type": "OpeningHoursSpecification",
-        dayOfWeek: ["Friday", "Saturday"],
-        opens: "18:00",
-        closes: "23:00",
-      },
-    ],
   };
 
   return (

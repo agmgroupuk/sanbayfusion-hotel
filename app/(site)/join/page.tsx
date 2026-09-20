@@ -1,0 +1,10 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { PageHeader } from "@/components/site/page-header";
+import { PlanCard } from "@/components/membership/plan-card";
+import { membershipPlans } from "@/lib/membership-plans";
+import { Reveal } from "@/components/motion/reveal";
+
+export const metadata: Metadata = { title: "Become a Member", description: "Start a Sanbay Fusion food delivery membership in Thailand.", alternates: { canonical: "/join" } };
+
+export default function JoinPage() { return <div className="pb-28"><PageHeader eyebrow="Become a member" title="Your next delivery starts here" lead="Choose a plan, then tell us where and how you would like to receive your food packages. We will confirm availability and the final terms before payment." /><div className="mx-auto max-w-7xl px-5 sm:px-8"><div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">{membershipPlans.map((plan) => <Reveal key={plan.slug} variant="up"><PlanCard plan={plan} /></Reveal>)}</div><Reveal variant="up" className="mx-auto mt-20 max-w-2xl border border-gold/40 bg-gold/5 p-8 text-center sm:p-12"><p className="text-eyebrow text-gold">Joining is being prepared</p><h2 className="mt-5 font-display text-3xl font-light italic">We are setting up secure recurring checkout</h2><p className="mt-4 text-base leading-relaxed text-foreground/75">For now, choose a plan above and contact the house to confirm your area, package, dietary requirements, and start date. The final payment screen will show all renewal and cancellation terms.</p><div className="mt-8 flex flex-wrap justify-center gap-4"><Link href="/contact" className="inline-flex rounded-full bg-gold px-7 py-3 text-eyebrow text-gold-foreground">Request Membership</Link><Link href="/faq" className="inline-flex rounded-full border border-foreground/30 px-7 py-3 text-eyebrow">Read FAQ</Link></div></Reveal></div></div>; }

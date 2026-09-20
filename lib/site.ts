@@ -1,8 +1,8 @@
 export const site = {
   name: "Sanbay Fusion",
-  tagline: "Bar & Restaurant",
+  tagline: "Seasonal food memberships & delivery",
   description:
-    "Sanbay Fusion Bar & Restaurant brings together contemporary dining, warm hospitality, and a memorable atmosphere in the heart of the city.",
+    "Sanbay Fusion delivers seasonal food packages, drinks, and pantry products through flexible weekly and monthly memberships in Thailand.",
   url: process.env.NEXT_PUBLIC_SITE_URL || "https://sanbayfusion.com",
   address: {
     line1: "Sanbay Fusion Bar & Restaurant",
@@ -22,9 +22,10 @@ export const site = {
 } as const;
 
 export const navLinks = [
-  { href: "/menu", label: "Menu" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/story", label: "Our Story" },
-  { href: "/membership", label: "Membership" },
+  { href: "/plans", label: "Membership Plans" },
+  { href: "/how-it-works", label: "How It Works" },
+  { href: "/menu", label: "Menus" },
+  { href: "/delivery-areas", label: "Delivery Areas" },
+  { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },
 ] as const;

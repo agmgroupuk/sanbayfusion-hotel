@@ -4,7 +4,7 @@ import { KenBurns } from "@/components/motion/ken-burns";
 import { Reveal } from "@/components/motion/reveal";
 import { site } from "@/lib/site";
 
-/** Beat 7 — Arrival. Slow fade close, location + contact CTA. Atmospheric. */
+/** Closing delivery-area and membership CTA. */
 export function ArrivalSection() {
   return (
     <section className="relative w-full">
@@ -27,31 +27,32 @@ export function ArrivalSection() {
 
       <div className="absolute inset-0 z-10 mx-auto flex h-full max-w-7xl flex-col items-center justify-center px-5 text-center sm:px-8">
         <Reveal variant="fade" duration={1.4} className="text-eyebrow text-gold">
-          Arrival
+          Your next delivery
         </Reveal>
         <Reveal variant="blur" duration={1.4} delay={0.1}>
           <h2 className="mt-5 font-display text-h1 font-light">
-            Find us after dark
+            Make the next meal easier
           </h2>
         </Reveal>
         <Reveal variant="fade" duration={1.4} delay={0.2}>
           <p className="lead mt-5 max-w-md">
-            {site.address.line1}, {site.address.line2}.
+            Join a seasonal food membership and receive carefully packed meals,
+            drinks, and products on a schedule that works for you.
           </p>
         </Reveal>
         <Reveal variant="up" duration={1.2} delay={0.3}>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
             <Link
-              href="/reservations"
+              href="/join"
               className="inline-flex items-center justify-center rounded-full bg-gold px-7 py-3 text-eyebrow text-gold-foreground transition-transform hover:-translate-y-0.5"
             >
-              Reserve a Table
+              Become a Member
             </Link>
             <Link
-              href="/contact"
+              href="/delivery-areas"
               className="inline-flex items-center justify-center rounded-full border border-foreground/30 px-7 py-3 text-eyebrow text-foreground transition-colors hover:border-foreground/70"
             >
-              Hours & Location
+              Delivery Areas
             </Link>
           </div>
         </Reveal>

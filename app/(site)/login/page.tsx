@@ -1,0 +1,7 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { PageHeader } from "@/components/site/page-header";
+
+export const metadata: Metadata = { title: "Member Login", description: "Access your Sanbay Fusion membership account.", alternates: { canonical: "/login" } };
+
+export default function LoginPage() { return <div className="pb-28"><PageHeader eyebrow="Member access" title="Welcome back" lead="Your member account will hold delivery dates, package preferences, billing, and support." /><div className="mx-auto max-w-md px-5 sm:px-8"><div className="rounded-sm border border-border/60 bg-card/30 p-8 sm:p-10"><p className="text-sm leading-relaxed text-foreground/75">Account login is being connected to the recurring membership checkout. Until then, our team can help with an existing plan or delivery change.</p><Link href="/contact" className="mt-8 inline-flex w-full items-center justify-center rounded-full bg-gold px-7 py-3 text-eyebrow text-gold-foreground">Contact Member Support</Link><Link href="/plans" className="mt-4 inline-flex w-full items-center justify-center rounded-full border border-foreground/30 px-7 py-3 text-eyebrow">View Plans</Link></div></div></div>; }

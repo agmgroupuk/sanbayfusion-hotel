@@ -115,12 +115,15 @@ export function SiteNav() {
           {navLinks.map((link) => (
             <NavLink key={link.href} href={link.href} label={link.label} />
           ))}
+          <Link href="/login" className="text-sm text-foreground/75 transition-colors hover:text-foreground">
+            Login
+          </Link>
           <Magnetic strength={0.4}>
             <Link
-              href="/reservations"
-              className="inline-flex rounded-full border border-gold/60 px-5 py-2 text-eyebrow text-gold transition-colors hover:bg-gold hover:text-gold-foreground"
+              href="/join"
+              className="inline-flex rounded-full bg-gold px-5 py-2 text-eyebrow text-gold-foreground transition-colors hover:bg-gold/85"
             >
-              Reserve
+              Join Now
             </Link>
           </Magnetic>
         </div>
@@ -175,13 +178,16 @@ export function SiteNav() {
                 transition={{ delay: 0.06 * navLinks.length + 0.05, ease: EASE }}
               >
                 <Link
-                  href="/reservations"
+                  href="/login"
                   onClick={() => setOpen(false)}
-                  className="mt-6 inline-flex items-center justify-center rounded-full bg-gold px-6 py-4 text-eyebrow text-gold-foreground"
+                  className="mt-6 inline-flex items-center justify-center rounded-full border border-foreground/30 px-6 py-4 text-eyebrow"
                 >
-                  Reserve a Table
+                  Login
                 </Link>
               </motion.div>
+              <Link href="/join" onClick={() => setOpen(false)} className="inline-flex items-center justify-center rounded-full bg-gold px-6 py-4 text-eyebrow text-gold-foreground">
+                Become a Member
+              </Link>
             </div>
           </motion.div>
         )}

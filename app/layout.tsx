@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: "Sanbay Fusion Bar & Restaurant",
+    default: "Sanbay Fusion Food Memberships",
     template: "%s · Sanbay Fusion",
   },
   description: site.description,
@@ -16,14 +16,14 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    title: "Sanbay Fusion Bar & Restaurant",
+    title: "Sanbay Fusion Food Memberships",
     description: site.description,
     siteName: "Sanbay Fusion",
     url: site.url,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sanbay Fusion Bar & Restaurant",
+    title: "Sanbay Fusion Food Memberships",
     description: site.description,
   },
 };

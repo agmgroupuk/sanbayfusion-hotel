@@ -35,17 +35,17 @@ export function MembershipSection() {
 
         <div className="mt-6 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <Reveal variant="up" className="max-w-2xl">
-            <h2 className="font-display text-h2 font-light leading-none text-foreground">
-              An invitation to return.
+              <h2 className="font-display text-h2 font-light leading-none text-foreground">
+                Food that arrives on your rhythm.
             </h2>
           </Reveal>
 
           <Reveal variant="up" delay={0.1}>
             <Link
-              href="/membership"
+              href="/plans"
               className="inline-flex items-center gap-2 rounded-full border border-gold/60 px-6 py-3 text-eyebrow text-gold transition-colors hover:bg-gold hover:text-gold-foreground"
             >
-              Explore Membership
+              View Membership Plans
               <ArrowRight className="size-4" />
             </Link>
           </Reveal>

@@ -105,7 +105,7 @@ export function HomeHero() {
           transition={{ duration: 0.9, ease: EASE, delay: 0.2 }}
           className="text-eyebrow text-gold"
         >
-          Michelin-Starred · Paris
+          Seasonal food memberships · Thailand
         </motion.p>
 
         <KineticText
@@ -122,8 +122,8 @@ export function HomeHero() {
           transition={{ duration: 1, ease: EASE, delay: 0.9 }}
           className="lead measure mt-7 text-foreground/90"
         >
-          {site.tagline} — a theatrical tasting menu built on fire, precision,
-          and the finest seasonal produce.
+          {site.tagline} — scheduled food packages, drinks, and pantry products
+          delivered on a rhythm that fits your life.
         </motion.p>
 
         <motion.div
@@ -134,18 +134,18 @@ export function HomeHero() {
         >
           <Magnetic strength={0.3}>
             <Link
-              href="/reservations"
+              href="/join"
               className="inline-flex items-center justify-center rounded-full bg-gold px-8 py-3.5 text-eyebrow text-gold-foreground"
             >
-              Reserve a Table
+              Become a Member
             </Link>
           </Magnetic>
           <Magnetic strength={0.3}>
             <Link
-              href="/menu"
+              href="/plans"
               className="inline-flex items-center justify-center rounded-full border border-foreground/40 px-8 py-3.5 text-eyebrow text-foreground transition-colors hover:border-foreground/80"
             >
-              View the Menu
+              View Membership Plans
             </Link>
           </Magnetic>
         </motion.div>

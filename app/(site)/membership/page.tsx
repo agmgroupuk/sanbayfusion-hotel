@@ -3,11 +3,13 @@ import Link from "next/link";
 import { ArrowRight, Crown, Sparkles, Users, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/site/page-header";
 import { Reveal } from "@/components/motion/reveal";
+import { PlanCard } from "@/components/membership/plan-card";
+import { membershipPlans } from "@/lib/membership-plans";
 
 export const metadata: Metadata = {
   title: "Membership",
   description:
-    "Discover the Sanbay Fusion membership experience — priority reservations, private table access, and elevated hospitality for returning guests.",
+    "Choose a Sanbay Fusion food delivery membership with scheduled seasonal meals, drinks, and products in Thailand.",
   alternates: {
     canonical: "/membership",
   },
@@ -16,42 +18,23 @@ export const metadata: Metadata = {
 const membershipHighlights = [
   {
     title: "Priority reservations",
-    description: "Members receive preferred access to high-demand evenings, special tasting events, and elevated table windows.",
+    description: "Members receive scheduled food packages on a predictable weekly or monthly rhythm.",
     icon: Crown,
   },
   {
     title: "Members’ tables",
-    description: "Reserved tables and recurring seating options for our most valued guests and regular gatherings.",
+    description: "Choose delivery dates and package sizes that fit your household, team, or routine.",
     icon: Users,
   },
   {
     title: "Private rooms & lounges",
-    description: "Access to private dining moments, intimate room bookings, and tailored hospitality for celebrations and quiet evenings.",
+    description: "Seasonal meals, snacks, drinks, pantry products, and add-ons move with the market.",
     icon: Sparkles,
   },
   {
     title: "Discreet, elevated service",
-    description: "A members-first experience built around attentive hosting, continuity, and a sense of belonging.",
+    description: "Pause, adjust, or request support before the next recurring delivery cycle begins.",
     icon: ShieldCheck,
-  },
-];
-
-const membershipFormats = [
-  {
-    name: "Monthly Circle",
-    detail: "For guests who like to return often and stay close to the rhythm of the room.",
-  },
-  {
-    name: "Weekly Table",
-    detail: "For regulars who want priority access and a more personal rhythm throughout the week.",
-  },
-  {
-    name: "Annual Membership",
-    detail: "For loyal diners seeking a more elevated and lasting connection to the house.",
-  },
-  {
-    name: "VIP Host Access",
-    detail: "For private dining, special experiences, rooms, and bespoke hospitality moments.",
   },
 ];
 
@@ -60,8 +43,8 @@ export default function MembershipPage() {
     <div className="pb-28">
       <PageHeader
         eyebrow="Membership"
-        title="A room for returning guests"
-        lead="Sanbay Fusion membership is designed for diners who want early access, personal attention, and a more connected relationship to the experience of the house."
+        title="Food that keeps its promise"
+        lead="Sanbay Fusion membership turns seasonal cooking into a dependable delivery rhythm for households, teams, and returning guests."
       />
 
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
@@ -84,35 +67,28 @@ export default function MembershipPage() {
         </div>
 
         <Reveal variant="up" className="mt-20">
-          <div className="rounded-sm border border-border/60 bg-background/50 p-8 sm:p-10">
-            <p className="text-eyebrow text-gold">Membership options</p>
-            <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-              {membershipFormats.map((item) => (
-                <div key={item.name} className="rounded-sm border border-border/60 bg-card/30 p-5">
-                  <p className="text-eyebrow text-foreground/70">{item.name}</p>
-                  <p className="mt-4 text-sm leading-relaxed text-foreground/75">{item.detail}</p>
-                </div>
-              ))}
-            </div>
+          <p className="text-eyebrow text-gold">Choose your rhythm</p>
+          <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {membershipPlans.map((plan) => <PlanCard key={plan.slug} plan={plan} />)}
           </div>
         </Reveal>
 
         <Reveal variant="fade" className="mt-20 text-center">
           <p className="lead mx-auto max-w-2xl text-foreground/80">
-            Membership is about access, continuity, and a more personal hospitality. We welcome guests who wish to return often and enjoy the room in a more considered way.
+            Membership is about continuity: better food at home, clear delivery days, and a kitchen you can return to without starting from zero each time.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
-              href="/reservations"
+              href="/join"
               className="inline-flex items-center justify-center rounded-full bg-gold px-7 py-3 text-eyebrow text-gold-foreground transition-transform hover:-translate-y-0.5"
             >
-              Reserve a Table
+              Become a Member
             </Link>
             <Link
-              href="/contact"
+              href="/how-it-works"
               className="inline-flex items-center justify-center rounded-full border border-foreground/30 px-7 py-3 text-eyebrow text-foreground transition-colors hover:border-foreground/70"
             >
-              Contact the House
+              How It Works
             </Link>
           </div>
         </Reveal>
