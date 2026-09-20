@@ -23,6 +23,7 @@ export const site = {
 
 export const navLinks = [
   { href: "/menu", label: "Menu" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/story", label: "Our Story" },
   { href: "/membership", label: "Membership" },
   { href: "/contact", label: "Contact" },
