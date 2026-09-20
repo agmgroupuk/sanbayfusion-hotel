@@ -47,6 +47,13 @@ export default async function MenuPage() {
           </Reveal>
         )}
 
+        <Reveal variant="fade" className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+          <span><strong className="text-gold">v</strong> vegetarian</span>
+          <span><strong className="text-gold">vg</strong> vegan</span>
+          <span><strong className="text-gold">gf</strong> gluten-free</span>
+          <span>please confirm allergies with our team</span>
+        </Reveal>
+
         <div className="mt-16 space-y-20">
           {menu.sections.map((section) => (
             <section key={section.name}>
@@ -87,8 +94,9 @@ export default async function MenuPage() {
 
         <Reveal variant="fade" className="mt-20 text-center">
           <p className="text-sm text-muted-foreground">
-            Menus evolve nightly with the season. Please share any dietary needs
-            when you book.
+            Menus evolve nightly with the season. Please share allergies, dietary needs,
+            or preferences when you book. Prices are in Thai baht and may change with
+            availability.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
             <Link

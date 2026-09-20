@@ -16,20 +16,20 @@ export function toBlocks(paragraphs: string[]): PortableTextBlock[] {
 export const DEFAULT_MENU: MenuContent = {
   title: "The Tasting Menu",
   intro:
-    "A single menu of nine courses, changing with the season and the morning's deliveries. Served to the whole table from 18:00.",
-  priceNote: "€185 per guest · Wine pairing €120",
+    "A single menu of nine courses, shaped by the season and the morning's deliveries. Served to the whole table from 18:00.",
+  priceNote: "฿3,950 per guest · Wine pairing ฿2,200 · Non-alcoholic pairing ฿1,200",
   sections: [
     {
       name: "To Begin",
       items: [
         {
           name: "Cep & chestnut",
-          description: "Smoked cep custard, roast chestnut, aged comté.",
+          description: "Smoked cep custard, roast chestnut, aged comté, and black truffle oil.",
           dietary: ["v", "gf"],
         },
         {
           name: "Oyster, charred leek",
-          description: "Fine de claire, burnt leek ash, green apple.",
+          description: "Fine de claire oyster, burnt leek ash, green apple, and finger lime.",
           dietary: ["gf"],
         },
       ],
@@ -39,17 +39,17 @@ export const DEFAULT_MENU: MenuContent = {
       items: [
         {
           name: "Hand-dived scallop",
-          description: "Brown butter, sea herbs, a whisper of yuzu.",
+          description: "Seared scallop, brown butter, sea herbs, and a whisper of yuzu.",
           dietary: ["gf"],
         },
         {
           name: "Cornish turbot",
-          description: "Grilled over embers, vin jaune, golden raisin.",
+          description: "Ember-grilled turbot, vin jaune sauce, golden raisin, and young fennel.",
           dietary: ["gf"],
         },
         {
           name: "Dry-aged duck",
-          description: "Lavender honey, fermented cherry, charred onion.",
+          description: "Dry-aged duck breast, lavender honey, fermented cherry, and charred onion.",
           dietary: ["gf"],
         },
       ],
@@ -59,12 +59,12 @@ export const DEFAULT_MENU: MenuContent = {
       items: [
         {
           name: "Heritage beetroot",
-          description: "Slow-roasted in salt, blackcurrant, horseradish snow.",
+          description: "Salt-roasted heritage beetroot, blackcurrant, horseradish snow, and dill.",
           dietary: ["vg", "gf"],
         },
         {
           name: "Autumn squash",
-          description: "Brown-butter squash, sage, toasted seeds.",
+          description: "Brown-butter squash, Thai basil, sage, toasted seeds, and fermented chilli.",
           dietary: ["v", "gf"],
         },
       ],
@@ -74,12 +74,12 @@ export const DEFAULT_MENU: MenuContent = {
       items: [
         {
           name: "Tonka & pear",
-          description: "Poached pear, tonka cream, brown sugar tuile.",
+          description: "Poached pear, tonka cream, brown sugar tuile, and vanilla bean.",
           dietary: ["v"],
         },
         {
           name: "Black forest, reimagined",
-          description: "Valrhona, morello cherry, kirsch ice.",
+          description: "Valrhona chocolate, morello cherry, kirsch ice, and cacao nib.",
           dietary: ["v"],
         },
       ],
@@ -88,7 +88,7 @@ export const DEFAULT_MENU: MenuContent = {
   winePairing: {
     title: "The Pairing",
     description:
-      "An optional pairing traces the menu course by course — drawn from a cellar of small, characterful growers across France and beyond. A non-alcoholic pairing of house ferments and infusions is offered alongside.",
+      "An optional pairing traces the menu course by course, with bottles from small growers across France, Italy, Australia, and Thailand. A non-alcoholic pairing of house ferments, teas, and infusions is offered alongside.",
   },
 };
 
