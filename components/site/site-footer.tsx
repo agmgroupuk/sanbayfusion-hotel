@@ -44,11 +44,6 @@ export function SiteFooter() {
                   Reservations
                 </Link>
               </li>
-              <li>
-                <Link href="/login" className="hover:text-foreground">
-                  Member Login
-                </Link>
-              </li>
             </ul>
           </div>
         </div>

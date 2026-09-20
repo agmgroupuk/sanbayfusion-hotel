@@ -115,9 +115,6 @@ export function SiteNav() {
           {navLinks.map((link) => (
             <NavLink key={link.href} href={link.href} label={link.label} />
           ))}
-          <Link href="/login" className="text-sm text-foreground/75 transition-colors hover:text-foreground">
-            Login
-          </Link>
           <Magnetic strength={0.4}>
             <Link
               href="/join"
@@ -172,19 +169,6 @@ export function SiteNav() {
                   </Link>
                 </motion.div>
               ))}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.06 * navLinks.length + 0.05, ease: EASE }}
-              >
-                <Link
-                  href="/login"
-                  onClick={() => setOpen(false)}
-                  className="mt-6 inline-flex items-center justify-center rounded-full border border-foreground/30 px-6 py-4 text-eyebrow"
-                >
-                  Login
-                </Link>
-              </motion.div>
               <Link href="/join" onClick={() => setOpen(false)} className="inline-flex items-center justify-center rounded-full bg-gold px-6 py-4 text-eyebrow text-gold-foreground">
                 Become a Member
               </Link>
