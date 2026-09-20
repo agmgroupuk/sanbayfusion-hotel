@@ -11,6 +11,7 @@ export type MembershipPlan = {
   id: string;
   slug: string;
   name: string;
+  description: string;
   category: PlanCategory;
   level: PlanLevel;
   price: number;
@@ -56,6 +57,7 @@ export const membershipPlans: MembershipPlan[] = rows.map(([id, slug, name, cate
   id,
   slug,
   name,
+  description: `${name} delivers a fixed recurring food package for ${deliveryDays} scheduled deliveries each month, with a ${level} membership experience built around simple, predictable meal planning.`,
   category,
   level,
   price,
