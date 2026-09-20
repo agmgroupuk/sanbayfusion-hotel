@@ -110,7 +110,7 @@ export function HomeHero() {
 
         <KineticText
           as="h1"
-          text={site.name}
+          text="Your Food. Your Drinks. Your Membership."
           delay={0.35}
           stagger={0.12}
           className="text-display mt-5 font-display font-light"
@@ -122,8 +122,8 @@ export function HomeHero() {
           transition={{ duration: 1, ease: EASE, delay: 0.9 }}
           className="lead measure mt-7 text-foreground/90"
         >
-          {site.tagline} — scheduled food packages, drinks, and pantry products
-          delivered on a rhythm that fits your life.
+          Choose a membership that fits your lifestyle and enjoy delicious meals,
+          drinks, and products delivered to your door on your scheduled days.
         </motion.p>
 
         <motion.div
@@ -145,7 +145,7 @@ export function HomeHero() {
               href="/plans"
               className="inline-flex items-center justify-center rounded-full border border-foreground/40 px-8 py-3.5 text-eyebrow text-foreground transition-colors hover:border-foreground/80"
             >
-              View Membership Plans
+              Explore Menu & Catalogue
             </Link>
           </Magnetic>
         </motion.div>

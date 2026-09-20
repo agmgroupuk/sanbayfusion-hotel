@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/site/page-header";
 import { PlanCard } from "@/components/membership/plan-card";
 import { membershipPlans, membershipValueProps } from "@/lib/membership-plans";
+import { packageCategoryLabels } from "@/lib/membership-plans";
 import { Reveal } from "@/components/motion/reveal";
 
 export const metadata: Metadata = {
@@ -25,9 +26,10 @@ export default function PlansPage() {
             </Reveal>
           ))}
         </div>
-        <div className="mt-20 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {membershipPlans.map((plan, index) => <Reveal key={plan.slug} variant="up" delay={(index % 3) * 0.05}><PlanCard plan={plan} /></Reveal>)}
-        </div>
+        {(["food-only", "food-drinks", "family", "executive", "corporate"] as const).map((category) => {
+          const plans = membershipPlans.filter((plan) => plan.category === category);
+          return <section key={category} className="mt-20"><p className="text-eyebrow text-gold">{packageCategoryLabels[category]}</p><h2 className="mt-4 font-display text-3xl font-light italic">{category === "food-only" ? "Budget to luxury food programmes" : category === "food-drinks" ? "Food plus drinks where permitted" : category === "family" ? "Shared meals for the household" : category === "executive" ? "Premium and priority delivery" : "Custom business programmes"}</h2><div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">{plans.map((plan, index) => <Reveal key={plan.slug} variant="up" delay={(index % 3) * 0.05}><PlanCard plan={plan} /></Reveal>)}</div></section>;
+        })}
         <p className="mx-auto mt-10 max-w-2xl text-center text-sm leading-relaxed text-muted-foreground">Planning prices in Thai baht. Final delivery radius, menu contents, taxes, service fees, and available dates are confirmed before payment.</p>
       </div>
     </div>

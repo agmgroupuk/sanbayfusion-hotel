@@ -19,7 +19,7 @@ export function RestaurantJsonLd() {
       itemListElement: membershipPlans.map((plan) => ({
         "@type": "Offer",
         name: plan.name,
-        price: plan.price.replace(/[^0-9]/g, "") || undefined,
+        price: plan.price ?? undefined,
         priceCurrency: "THB",
         url: `${site.url}/join?plan=${plan.slug}`,
       })),
