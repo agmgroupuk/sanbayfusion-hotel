@@ -52,7 +52,20 @@ export function SiteFooter() {
           <p>
             © {new Date().getFullYear()} {site.name}. All rights reserved.
           </p>
-          <p className="text-eyebrow">★ Michelin Guide</p>
+          <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-2">
+            <Link href="/privacy-policy" className="hover:text-foreground">
+              Privacy
+            </Link>
+            <Link href="/terms-and-conditions" className="hover:text-foreground">
+              Terms
+            </Link>
+            <Link href="/cookie-policy" className="hover:text-foreground">
+              Cookies
+            </Link>
+            <Link href="/accessibility" className="hover:text-foreground">
+              Accessibility
+            </Link>
+          </nav>
         </div>
       </div>
     </footer>
