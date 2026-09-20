@@ -10,9 +10,12 @@ export function PlanCard({ plan }: { plan: MembershipPlan }) {
       {plan.featured && <p className="text-eyebrow text-gold">Most popular</p>}
       <h2 className="mt-2 font-display text-3xl font-light italic">{plan.name}</h2>
       <p className="mt-5 text-3xl text-gold">{price}</p>
-      <p className="text-sm text-muted-foreground">{plan.cadence} · {plan.deliveryDays} delivery days</p>
+      <p className="text-sm text-muted-foreground">{price} / year · valid for {plan.validityMonths} months</p>
       <p className="mt-5 text-sm leading-relaxed text-foreground/75">{plan.description}</p>
       <dl className="mt-7 space-y-3 border-y border-border/50 py-5 text-sm">
+        <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Deliveries / month</dt><dd className="text-right text-foreground/85">{plan.deliveryDays}</dd></div>
+        <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Deliveries / year</dt><dd className="text-right text-foreground/85">{plan.deliveryDaysPerYear}</dd></div>
+        <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Rhythm</dt><dd className="text-right text-foreground/85">{plan.rhythm}</dd></div>
         <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Package</dt><dd className="text-right text-foreground/85">Fixed contents</dd></div>
         <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Alcohol</dt><dd className="text-right text-foreground/85">{containsAlcohol ? "Included allocation" : "Not included"}</dd></div>
       </dl>
@@ -22,7 +25,7 @@ export function PlanCard({ plan }: { plan: MembershipPlan }) {
       <ul className="mt-6 space-y-3 text-sm text-foreground/75">
         {plan.benefits.map((benefit) => <li key={benefit} className="flex gap-3"><span className="text-gold">+</span><span>{benefit}</span></li>)}
       </ul>
-      {unavailable ? <p className="mt-8 rounded-sm border border-border/60 px-5 py-3 text-center text-xs leading-relaxed text-muted-foreground">Unavailable until alcohol-sale compliance is enabled.</p> : <Link href={`/join?plan=${plan.slug}`} className="mt-auto inline-flex items-center justify-center rounded-full bg-gold px-6 py-3 text-eyebrow text-gold-foreground transition-transform hover:-translate-y-0.5 sm:mt-8">Join Package</Link>}
+      {unavailable ? <p className="mt-8 rounded-sm border border-border/60 px-5 py-3 text-center text-xs leading-relaxed text-muted-foreground">Unavailable until alcohol-sale compliance is enabled.</p> : <Link href={`/plans/${plan.slug}`} className="mt-auto inline-flex items-center justify-center rounded-full bg-gold px-6 py-3 text-eyebrow text-gold-foreground transition-transform hover:-translate-y-0.5 sm:mt-8">View Membership</Link>}
       {containsAlcohol && <p className="mt-3 text-[0.7rem] leading-relaxed text-muted-foreground">* Alcohol is age-restricted and subject to Thai licensing, sale-hour, delivery, and identity requirements.</p>}
     </article>
   );
