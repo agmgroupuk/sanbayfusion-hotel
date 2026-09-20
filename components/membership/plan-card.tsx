@@ -11,7 +11,7 @@ export function PlanCard({ plan }: { plan: MembershipPlan }) {
       <p className="text-sm text-muted-foreground">{plan.cadence} · {plan.deliveryDays ? `${plan.deliveryDays} delivery days` : "tailored schedule"}</p>
       <p className="mt-5 text-sm leading-relaxed text-foreground/75">{plan.description}</p>
       <dl className="mt-7 space-y-3 border-y border-border/50 py-5 text-sm">
-        <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Delivery rhythm</dt><dd className="text-right text-foreground/85">{plan.deliveries}</dd></div>
+        <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Delivery rhythm</dt><dd className="text-right text-foreground/85">{plan.deliveryDays ? `${plan.deliveryDays} delivery days` : "Tailored schedule"}</dd></div>
         <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Package</dt><dd className="text-right text-foreground/85">{plan.portions}</dd></div>
       </dl>
       <ul className="mt-6 space-y-3 text-sm text-foreground/75">
