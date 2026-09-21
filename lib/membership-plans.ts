@@ -7,6 +7,8 @@ export type PackageItem = {
   alcohol?: boolean;
 };
 
+export type PackageRowItem = [string, number | string, boolean?];
+
 export type MembershipPlan = {
   id: string;
   slug: string;
@@ -30,7 +32,7 @@ export type MembershipPlan = {
 };
 
 // Fixed package catalogue. Prices and contents remain editable data, not checkout logic.
-const rows: [string, string, string, PlanCategory, PlanLevel, number, number, PackageItem[], string[]][] = [
+const rows: [string, string, string, PlanCategory, PlanLevel, number, number, PackageRowItem[], string[]][] = [
   ["01", "starter", "Starter Membership", "food-only", "budget", 4000, 2, [["Thai starter food package", 1]], ["Every 2 weeks", "Standard delivery"]],
   ["02", "essential", "Essential Membership", "food-only", "budget", 6000, 2, [["Essential food package", 1]], ["Every 2 weeks", "Standard delivery"]],
   ["03", "bronze", "Bronze Membership", "food-only", "budget", 8000, 2, [["Bronze food package", 1]], ["Every 2 weeks", "Standard delivery"]],
