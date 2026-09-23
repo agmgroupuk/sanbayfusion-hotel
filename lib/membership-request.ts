@@ -80,7 +80,7 @@ export function validateMembershipConfiguration(configuration: MembershipConfigu
     return { ok: false as const, error: "One or more food preferences are invalid." };
   }
 
-  const allowed = new Map(beverageAddOns.map((addOn) => [addOn.category, addOn]));
+  const allowed = new Map<string, (typeof beverageAddOns)[number]>(beverageAddOns.map((addOn) => [addOn.category, addOn]));
   let addOnTotal = 0;
   for (const selected of configuration.selectedAddOns) {
     const addOn = allowed.get(selected.category);
