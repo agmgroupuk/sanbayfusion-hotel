@@ -70,7 +70,7 @@ export const membershipPlans: MembershipPlan[] = rows.map(([id, slug, name, cate
   rhythm: benefits[0],
   foodLevel: level === "budget" ? "Essential Thai" : level === "standard" ? "Thai Plus" : level === "premium" ? "Premium" : "Elite",
   foodValueRange: level === "budget" ? [250, 450] : level === "standard" ? [450, 800] : level === "premium" ? [850, 1400] : [1400, 2500],
-  exampleMenu: items.filter((item) => !item.alcohol).slice(0, 6).map((item) => item.name),
+  exampleMenu: items.filter(([, , alcohol]) => !alcohol).slice(0, 6).map(([itemName]) => itemName),
   allowedBeverageCategories: level === "budget" ? ["beer", "house-wine"] : level === "standard" ? ["beer", "wine", "whisky"] : level === "premium" ? ["beer", "wine", "whisky", "rum", "vodka", "gin"] : ["beer", "wine", "whisky", "rum", "vodka", "gin", "tequila"],
   items: items.map(([itemName, quantity, alcohol]) => ({ name: itemName, quantity, alcohol })),
   benefits,
