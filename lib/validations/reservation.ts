@@ -5,6 +5,7 @@ export const reservationSchema = z.object({
   name: z.string().trim().min(2, "Please enter your name").max(120),
   email: z.string().trim().email("Enter a valid email").max(200),
   phone: z.string().trim().min(6, "Enter a contact number").max(40),
+  meetingPurpose: z.string().trim().min(1, "Choose a meeting purpose").max(120).default("General consultation"),
   partySize: z
     .number()
     .int()

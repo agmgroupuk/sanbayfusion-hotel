@@ -34,6 +34,18 @@ const partyOptions = Array.from(
   (_, i) => reservationConfig.minPartySize + i,
 );
 
+const meetingPurposes = [
+  "Event or private party enquiry",
+  "Membership information",
+  "Membership consultation",
+  "Food & catering services",
+  "Alcohol / beverage packages",
+  "Corporate or private event planning",
+  "Partnership or business enquiry",
+  "General consultation",
+  "Other enquiry",
+] as const;
+
 function bookingBounds() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -68,6 +80,7 @@ export function BookingForm() {
       name: "",
       email: "",
       phone: "",
+      meetingPurpose: "General consultation",
       partySize: 2,
       date: "",
       timeSlot: "",
@@ -118,7 +131,7 @@ export function BookingForm() {
         <div className="mx-auto flex size-12 items-center justify-center rounded-full border border-gold/50 text-gold">
           <Check className="size-5" />
         </div>
-        <h2 className="mt-6 font-display text-h3 font-light">Reservation requested</h2>
+        <h2 className="mt-6 font-display text-h3 font-light">Meeting request received</h2>
         <p className="lead mx-auto mt-4 max-w-md text-base">{confirmation.message}</p>
         {confirmation.reference && (
           <p className="text-eyebrow mt-6 text-muted-foreground">
@@ -127,8 +140,8 @@ export function BookingForm() {
         )}
         {confirmation.demo && (
           <p className="mx-auto mt-6 max-w-md text-sm text-muted-foreground">
-            Demo mode — this booking was not saved. Configure the database to
-            take live reservations.
+            Demo mode — this meeting request was not saved. Configure the database to
+            store live enquiries.
           </p>
         )}
         <Button
@@ -136,7 +149,7 @@ export function BookingForm() {
           className="mt-8 rounded-full"
           onClick={() => setConfirmation(null)}
         >
-          Make another reservation
+          Schedule another meeting
         </Button>
       </div>
     );
@@ -145,13 +158,29 @@ export function BookingForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <FormField
+          control={form.control}
+          name="meetingPurpose"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-eyebrow text-muted-foreground">Meeting purpose</FormLabel>
+              <FormControl>
+                <select className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40" {...field}>
+                  {meetingPurposes.map((purpose) => <option key={purpose}>{purpose}</option>)}
+                </select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         {/* Party size */}
         <FormField
           control={form.control}
           name="partySize"
           render={({ field }) => (
             <FormItem className="sm:max-w-[14rem]">
-              <FormLabel className="text-eyebrow text-muted-foreground">Guests</FormLabel>
+              <FormLabel className="text-eyebrow text-muted-foreground">Meeting attendees</FormLabel>
               <FormControl>
                 <select
                   className="h-10 w-full rounded-md border border-input bg-background px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 sm:text-sm"
@@ -160,7 +189,7 @@ export function BookingForm() {
                 >
                   {partyOptions.map((n) => (
                     <option key={n} value={n}>
-                      {n} {n === 1 ? "guest" : "guests"}
+                      {n} {n === 1 ? "attendee" : "attendees"}
                     </option>
                   ))}
                 </select>
@@ -176,7 +205,7 @@ export function BookingForm() {
           name="date"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-eyebrow text-muted-foreground">Date</FormLabel>
+              <FormLabel className="text-eyebrow text-muted-foreground">Meeting date</FormLabel>
               <div className="flex justify-center rounded-md border border-input p-2">
                 <Calendar
                   mode="single"
@@ -209,12 +238,12 @@ export function BookingForm() {
           name="timeSlot"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-eyebrow text-muted-foreground">Time</FormLabel>
+              <FormLabel className="text-eyebrow text-muted-foreground">Meeting time</FormLabel>
               <FormControl>
                 <div className="min-h-[3rem]">
                   {!dateValue ? (
                     <p className="text-sm text-muted-foreground">
-                      Select a date to see available seatings.
+                      Select a date to see available meeting times.
                     </p>
                   ) : slotsLoading ? (
                     <p className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -222,7 +251,7 @@ export function BookingForm() {
                     </p>
                   ) : slots.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
-                      No seatings available for this date and party size. Please try another date.
+                      No meeting times are available for this date and attendee count. Please try another date.
                     </p>
                   ) : (
                     <div
@@ -342,12 +371,12 @@ export function BookingForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-eyebrow text-muted-foreground">
-                Dietary needs & requests (optional)
+                Discussion details & additional requests (optional)
               </FormLabel>
               <FormControl>
                 <Textarea
                   rows={3}
-                  placeholder="Allergies, celebrations, accessibility…"
+                  placeholder="What would you like to discuss? Include event details, catering questions, accessibility needs or other notes."
                   {...field}
                 />
               </FormControl>
@@ -366,11 +395,11 @@ export function BookingForm() {
               <Loader2 className="mr-2 size-4 animate-spin" /> Requesting…
             </>
           ) : (
-            "Request Reservation"
+            "Request Meeting"
           )}
         </Button>
         <p className="text-center text-xs text-muted-foreground">
-          We&apos;ll confirm your table by email or phone. Reservations are held for the full tasting menu.
+          We&apos;ll review your meeting request and contact you directly to confirm the next steps.
         </p>
       </form>
     </Form>

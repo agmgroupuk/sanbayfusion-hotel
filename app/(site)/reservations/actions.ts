@@ -33,6 +33,7 @@ export async function createReservationAction(
     return { ok: false, error: first };
   }
   const data = parsed.data;
+  const meetingNotes = [`Meeting purpose: ${data.meetingPurpose}`, data.specialRequests].filter(Boolean).join("\n\n");
 
   const dateCheck = validateDate(data.date);
   if (!dateCheck.ok) {
@@ -70,10 +71,10 @@ export async function createReservationAction(
       reference = row?.id.slice(0, 8).toUpperCase();
     }
   } catch (err) {
-    console.error("[reservation] insert failed", err);
+    console.error("[meeting] insert failed", err);
     return {
       ok: false,
-      error: "We couldn't save your reservation. Please try again or call us.",
+      error: "We couldn't save your meeting request. Please try again or call us.",
     };
   }
 
@@ -81,12 +82,13 @@ export async function createReservationAction(
   try {
     await sendReservationEmails({
       ...data,
-      specialRequests: data.specialRequests || undefined,
+      meetingPurpose: data.meetingPurpose,
+      specialRequests: meetingNotes || undefined,
       dateLong: formatDateLong(data.date),
       reference,
     });
   } catch (err) {
-    console.error("[reservation] email failed", err);
+    console.error("[meeting] email failed", err);
   }
 
   return {
@@ -95,8 +97,6 @@ export async function createReservationAction(
     // No database means nothing was persisted — flag it so the UI is honest
     // rather than implying a confirmed booking.
     demo: !db,
-    message: `Thank you, ${data.name}. Your table for ${data.partySize} on ${formatDateLong(
-      data.date,
-    )} at ${data.timeSlot} is requested — we'll confirm shortly.`,
+    message: `Thank you, ${data.name}. Your meeting request for ${formatDateLong(data.date)} at ${data.timeSlot} has been received — we'll contact you shortly to confirm.`,
   };
 }

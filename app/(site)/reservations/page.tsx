@@ -5,9 +5,8 @@ import { Reveal } from "@/components/motion/reveal";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Reservations",
-  description:
-    "Reserve your table at Sanbay Fusion Bar & Restaurant — forty seats, one seating, a single tasting menu served across the evening.",
+  title: "Schedule a Meeting",
+  description: "Schedule a meeting with the Sanbay Fusion team for memberships, events, catering, partnerships, and private gathering enquiries.",
   alternates: {
     canonical: "/reservations",
   },
@@ -20,15 +19,14 @@ export default function ReservationsPage() {
         {/* Aside — atmosphere + practical details */}
         <aside className="lg:sticky lg:top-28 lg:self-start">
           <Reveal variant="fade" className="text-eyebrow text-gold">
-            Reservations
+            Schedule a meeting
           </Reveal>
           <Reveal variant="up" delay={0.05}>
-            <h1 className="mt-5 font-display text-h1 font-light">Reserve a table</h1>
+            <h1 className="mt-5 font-display text-h1 font-light">Meet with the Sanbay Fusion team</h1>
           </Reveal>
           <Reveal variant="up" delay={0.1}>
             <p className="lead measure mt-5">
-              Forty seats, one seating. We serve a single tasting menu across the
-              evening — reserve below and we&apos;ll confirm by email or phone.
+              Choose a purpose, select an available meeting date and time, and tell us what you would like to discuss. We&apos;ll review your request and contact you directly to confirm the conversation.
             </p>
           </Reveal>
 
@@ -36,7 +34,7 @@ export default function ReservationsPage() {
             <div className="relative aspect-[5/4] w-full">
               <Image
                 src="/images/nicely-plated-food-served-at-decorated-table.jpg"
-                alt="A table set for the evening at Sanbay Fusion Bar & Restaurant"
+                alt="A prepared Sanbay Fusion table and dining setting"
                 fill
                 sizes="(min-width: 1024px) 40vw, 100vw"
                 className="object-cover"
@@ -55,16 +53,16 @@ export default function ReservationsPage() {
               ))}
             </ul>
             <p className="mt-6 text-sm text-muted-foreground">
-              Parties larger than 8?{" "}
+              Need help choosing a meeting time?{" "}
               <a href={`tel:${site.phone.replace(/\s/g, "")}`} className="text-gold hover:text-gold/80">
-                Call us directly
+                Contact us directly
               </a>
               .
             </p>
           </Reveal>
         </aside>
 
-        {/* The booking form */}
+        {/* Meeting scheduling form — retains the existing calendar and availability logic. */}
         <div className="rounded-sm border border-border/60 bg-card/30 p-6 sm:p-10">
           <BookingForm />
         </div>

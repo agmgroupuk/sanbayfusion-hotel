@@ -14,6 +14,7 @@ export interface ReservationEmailData {
   name: string;
   email: string;
   phone: string;
+  meetingPurpose?: string;
   partySize: number;
   dateLong: string;
   timeSlot: string;
@@ -29,6 +30,7 @@ const muted = "#6b6457";
 export function GuestConfirmationEmail({
   name,
   partySize,
+  meetingPurpose,
   dateLong,
   timeSlot,
   specialRequests,
@@ -37,31 +39,30 @@ export function GuestConfirmationEmail({
   return (
     <Html>
       <Head />
-      <Preview>{`Your table at Sanbay Fusion — ${dateLong} at ${timeSlot}`}</Preview>
+      <Preview>{`Your Sanbay Fusion meeting request — ${dateLong} at ${timeSlot}`}</Preview>
       <Body style={{ backgroundColor: paper, margin: 0, fontFamily: "Georgia, 'Times New Roman', serif" }}>
         <Container style={{ maxWidth: "560px", margin: "0 auto", padding: "40px 32px" }}>
           <Text style={{ letterSpacing: "0.3em", textTransform: "uppercase", fontSize: "11px", color: gold, fontFamily: "Arial, sans-serif", margin: 0 }}>
             Sanbay Fusion Bar & Restaurant · City
           </Text>
           <Heading style={{ color: ink, fontSize: "30px", fontWeight: 400, margin: "16px 0 0" }}>
-            Your table is requested
+            Your meeting is requested
           </Heading>
           <Text style={{ color: muted, fontSize: "16px", lineHeight: "1.6" }}>
-            Dear {name}, thank you for choosing Sanbay Fusion Bar & Restaurant. We have received your
-            reservation request and will confirm shortly by email or phone.
+            Dear {name}, thank you for contacting Sanbay Fusion. We have received your meeting request and will contact you shortly to confirm the conversation.
           </Text>
 
           <Section style={{ backgroundColor: "#fff", border: "1px solid #ece7dc", borderRadius: "6px", padding: "24px", marginTop: "12px" }}>
             <Detail label="Date" value={dateLong} />
             <Detail label="Time" value={timeSlot} />
-            <Detail label="Guests" value={String(partySize)} />
+            <Detail label="Attendees" value={String(partySize)} />
+            {meetingPurpose ? <Detail label="Purpose" value={meetingPurpose} /> : null}
             {reference ? <Detail label="Reference" value={reference} /> : null}
             {specialRequests ? <Detail label="Notes" value={specialRequests} /> : null}
           </Section>
 
           <Text style={{ color: muted, fontSize: "14px", lineHeight: "1.6", marginTop: "20px" }}>
-            We serve a single tasting menu over the course of the evening. Please
-            let us know of any dietary needs by replying to this email.
+            This request is not an automatic booking. Our team will review the details and confirm the meeting directly.
           </Text>
 
           <Hr style={{ borderColor: "#ece7dc", margin: "28px 0" }} />
