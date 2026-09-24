@@ -32,7 +32,7 @@ export function SiteFooter() {
 
           <div>
             <p className="text-eyebrow text-muted-foreground">Explore</p>
-            <ul className="mt-4 space-y-2 text-sm text-foreground/80">
+            <ul className="mt-4 flex max-w-xl flex-wrap gap-x-5 gap-y-3 text-sm text-foreground/80">
               {navLinks.map((link) => (
                 <li key={link.href}>
                   <Link href={link.href} className="hover:text-foreground">

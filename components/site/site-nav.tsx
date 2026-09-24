@@ -3,33 +3,80 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { useLenis } from "lenis/react";
-import { Menu, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Magnetic } from "@/components/motion/magnetic";
 import { navLinks, site } from "@/lib/site";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-function NavLink({ href, label }: { href: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="group relative text-sm text-foreground/85 transition-colors hover:text-foreground"
-    >
-      {label}
-      <span className="absolute -bottom-1.5 left-0 h-px w-full origin-left scale-x-0 bg-gold transition-transform duration-300 ease-out group-hover:scale-x-100" />
-    </Link>
-  );
-}
-
 export function SiteNav() {
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const lenis = useLenis();
   const overlayRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const desktopNavRef = useRef<HTMLDivElement>(null);
+  const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const desktopPausedRef = useRef(false);
+
+  function pauseDesktopMovement() {
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    desktopPausedRef.current = true;
+  }
+
+  function resumeDesktopMovement() {
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = setTimeout(() => { desktopPausedRef.current = false; }, 700);
+  }
+
+  function scrollDesktopNav(direction: number) {
+    pauseDesktopMovement();
+    desktopNavRef.current?.scrollBy({ left: direction * 180, behavior: "smooth" });
+    resumeDesktopMovement();
+  }
+
+  useEffect(() => {
+    const nav = desktopNavRef.current;
+    if (!nav) return;
+    const active = nav.querySelector<HTMLElement>(`[data-nav-path="${CSS.escape(pathname)}"]`);
+    active?.scrollIntoView({ block: "nearest", inline: "center" });
+  }, [pathname]);
+
+  useEffect(() => {
+    const nav = desktopNavRef.current;
+    if (!nav) return;
+    let animationFrame = 0;
+    let last = performance.now();
+    const onEnter = () => { desktopPausedRef.current = true; };
+    const onLeave = () => { desktopPausedRef.current = false; last = performance.now(); };
+    const move = (now: number) => {
+      const elapsed = now - last;
+      last = now;
+      if (!desktopPausedRef.current && document.visibilityState === "visible") {
+        nav.scrollLeft += elapsed * 0.018;
+        if (nav.scrollLeft >= nav.scrollWidth / 2) nav.scrollLeft = 0;
+      }
+      animationFrame = requestAnimationFrame(move);
+    };
+    nav.addEventListener("pointerenter", onEnter);
+    nav.addEventListener("pointerleave", onLeave);
+    nav.addEventListener("focusin", onEnter);
+    nav.addEventListener("focusout", onLeave);
+    animationFrame = requestAnimationFrame(move);
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      nav.removeEventListener("pointerenter", onEnter);
+      nav.removeEventListener("pointerleave", onLeave);
+      nav.removeEventListener("focusin", onEnter);
+      nav.removeEventListener("focusout", onLeave);
+      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -98,7 +145,9 @@ export function SiteNav() {
       transition={{ duration: 0.8, ease: EASE, delay: 0.1 }}
       className={cn(
         "fixed inset-x-0 top-0 z-50 transition-colors duration-500",
-        scrolled
+        open
+          ? "bg-gold text-gold-foreground"
+          : scrolled
           ? "border-b border-border/60 bg-background/80 backdrop-blur-md"
           : "border-b border-transparent bg-transparent",
       )}
@@ -112,10 +161,12 @@ export function SiteNav() {
           <Image src="/brand/sanbayfusion-logo.webp" alt={site.name} fill priority sizes="(min-width: 640px) 176px, 144px" className="object-contain object-left" />
         </Link>
 
-        <div className="hidden items-center gap-10 md:flex">
-          {navLinks.map((link) => (
-            <NavLink key={link.href} href={link.href} label={link.label} />
-          ))}
+        <div className="hidden min-w-0 items-center gap-2 md:flex">
+          <button type="button" aria-label="Scroll navigation left" onClick={() => scrollDesktopNav(-1)} className="flex size-8 shrink-0 items-center justify-center rounded-full border border-foreground/20 text-foreground transition-colors hover:border-gold hover:text-gold"><ChevronLeft className="size-4" /></button>
+          <div ref={desktopNavRef} className="flex max-w-[min(42vw,32rem)] min-w-0 snap-x gap-7 overflow-x-auto scroll-smooth px-2 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" onPointerDown={pauseDesktopMovement} onPointerUp={resumeDesktopMovement}>
+            {[...navLinks, ...navLinks].map((link, index) => <div key={`${link.href}-${index}`} className="shrink-0"><Link data-nav-path={link.href} href={link.href} className={cn("group relative block whitespace-nowrap text-sm transition-colors", pathname === link.href ? "text-gold" : "text-foreground/85 hover:text-foreground")}><span>{link.label}</span><span className={cn("absolute -bottom-1.5 left-0 h-px w-full origin-left bg-gold transition-transform duration-300 ease-out", pathname === link.href ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100")} /></Link></div>)}
+          </div>
+          <button type="button" aria-label="Scroll navigation right" onClick={() => scrollDesktopNav(1)} className="flex size-8 shrink-0 items-center justify-center rounded-full border border-foreground/20 text-foreground transition-colors hover:border-gold hover:text-gold"><ChevronRight className="size-4" /></button>
           <Magnetic strength={0.4}>
             <Link
               href="/join"
@@ -133,7 +184,7 @@ export function SiteNav() {
           aria-expanded={open}
           aria-controls="mobile-menu"
           onClick={() => setOpen((v) => !v)}
-          className="-mr-2 inline-flex h-10 w-10 items-center justify-center text-foreground md:hidden"
+          className="-mr-2 inline-flex h-10 w-10 items-center justify-center text-gold-foreground md:hidden"
         >
           {open ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>
@@ -151,9 +202,9 @@ export function SiteNav() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 top-16 z-40 bg-background/98 backdrop-blur-xl md:hidden"
+            className="fixed inset-0 top-16 z-40 overflow-y-auto bg-gold text-gold-foreground md:hidden"
           >
-            <div className="flex flex-col gap-2 px-6 py-10">
+            <div className="flex min-h-full flex-col gap-1 px-5 py-5 sm:px-8 sm:py-8">
               {navLinks.map((link, i) => (
                 <motion.div
                   key={link.href}
@@ -164,13 +215,13 @@ export function SiteNav() {
                   <Link
                     href={link.href}
                     onClick={() => setOpen(false)}
-                    className="block border-b border-border/50 py-5 font-display text-4xl"
+                    className="block border-b border-gold-foreground/20 py-3.5 font-display text-2xl leading-tight sm:py-4 sm:text-3xl"
                   >
                     {link.label}
                   </Link>
                 </motion.div>
               ))}
-              <Link href="/join" onClick={() => setOpen(false)} className="inline-flex items-center justify-center rounded-full bg-gold px-6 py-4 text-eyebrow text-gold-foreground">
+              <Link href="/join" onClick={() => setOpen(false)} className="mt-4 inline-flex items-center justify-center rounded-full bg-gold-foreground px-6 py-3.5 text-eyebrow text-gold">
                 Become a Member
               </Link>
             </div>
