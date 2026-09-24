@@ -17,6 +17,8 @@ export const membershipRequestStatuses = [
   "cancelled",
 ] as const;
 
+const phoneNumberSchema = z.string().trim().regex(/^\+?[0-9][0-9\s().-]{5,38}$/, "Enter a valid phone number");
+
 export const membershipConfigurationSchema = z.object({
   planSlug: z.string().min(1),
   foodPreferences: z.array(z.string().min(1)).max(8),
@@ -39,9 +41,10 @@ export const membershipConfigurationSchema = z.object({
 export const membershipApplicationSchema = z.object({
   configuration: membershipConfigurationSchema,
   fullName: z.string().trim().min(2, "Please enter your full name").max(120),
-  phone: z.string().trim().min(6, "Please enter a mobile number").max(40),
-  email: z.string().trim().email("Please enter a valid email").max(200),
+  phone: phoneNumberSchema.max(40).optional().default(""),
+  email: z.string().trim().email("Please enter a valid email").max(200).optional().or(z.literal("")).default(""),
   lineId: z.string().trim().max(80).optional().or(z.literal("")),
+  whatsappNumber: phoneNumberSchema.max(40).optional().default(""),
   addressLine1: z.string().trim().min(3, "Please enter your address").max(200),
   addressLine2: z.string().trim().max(200).optional().or(z.literal("")),
   subdistrict: z.string().trim().max(120).optional().or(z.literal("")),
@@ -64,6 +67,22 @@ export const membershipApplicationSchema = z.object({
   acknowledgesPrivacy: z.boolean().refine((value) => value === true, { message: "Please acknowledge the Privacy Policy" }),
   agreesContact: z.boolean().refine((value) => value === true, { message: "Please agree to be contacted" }),
   confirmsAlcoholLaw: z.boolean(),
+}).superRefine((data, context) => {
+  if (!data.contactPreferences.length) {
+    context.addIssue({ code: "custom", path: ["contactPreferences"], message: "Select at least one contact method." });
+  }
+  if (data.contactPreferences.includes("phone") && !data.phone) {
+    context.addIssue({ code: "custom", path: ["phone"], message: "Enter your phone number." });
+  }
+  if (data.contactPreferences.includes("email") && !data.email) {
+    context.addIssue({ code: "custom", path: ["email"], message: "Enter your email address." });
+  }
+  if (data.contactPreferences.includes("line") && !data.lineId) {
+    context.addIssue({ code: "custom", path: ["lineId"], message: "Enter your LINE ID." });
+  }
+  if (data.contactPreferences.includes("whatsapp") && !data.whatsappNumber) {
+    context.addIssue({ code: "custom", path: ["whatsappNumber"], message: "Enter your WhatsApp number." });
+  }
 });
 
 export type MembershipConfiguration = z.infer<typeof membershipConfigurationSchema>;

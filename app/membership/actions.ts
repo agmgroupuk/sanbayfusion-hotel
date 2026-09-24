@@ -27,12 +27,6 @@ export async function submitMembershipApplication(raw: unknown): Promise<Members
   const checked = validateMembershipConfiguration(data.configuration);
   if (!checked.ok) return checked;
 
-  if (data.contactPreferences.includes("line") && !data.lineId) {
-    return { ok: false, error: "Add your LINE ID or choose another contact method." };
-  }
-  if (data.contactPreferences.includes("whatsapp") && !data.phone) {
-    return { ok: false, error: "Add a mobile number for WhatsApp contact." };
-  }
   if (data.configuration.alcoholEnabled && !data.confirmsAlcoholLaw) {
     return { ok: false, error: "Please confirm the alcohol age and legal notice." };
   }
@@ -80,7 +74,15 @@ export async function submitMembershipApplication(raw: unknown): Promise<Members
           deliveryInstructions: data.deliveryInstructions || null,
           area: data.configuration.deliveryArea,
         },
-        contactPreferences: data.contactPreferences,
+        contactPreferences: {
+          methods: data.contactPreferences,
+          values: {
+            email: data.email,
+            phone: data.phone,
+            lineId: data.lineId || null,
+            whatsappNumber: data.whatsappNumber,
+          },
+        },
         configuration: data.configuration,
         notes: data.notes || null,
         allergies: data.allergies || null,
