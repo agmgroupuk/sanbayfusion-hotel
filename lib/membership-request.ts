@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { catalogueCategories } from "@/lib/catalogue";
 import { alcoholSalesEnabled, beverageAddOns, membershipPlans } from "@/lib/membership-plans";
 
 export const membershipRequestStatuses = [
@@ -27,7 +28,12 @@ export const membershipConfigurationSchema = z.object({
     category: z.string().min(1),
     name: z.string().min(1),
     quantity: z.number().int().min(0).max(5),
-  })).max(7),
+  })).max(7).default([]),
+  selectedProducts: z.array(z.object({
+    category: z.string().min(1),
+    name: z.string().min(1),
+    quantity: z.number().int().min(1).max(5),
+  })).max(100).default([]),
 });
 
 export const membershipApplicationSchema = z.object({
@@ -84,7 +90,7 @@ export function validateMembershipConfiguration(configuration: MembershipConfigu
   let addOnTotal = 0;
   for (const selected of configuration.selectedAddOns) {
     const addOn = allowed.get(selected.category);
-    if (!addOn || !plan.allowedBeverageCategories.includes(selected.category) || !addOn.options.includes(selected.name as never)) {
+    if (!addOn || !(plan.allowedBeverageCategories as readonly string[]).includes(selected.category) || !addOn.options.includes(selected.name as never)) {
       return { ok: false as const, error: "One or more beverage selections are not available for this plan." };
     }
     if (!configuration.alcoholEnabled || selected.quantity === 0) {
@@ -93,7 +99,22 @@ export function validateMembershipConfiguration(configuration: MembershipConfigu
     addOnTotal += addOn.price * selected.quantity;
   }
 
-  if (configuration.alcoholEnabled && !configuration.selectedAddOns.length) {
+  for (const selected of configuration.selectedProducts) {
+    const category = catalogueCategories.find((item) => item.name === selected.category);
+    const product = category?.products.find((item) => item.name === selected.name);
+    if (!category || !product) {
+      return { ok: false as const, error: "One or more catalogue selections are no longer available." };
+    }
+    if (category.group === "alcohol" && !configuration.alcoholEnabled) {
+      return { ok: false as const, error: "Enable alcohol options before selecting alcoholic products." };
+    }
+    if (category.group === "alcohol" && !alcoholSalesEnabled) {
+      return { ok: false as const, error: "Alcohol options are not currently available." };
+    }
+    addOnTotal += product.price * selected.quantity;
+  }
+
+  if (configuration.alcoholEnabled && !configuration.selectedAddOns.length && !configuration.selectedProducts.some((selected) => catalogueCategories.find((category) => category.name === selected.category)?.group === "alcohol")) {
     return { ok: false as const, error: "Choose a beverage add-on or turn alcohol options off." };
   }
 
