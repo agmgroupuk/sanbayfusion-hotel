@@ -9,6 +9,7 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+import { site } from "@/lib/site";
 
 export interface ReservationEmailData {
   name: string;
@@ -67,7 +68,7 @@ export function GuestConfirmationEmail({
 
           <Hr style={{ borderColor: "#ece7dc", margin: "28px 0" }} />
           <Text style={{ color: muted, fontSize: "12px", fontFamily: "Arial, sans-serif" }}>
-            Sanbay Fusion Bar & Restaurant · 1 Main Street, City Center · +00 000 000 0000
+            {site.name} · {site.address.line1} · {site.phone}
           </Text>
         </Container>
       </Body>

@@ -8,7 +8,7 @@ export const site = {
     line1: "Sanbay Fusion Bar & Restaurant",
     line2: "sanbayfusion.com",
   },
-  phone: "+00 000 000 0000",
+  phone: "+66 80 897 2129",
   email: "info@sanbayfusion.com",
   hours: [
     { days: "Tuesday — Thursday", time: "18:00 — 22:00" },
