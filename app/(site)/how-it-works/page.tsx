@@ -1,37 +1,66 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarDays, PackageCheck, RefreshCw, Sparkles } from "lucide-react";
-import { PageHeader } from "@/components/site/page-header";
+import { BadgeCheck, CalendarClock, Check, Clock3, CreditCard, FileText, ShoppingBasket, Truck, Utensils, X } from "lucide-react";
 import { Reveal } from "@/components/motion/reveal";
+import { PageHeader } from "@/components/site/page-header";
+import { membershipPlans } from "@/lib/membership-plans";
 
 export const metadata: Metadata = {
   title: "How It Works",
-  description: "How Sanbay Fusion food delivery memberships work from plan selection to scheduled delivery.",
+  description: "Understand Sanbay Fusion membership fees, ordering, delivery entitlements, payment deadlines, and activation.",
   alternates: { canonical: "/how-it-works" },
 };
 
-const steps = [
-  ["01", "Choose a membership", "Select the plan that matches your household, schedule, and appetite."],
-  ["02", "Pick your delivery days", "We show available dates and delivery windows for your area before you commit."],
-  ["03", "Receive your food package", "Your seasonal meals, snacks, drinks, or pantry products arrive on the agreed schedule."],
-  ["04", "Adjust the next cycle", "Update preferences, pause, or change future delivery dates before the next cycle begins."],
+const joiningSteps = [
+  ["01", "Choose plan", "Select the membership level and delivery entitlement that fits your routine."],
+  ["02", "Configure membership", "Add your delivery details, preferences, and eligible catalogue selections."],
+  ["03", "Submit request", "Send the request for the Sanbay Fusion team to review."],
+  ["04", "Team review", "We confirm availability, route details, and the proposed membership terms."],
+  ["05", "Receive invoice", "Approved requests receive the membership fee invoice."],
+  ["06", "Pay membership fee", "Complete payment within the invoice deadline."],
+  ["07", "Membership activated", "Your 12-month term begins on the confirmed activation date."],
 ] as const;
 
-const icons = [CalendarDays, Sparkles, PackageCheck, RefreshCw];
+const activeSteps = [
+  ["01", "Membership active", "Use the benefits and delivery entitlement attached to your selected plan."],
+  ["02", "Choose food and beverages", "Select the products you want from the available menu and catalogue."],
+  ["03", "Choose delivery date", "Pick an eligible delivery opportunity for your area and plan."],
+  ["04", "Order at least 3 days ahead", "Submit the order and complete its required payment before the deadline."],
+  ["05", "Receive confirmation", "The order is confirmed only after availability and payment are checked."],
+  ["06", "Delivery", "Your confirmed order is prepared and delivered in the agreed window."],
+] as const;
+
+const deliveryEntitlements = [...new Set(membershipPlans.map((plan) => plan.deliveryDays))].sort((first, second) => first - second);
+const minimumDeliveryDays = deliveryEntitlements[0] ?? 2;
+const maximumDeliveryDays = deliveryEntitlements.at(-1) ?? 12;
+
+function StepGrid({ steps }: { steps: readonly (readonly [string, string, string])[] }) {
+  return <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{steps.map(([number, title, description], index) => <Reveal key={number} variant="up" delay={(index % 3) * 0.05}><article className="h-full rounded-sm border border-border/60 bg-card/30 p-6 sm:p-7"><div className="flex items-center justify-between text-gold"><span className="text-eyebrow">{number}</span>{index < steps.length - 1 && <span className="hidden text-lg lg:block">→</span>}</div><h3 className="mt-8 font-display text-2xl font-light italic">{title}</h3><p className="mt-3 text-sm leading-relaxed text-foreground/70">{description}</p></article></Reveal>)}</div>;
+}
 
 export default function HowItWorksPage() {
-  return (
-    <div className="pb-28">
-      <PageHeader eyebrow="The membership rhythm" title="Simple by design" lead="The service is built around recurring food delivery, not one-off ordering. You choose the rhythm once, then we prepare the next package." />
-      <div className="mx-auto max-w-7xl px-5 sm:px-8">
-        <div className="grid gap-6 md:grid-cols-2">
-          {steps.map(([number, title, description], index) => {
-            const Icon = icons[index];
-            return <Reveal key={number} variant="up" delay={index * 0.06}><article className="h-full rounded-sm border border-border/60 bg-card/30 p-8"><div className="flex items-center justify-between text-gold"><span className="text-eyebrow">{number}</span><Icon className="size-5" /></div><h2 className="mt-10 font-display text-3xl font-light italic">{title}</h2><p className="mt-4 text-base leading-relaxed text-foreground/75">{description}</p></article></Reveal>;
-          })}
-        </div>
-        <Reveal variant="up" className="mx-auto mt-20 max-w-3xl border-y border-border/60 py-10 text-center"><p className="text-eyebrow text-gold">A clear promise</p><p className="lead mt-5 text-base text-foreground/80">Every membership shows what is included, how many delivery days you receive, and what happens next. No hidden one-off ordering flow.</p><Link href="/plans" className="mt-8 inline-flex rounded-full bg-gold px-7 py-3 text-eyebrow text-gold-foreground">View Membership Plans</Link></Reveal>
-      </div>
+  return <div className="pb-28">
+    <PageHeader eyebrow="The membership process" title="How Sanbay Fusion Membership Works" lead="One membership. Flexible ordering. Scheduled delivery. Understand what the membership fee pays for, what each order costs, and when each payment is due before you join." />
+    <div className="mx-auto max-w-7xl px-5 sm:px-8">
+      <section aria-labelledby="payment-model"><Reveal variant="up" className="rounded-sm border border-gold/60 bg-gold/10 p-6 sm:p-10"><p className="text-eyebrow text-gold">The big difference</p><h2 id="payment-model" className="mt-5 max-w-3xl font-display text-4xl font-light sm:text-5xl">Two payments. Two different purposes.</h2><div className="mt-10 grid gap-5 lg:grid-cols-2"><article className="rounded-sm border border-gold/40 bg-background/50 p-6 sm:p-8"><CreditCard className="size-6 text-gold" /><p className="mt-6 text-eyebrow text-gold">One-time membership fee</p><h3 className="mt-3 font-display text-3xl font-light italic">Paid for membership access</h3><p className="mt-4 text-sm leading-relaxed text-foreground/75">The membership fee gives you access to the selected plan and its applicable benefits for 12 months from the confirmed activation date. It is not added again whenever you order food.</p></article><article className="rounded-sm border border-border/60 bg-card/50 p-6 sm:p-8"><ShoppingBasket className="size-6 text-gold" /><p className="mt-6 text-eyebrow text-gold">Food and beverage orders</p><h3 className="mt-3 font-display text-3xl font-light italic">Paid separately when you order</h3><p className="mt-4 text-sm leading-relaxed text-foreground/75">Active members pay for the food, beverages, eligible alcohol, add-ons, delivery, service charges, taxes, and other disclosed costs selected for each order.</p></article></div><p className="mt-8 text-center font-display text-2xl font-light italic text-gold sm:text-3xl">You do not pay the membership fee again every time you order food.</p></Reveal></section>
+
+      <section className="mt-24" aria-labelledby="joining-title"><div className="mb-10 max-w-2xl"><p className="text-eyebrow text-gold">Joining Sanbay Fusion</p><h2 id="joining-title" className="mt-5 font-display text-4xl font-light sm:text-5xl">Request first. Activation follows review and payment.</h2><p className="mt-5 text-sm leading-relaxed text-muted-foreground">Submitting a membership request does not immediately activate the membership.</p></div><StepGrid steps={joiningSteps} /></section>
+
+      <section className="mt-20 grid gap-6 lg:grid-cols-2" aria-label="Membership invoice payment rule"><Reveal variant="up" className="rounded-sm border border-gold/50 bg-gold/5 p-7 sm:p-9"><Clock3 className="size-6 text-gold" /><p className="mt-6 text-eyebrow text-gold">Membership invoice</p><h2 className="mt-4 font-display text-3xl font-light italic">3-day membership invoice payment window</h2><p className="mt-4 text-sm leading-relaxed text-foreground/75">After review and approval, the membership invoice normally must be paid within 3 days. This payment is for membership access and activation.</p></Reveal><Reveal variant="up" delay={0.06} className="rounded-sm border border-border/60 bg-card/30 p-7 sm:p-9"><FileText className="size-6 text-gold" /><p className="mt-6 text-eyebrow text-gold">Important distinction</p><h2 className="mt-4 font-display text-3xl font-light italic">This is separate from the order deadline</h2><p className="mt-4 text-sm leading-relaxed text-foreground/75">The invoice window applies once, during membership approval. The 3-day advance notice applies later, to each intended delivery order.</p></Reveal></section>
+
+      <section className="mt-24" aria-labelledby="active-title"><div className="mb-10 max-w-2xl"><p className="text-eyebrow text-gold">After you become a member</p><h2 id="active-title" className="mt-5 font-display text-4xl font-light sm:text-5xl">Choose, pay, confirm, receive.</h2></div><StepGrid steps={activeSteps} /></section>
+
+      <section className="mt-20"><Reveal variant="up" className="rounded-sm border-2 border-gold/60 bg-gold/10 p-7 text-center sm:p-12"><p className="text-eyebrow text-gold">The 3-day order rule</p><h2 className="mt-5 font-display text-4xl font-light sm:text-6xl">Order at least 3 days before delivery.</h2><p className="mx-auto mt-6 max-w-2xl text-sm leading-relaxed text-foreground/80">The intended delivery order must normally be submitted and its required product payment completed at least 3 days before the requested delivery date. A requested slot is not automatically confirmed if this process is missed.</p><div className="mt-8 flex flex-wrap items-center justify-center gap-3 text-sm text-gold"><span>Choose food</span><span>→</span><span>Select date</span><span>→</span><span>Order 3 days ahead</span><span>→</span><span>Pay order total</span><span>→</span><span>Receive confirmation</span></div></Reveal></section>
+
+      <section className="mt-24" aria-labelledby="entitlement-title"><div className="grid gap-10 lg:grid-cols-2 lg:items-end"><div><p className="text-eyebrow text-gold">Delivery entitlement</p><h2 id="entitlement-title" className="mt-5 font-display text-4xl font-light sm:text-5xl">Your plan controls delivery frequency, not unlimited free food.</h2><p className="mt-5 text-sm leading-relaxed text-foreground/75">A delivery entitlement is the number of eligible delivery opportunities you may use during a month according to the selected plan. It does not mean automatic deliveries, unlimited food, or free products. For every intended delivery: choose food, choose an eligible date, review the order, pay the applicable amount, and receive confirmation.</p></div><div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{deliveryEntitlements.map((daysPerMonth) => <div key={daysPerMonth} className="rounded-sm border border-border/60 bg-card/30 p-5 text-center"><p className="font-display text-3xl font-light text-gold">{daysPerMonth}</p><p className="mt-2 text-xs text-muted-foreground">delivery days / month</p></div>)}</div></div><p className="mt-8 border-l-2 border-gold pl-5 text-sm text-muted-foreground">Current plan data ranges from {minimumDeliveryDays} delivery days/month to {maximumDeliveryDays} delivery days/month. Compare plans for the exact entitlement and benefits.</p><Link href="/plans" className="mt-7 inline-flex rounded-full bg-gold px-7 py-3 text-eyebrow text-gold-foreground">View Membership Plans</Link></section>
+
+      <section className="mt-24" aria-labelledby="example-title"><Reveal variant="up" className="rounded-sm border border-border/60 bg-card/30 p-7 sm:p-10"><div className="flex items-center gap-3"><BadgeCheck className="size-5 text-gold" /><p className="text-eyebrow text-gold">Example only</p></div><h2 id="example-title" className="mt-5 font-display text-4xl font-light sm:text-5xl">See the payment model in numbers.</h2><div className="mt-10 grid gap-5 lg:grid-cols-2"><div className="rounded-sm border border-border/60 p-6"><p className="text-eyebrow text-gold">Step 1 — Join</p><h3 className="mt-4 font-display text-2xl font-light italic">Premium Membership</h3><div className="mt-6 flex justify-between border-t border-border/50 pt-4 text-sm"><span>Annual membership fee</span><strong className="text-gold">฿20,000</strong></div><p className="mt-4 text-sm text-muted-foreground">6 delivery days / month. The customer pays the applicable membership fee during activation.</p></div><div className="rounded-sm border border-gold/50 bg-gold/5 p-6"><p className="text-eyebrow text-gold">Step 2 — Later order</p><h3 className="mt-4 font-display text-2xl font-light italic">An active member chooses</h3><div className="mt-6 space-y-3 border-t border-gold/20 pt-4 text-sm"><p className="flex justify-between gap-4"><span>Tom Yum Goong</span><span>฿320</span></p><p className="flex justify-between gap-4"><span>Pad Thai Prawn</span><span>฿280</span></p><p className="flex justify-between gap-4"><span>Mango Sticky Rice</span><span>฿150</span></p><p className="flex justify-between gap-4"><span>Beverage</span><span>฿100</span></p><p className="flex justify-between border-t border-gold/30 pt-4 text-lg"><strong>Example order total</strong><strong className="text-gold">฿850</strong></p></div><p className="mt-5 text-sm font-medium text-gold">The customer pays ฿850 for this order. Membership fee charged again: ฿0.</p></div></div><p className="mt-7 text-xs text-muted-foreground">This example is illustrative. Actual menu prices and applicable charges come from the current catalogue and finalized order.</p></Reveal></section>
+
+      <section className="mt-24 grid gap-5 md:grid-cols-2" aria-label="Important membership rules"><div><p className="text-eyebrow text-gold">Before you join</p><h2 className="mt-5 font-display text-4xl font-light sm:text-5xl">Know what happens next.</h2></div><div className="grid gap-3">{[["12-month membership", "Valid for 12 months from confirmed activation."], ["Food and beverages paid separately", "Normally paid when you place an order unless expressly included."], ["Order notice", "Normally at least 3 days before the requested delivery date."], ["Order payment", "Complete the applicable payment before the order is confirmed."], ["Finalized plan", "Locked after activation, subject to availability and substitutions."], ["Products subject to availability", "A suitable substitute may be offered for an unavailable item."], ["Membership fee", "Non-refundable after payment and activation except where required by law."]].map(([title, description]) => <div key={title} className="flex gap-4 rounded-sm border border-border/60 bg-card/30 p-5"><Check className="mt-1 size-4 shrink-0 text-gold" /><div><h3 className="font-display text-xl font-light italic">{title}</h3><p className="mt-2 text-sm leading-relaxed text-foreground/70">{description}</p></div></div>)}</div></section>
+
+      <section className="mt-20 grid gap-5 md:grid-cols-2"><Reveal variant="up" className="rounded-sm border border-border/60 p-7"><div className="flex items-center gap-3"><CalendarClock className="size-5 text-gold" /><p className="text-eyebrow text-gold">What if I order too late?</p></div><ul className="mt-6 space-y-4 text-sm leading-relaxed text-foreground/75"><li className="flex gap-3"><X className="mt-1 size-4 shrink-0 text-gold" />The requested delivery slot is not automatically confirmed.</li><li className="flex gap-3"><X className="mt-1 size-4 shrink-0 text-gold" />Sanbay Fusion is not required to prepare or dispatch that order.</li><li className="flex gap-3"><X className="mt-1 size-4 shrink-0 text-gold" />Another delivery date is not guaranteed.</li></ul></Reveal><Reveal variant="up" delay={0.06} className="rounded-sm border border-border/60 p-7"><div className="flex items-center gap-3"><Utensils className="size-5 text-gold" /><p className="text-eyebrow text-gold">Product availability</p></div><p className="mt-6 text-sm leading-relaxed text-foreground/75">A selected food, beverage, or product may occasionally become unavailable. Where appropriate, Sanbay Fusion may contact you with an available substitute. A temporary substitution does not permanently modify your finalized membership plan.</p></Reveal></section>
+
+      <section className="mt-20 rounded-sm border border-gold/40 bg-gold/5 p-7 sm:p-10"><div className="flex items-center gap-3"><Truck className="size-5 text-gold" /><p className="text-eyebrow text-gold">Ready to join?</p></div><h2 className="mt-5 font-display text-4xl font-light sm:text-5xl">Choose the membership that fits your lifestyle.</h2><div className="mt-8 flex flex-wrap gap-4"><Link href="/plans" className="inline-flex rounded-full bg-gold px-7 py-3 text-eyebrow text-gold-foreground">View Membership Plans</Link><Link href="/terms-and-conditions" className="inline-flex rounded-full border border-foreground/30 px-7 py-3 text-eyebrow">Read Membership Terms</Link></div><p className="mt-7 text-sm leading-relaxed text-foreground/70">Memberships may be cancelled or requested for termination according to the applicable Membership Terms. Membership fees are non-refundable after payment and activation except where required by applicable law.</p></section>
     </div>
-  );
+  </div>;
 }
