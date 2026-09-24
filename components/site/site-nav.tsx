@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { AnimatePresence, motion } from "motion/react";
 import { useLenis } from "lenis/react";
 import { Menu, X } from "lucide-react";
@@ -105,10 +106,10 @@ export function SiteNav() {
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:h-20 sm:px-8">
         <Link
           href="/"
-          className="font-display text-xl tracking-tight text-foreground transition-opacity hover:opacity-80 sm:text-2xl"
+          className="relative block h-8 w-36 transition-opacity hover:opacity-80 sm:h-10 sm:w-44"
           onClick={() => setOpen(false)}
         >
-          {site.name}
+          <Image src="/brand/sanbayfusion-logo.webp" alt={site.name} fill priority sizes="(min-width: 640px) 176px, 144px" className="object-contain object-left" />
         </Link>
 
         <div className="hidden items-center gap-10 md:flex">

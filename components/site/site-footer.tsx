@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { navLinks, site } from "@/lib/site";
 
 export function SiteFooter() {
@@ -7,7 +8,7 @@ export function SiteFooter() {
       <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-24">
         <div className="grid gap-12 md:grid-cols-[1.4fr_1fr_1fr]">
           <div>
-            <p className="font-display text-3xl tracking-tight">{site.name}</p>
+            <Image src="/brand/sanbayfusion-logo.webp" alt={site.name} width={240} height={120} sizes="240px" className="h-auto w-48 max-w-full object-contain object-left sm:w-56" />
             <p className="lead mt-4 max-w-sm text-base">{site.tagline}.</p>
           </div>
 

@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { logoDataUri } from "@/lib/brand-mark";
 import { site } from "@/lib/site";
 
 export const alt = `${site.name} — Michelin-Starred Dining`;
@@ -7,9 +8,10 @@ export const contentType = "image/png";
 
 // Branded share card on the warm-noir palette. Uses the default font bundled
 // with next/og — no asset loading, statically generated at build time.
-export default function Image() {
+export default async function Image() {
   const noir = "#1a1712";
   const gold = "#dcb56a";
+  const logo = await logoDataUri();
 
   return new ImageResponse(
     (
@@ -25,16 +27,9 @@ export default function Image() {
           color: "#f4efeb",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            fontSize: 26,
-            letterSpacing: 8,
-            textTransform: "uppercase",
-            color: gold,
-          }}
-        >
-          Michelin-Starred · Paris
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <img src={logo} alt={site.name} width="320" height="160" style={{ objectFit: "contain", objectPosition: "left center" }} />
+          <div style={{ display: "flex", fontSize: 26, letterSpacing: 8, textTransform: "uppercase", color: gold }}>Michelin-Starred · Paris</div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column" }}>

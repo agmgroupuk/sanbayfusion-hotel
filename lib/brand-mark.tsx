@@ -5,6 +5,7 @@ export const brandNoir = "#1a1712";
 export const brandGold = "#dcb56a";
 
 let fontDataPromise: Promise<ArrayBuffer> | null = null;
+let logoDataPromise: Promise<string> | null = null;
 
 /** Fraunces (the site's display serif) as raw bytes, for use inside ImageResponse. */
 export function frauncesFontData() {
@@ -22,8 +23,19 @@ export function frauncesFontData() {
   return fontDataPromise;
 }
 
+export function logoDataUri() {
+  if (!logoDataPromise) {
+    logoDataPromise = readFile(join(process.cwd(), "public/brand/sanbayfusion-logo.png"), "base64").then((data) => `data:image/png;base64,${data}`);
+  }
+  return logoDataPromise;
+}
+
 /** The site's monogram: a single Fraunces "M" over a thin rule, gold on noir. */
-export function BrandMark({ size }: { size: number }) {
+export function BrandMark({ size, src }: { size: number; src?: string }) {
+  if (src) {
+    return <img src={src} alt="Sanbay Fusion" style={{ width: "100%", height: "100%", objectFit: "contain" }} />;
+  }
+
   return (
     <div
       style={{
