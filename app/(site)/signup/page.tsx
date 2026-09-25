@@ -4,7 +4,7 @@ import { SignUpForm } from "@/components/auth/auth-forms";
 import { getCurrentAccount } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Create Your Account", description: "Create your Sanbay Fusion customer account." };
+export const metadata: Metadata = { title: "Create Your Account", description: "Create your Sanbay Fusion customer account.", robots: { index: false, follow: false } };
 
 export default async function SignUpPage() {
   if (await getCurrentAccount()) redirect("/dashboard");

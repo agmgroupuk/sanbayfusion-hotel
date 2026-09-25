@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Membership Request Received",
   description: "Your Sanbay Fusion membership request has been received and is pending review.",
   alternates: { canonical: "/membership/thank-you" },
+  robots: { index: false, follow: false },
 };
 
 type ThankYouProps = { searchParams: Promise<{ request?: string; plan?: string }> };

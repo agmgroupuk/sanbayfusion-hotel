@@ -17,6 +17,11 @@ type SignOutAction = () => Promise<void>;
 
 export function SiteNav({ authenticated, onSignOut }: { authenticated: boolean; onSignOut: SignOutAction }) {
   const pathname = usePathname();
+  const accountAction = !authenticated
+    ? { label: "Join Now", href: "/signup" }
+    : pathname === "/dashboard"
+      ? { label: "Website", href: "/" }
+      : { label: "Dashboard", href: "/dashboard" };
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const lenis = useLenis();
@@ -169,7 +174,8 @@ export function SiteNav({ authenticated, onSignOut }: { authenticated: boolean; 
             {[...navLinks, ...navLinks].map((link, index) => <div key={`${link.href}-${index}`} className="shrink-0"><Link data-nav-path={link.href} href={link.href} className={cn("group relative block whitespace-nowrap text-sm transition-colors", pathname === link.href ? "text-gold" : "text-foreground/85 hover:text-foreground")}><span>{link.label}</span><span className={cn("absolute -bottom-1.5 left-0 h-px w-full origin-left bg-gold transition-transform duration-300 ease-out", pathname === link.href ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100")} /></Link></div>)}
           </div>
           <button type="button" aria-label="Scroll navigation right" onClick={() => scrollDesktopNav(1)} className="flex size-8 shrink-0 items-center justify-center rounded-full border border-foreground/20 text-foreground transition-colors hover:border-gold hover:text-gold"><ChevronRight className="size-4" /></button>
-          {authenticated ? <><Link href="/dashboard" className="inline-flex rounded-full bg-gold px-5 py-2 text-eyebrow text-gold-foreground transition-colors hover:bg-gold/85">My Account</Link><form action={onSignOut}><button type="submit" className="inline-flex rounded-full border border-foreground/30 px-4 py-2 text-eyebrow transition-colors hover:border-gold hover:text-gold">Sign Out</button></form></> : <Magnetic strength={0.4}><Link href="/signup" className="inline-flex rounded-full bg-gold px-5 py-2 text-eyebrow text-gold-foreground transition-colors hover:bg-gold/85">Join Now</Link></Magnetic>}
+          <Magnetic strength={0.4}><Link href={accountAction.href} className="inline-flex rounded-full bg-gold px-5 py-2 text-eyebrow text-gold-foreground transition-colors hover:bg-gold/85">{accountAction.label}</Link></Magnetic>
+          {authenticated && <form action={onSignOut}><button type="submit" className="inline-flex rounded-full border border-foreground/30 px-4 py-2 text-eyebrow transition-colors hover:border-gold hover:text-gold">Sign Out</button></form>}
         </div>
 
         <button
@@ -216,7 +222,8 @@ export function SiteNav({ authenticated, onSignOut }: { authenticated: boolean; 
                   </Link>
                 </motion.div>
               ))}
-              {authenticated ? <><Link href="/dashboard" onClick={() => setOpen(false)} className="mt-4 inline-flex items-center justify-center rounded-full bg-gold-foreground px-6 py-3.5 text-eyebrow text-gold">My Account</Link><form action={onSignOut}><button type="submit" className="mt-2 inline-flex items-center justify-center rounded-full border border-gold-foreground/30 px-6 py-3.5 text-eyebrow">Sign Out</button></form></> : <Link href="/signup" onClick={() => setOpen(false)} className="mt-4 inline-flex items-center justify-center rounded-full bg-gold-foreground px-6 py-3.5 text-eyebrow text-gold">Become a Member</Link>}
+              <Link href={accountAction.href} onClick={() => setOpen(false)} className="mt-4 inline-flex items-center justify-center rounded-full bg-gold-foreground px-6 py-3.5 text-eyebrow text-gold">{accountAction.label}</Link>
+              {authenticated && <form action={onSignOut}><button type="submit" className="mt-2 inline-flex items-center justify-center rounded-full border border-gold-foreground/30 px-6 py-3.5 text-eyebrow">Sign Out</button></form>}
             </div>
           </motion.div>
         )}

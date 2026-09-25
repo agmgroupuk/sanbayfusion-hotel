@@ -4,7 +4,7 @@ import { SignInForm } from "@/components/auth/auth-forms";
 import { getCurrentAccount } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Welcome Back", description: "Sign in to manage your Sanbay Fusion membership." };
+export const metadata: Metadata = { title: "Welcome Back", description: "Sign in to manage your Sanbay Fusion membership.", robots: { index: false, follow: false } };
 
 export default async function SignInPage({ searchParams }: { searchParams: Promise<{ created?: string; reset?: string }> }) {
   if (await getCurrentAccount()) redirect("/dashboard");

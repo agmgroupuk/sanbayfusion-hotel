@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { logoDataUri } from "@/lib/brand-mark";
 import { site } from "@/lib/site";
 
-export const alt = `${site.name} — Michelin-Starred Dining`;
+export const alt = `${site.name} | Membership Food & Beverage Service`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -29,7 +29,7 @@ export default async function Image() {
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <img src={logo} alt={site.name} width="320" height="160" style={{ objectFit: "contain", objectPosition: "left center" }} />
-          <div style={{ display: "flex", fontSize: 26, letterSpacing: 8, textTransform: "uppercase", color: gold }}>Michelin-Starred · Paris</div>
+          <div style={{ display: "flex", fontSize: 26, letterSpacing: 8, textTransform: "uppercase", color: gold }}>Thailand · Food & Beverage Memberships</div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column" }}>
@@ -67,7 +67,7 @@ export default async function Image() {
           }}
         >
           <div style={{ display: "flex" }}>{site.address.line2}</div>
-          <div style={{ display: "flex", color: gold }}>Reserve a Table</div>
+          <div style={{ display: "flex", color: gold }}>Member ordering & scheduled delivery</div>
         </div>
       </div>
     ),

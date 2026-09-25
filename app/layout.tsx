@@ -7,23 +7,24 @@ import { Toaster } from "@/components/ui/sonner";
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: "Sanbay Fusion Food Memberships",
+    default: "Sanbay Fusion | Membership Food & Beverage Service",
     template: "%s · Sanbay Fusion",
   },
+  applicationName: site.name,
   description: site.description,
   alternates: {
     canonical: "/",
   },
   openGraph: {
     type: "website",
-    title: "Sanbay Fusion Food Memberships",
+    title: "Sanbay Fusion | Membership Food & Beverage Service",
     description: site.description,
     siteName: "Sanbay Fusion",
-    url: site.url,
+    url: `${site.url}/`,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sanbay Fusion Food Memberships",
+    title: "Sanbay Fusion | Membership Food & Beverage Service",
     description: site.description,
   },
 };

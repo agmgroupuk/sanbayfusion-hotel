@@ -2,8 +2,8 @@ export const site = {
   name: "Sanbay Fusion",
   tagline: "Seasonal food memberships & delivery",
   description:
-    "Sanbay Fusion delivers seasonal food packages, drinks, and pantry products through flexible weekly and monthly memberships in Thailand.",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "https://sanbayfusion.com",
+    "Sanbay Fusion is a membership-based food and beverage service in Thailand, offering member ordering, scheduled deliveries, membership plans, and a wide selection of food and beverages.",
+  url: (process.env.NEXT_PUBLIC_SITE_URL || "https://sanbayfusion.com").replace(/\/+$/, ""),
   address: {
     line1: "Sanbay Fusion Bar & Restaurant",
     line2: "sanbayfusion.com",

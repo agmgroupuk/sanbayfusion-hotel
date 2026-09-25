@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Complete Your Membership Request",
   description: "Submit your Sanbay Fusion annual membership request for team review.",
   alternates: { canonical: "/membership/apply" },
+  robots: { index: false, follow: false },
 };
 
 export default function MembershipApplyPage() {

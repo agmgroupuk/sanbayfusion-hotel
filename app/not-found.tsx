@@ -5,13 +5,16 @@ import { KenBurns } from "@/components/motion/ken-burns";
 import { Reveal } from "@/components/motion/reveal";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteNav } from "@/components/site/site-nav";
+import { signOut } from "@/app/auth/actions";
+import { getCurrentAccount } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Page Not Found",
   description: "The page you're looking for doesn't exist.",
 };
 
-export default function NotFound() {
+export default async function NotFound() {
+  const account = await getCurrentAccount();
   return (
     <>
       <a
@@ -20,7 +23,7 @@ export default function NotFound() {
       >
         Skip to content
       </a>
-      <SiteNav />
+      <SiteNav authenticated={Boolean(account)} onSignOut={signOut} />
       <main id="main" className="flex-1">
         <section className="relative w-full">
           <KenBurns

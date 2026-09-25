@@ -6,7 +6,7 @@ import { getCurrentAccount } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { membershipRequests } from "@/lib/db/schema";
 
-export const metadata: Metadata = { title: "Member Dashboard", description: "Your Sanbay Fusion membership overview." };
+export const metadata: Metadata = { title: "Member Dashboard", description: "Your Sanbay Fusion membership overview.", robots: { index: false, follow: false } };
 
 export default async function DashboardPage() {
   const account = await getCurrentAccount();

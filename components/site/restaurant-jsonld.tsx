@@ -21,7 +21,7 @@ export function RestaurantJsonLd() {
         name: plan.name,
         price: plan.price,
         priceCurrency: "THB",
-        url: `${site.url}/join?plan=${plan.slug}`,
+        url: `${site.url}/plans/${plan.slug}`,
       })),
     },
   };
