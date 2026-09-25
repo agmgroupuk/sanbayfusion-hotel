@@ -15,6 +15,13 @@
       "when": 1782510000000,
       "tag": "0001_membership_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790274762198,
+      "tag": "0002_small_gateway",
+      "breakpoints": true
     }
   ]
 }

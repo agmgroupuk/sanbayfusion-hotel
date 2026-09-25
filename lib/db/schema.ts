@@ -9,7 +9,47 @@ import {
   pgEnum,
   jsonb,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
+
+export const customerAccounts = pgTable(
+  "customer_accounts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    fullName: varchar("full_name", { length: 120 }).notNull(),
+    email: varchar("email", { length: 200 }).notNull(),
+    phone: varchar("phone", { length: 40 }).notNull(),
+    passwordHash: text("password_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("customer_accounts_email_idx").on(t.email)],
+);
+
+export const customerSessions = pgTable(
+  "customer_sessions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id").notNull().references(() => customerAccounts.id, { onDelete: "cascade" }),
+    tokenHash: varchar("token_hash", { length: 128 }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("customer_sessions_token_hash_idx").on(t.tokenHash), index("customer_sessions_account_idx").on(t.accountId)],
+);
+
+export const passwordResetTokens = pgTable(
+  "password_reset_tokens",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id").notNull().references(() => customerAccounts.id, { onDelete: "cascade" }),
+    tokenHash: varchar("token_hash", { length: 128 }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("password_reset_tokens_hash_idx").on(t.tokenHash), index("password_reset_tokens_account_idx").on(t.accountId)],
+);
 
 export const reservationStatus = pgEnum("reservation_status", [
   "pending",
@@ -100,5 +140,6 @@ export const membershipRequests = pgTable(
 
 export type Reservation = typeof reservations.$inferSelect;
 export type NewReservation = typeof reservations.$inferInsert;
+export type CustomerAccount = typeof customerAccounts.$inferSelect;
 export type MembershipRequest = typeof membershipRequests.$inferSelect;
 export type NewMembershipRequest = typeof membershipRequests.$inferInsert;

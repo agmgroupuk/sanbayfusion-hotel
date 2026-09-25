@@ -5,6 +5,7 @@ const validInput = {
   name: "Alex Dupont",
   email: "alex@example.com",
   phone: "+33 1 23 45 67 89",
+  meetingPurpose: "General consultation",
   partySize: 2,
   date: "2026-08-01",
   timeSlot: "19:00",
@@ -17,9 +18,9 @@ describe("reservationSchema", () => {
   });
 
   it("accepts an omitted specialRequests field", () => {
-    const { name, email, phone, partySize, date, timeSlot } = validInput;
+    const { name, email, phone, meetingPurpose, partySize, date, timeSlot } = validInput;
     expect(
-      reservationSchema.safeParse({ name, email, phone, partySize, date, timeSlot })
+      reservationSchema.safeParse({ name, email, phone, meetingPurpose, partySize, date, timeSlot })
         .success,
     ).toBe(true);
   });
