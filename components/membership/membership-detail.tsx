@@ -74,7 +74,7 @@ export function MembershipDetail({ plan }: { plan: MembershipPlan }) {
     setSelectedProducts((current) => current.filter((item) => productKey(item.category, item.name) !== productKey(selected.category, selected.name)));
   }
 
-  function continueToApplication() {
+  async function continueToApplication() {
     const configuration: MembershipConfiguration = {
       planSlug: plan.slug,
       foodPreferences: preferences,
@@ -86,7 +86,16 @@ export function MembershipDetail({ plan }: { plan: MembershipPlan }) {
       selectedProducts,
     };
     window.sessionStorage.setItem(membershipConfigurationStorageKey, JSON.stringify(configuration));
-    window.location.href = "/membership/apply";
+    const response = await fetch("/api/membership/checkout-selection", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ planSlug: plan.slug, configuration }),
+    });
+    if (!response.ok) {
+      window.location.href = "/signin?next=%2Fmembership%2Fcheckout";
+      return;
+    }
+    window.location.href = "/membership/checkout";
   }
 
   function renderCategory(category: CatalogueCategory) {
@@ -111,7 +120,7 @@ export function MembershipDetail({ plan }: { plan: MembershipPlan }) {
         <section><p className="text-eyebrow text-gold">Food preferences</p><p className="mt-4 text-sm text-muted-foreground">Preferences help us plan your menu alongside the products you select.</p><div className="mt-6 grid gap-3 sm:grid-cols-2">{preferenceOptions.map((preference) => <label key={preference} className="flex items-center gap-3 rounded-sm border border-border/60 px-4 py-3 text-sm"><input type="checkbox" checked={preferences.includes(preference)} onChange={() => togglePreference(preference)} className="size-4 accent-[var(--gold)]" />{preference}</label>)}</div></section>
         <section><div className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-eyebrow text-gold">Beverage options</p><p className="mt-3 text-sm text-muted-foreground">Open the full alcohol catalogue and select individual bottles.</p></div><button type="button" aria-pressed={alcoholOpen} onClick={() => setAlcoholOpen((value) => !value)} className={`rounded-full px-5 py-3 text-eyebrow ${alcoholOpen ? "bg-gold text-gold-foreground" : "border border-foreground/30"}`}>Add Alcohol · {alcoholOpen ? "On" : "Off"}</button></div>{alcoholOpen && <div className="mt-6 space-y-3"><div className="rounded-sm border border-gold/40 bg-gold/5 p-5 text-sm leading-relaxed text-foreground/75">Alcohol products are age-restricted and subject to Thai licensing, identity, permitted-hours, and delivery requirements. {alcoholSalesEnabled ? "Availability is enabled for configuration." : "The catalogue is available to browse, but alcohol sales are currently disabled."}</div>{alcoholCategories.map(renderCategory)}</div>}</section>
       </div>
-      <aside className="h-fit lg:sticky lg:top-28"><div className="rounded-sm border border-gold/50 bg-card/50 p-6 sm:p-8"><p className="text-eyebrow text-gold">Plan details</p><h2 className="mt-4 font-display text-3xl font-light italic">{plan.name}</h2><p className="mt-5 text-2xl text-gold">฿{total.toLocaleString("en-US")} / year</p><div className="mt-6 space-y-3 border-y border-border/50 py-5 text-sm"><div className="flex justify-between gap-4"><span className="text-muted-foreground">Membership</span><span>฿{plan.price.toLocaleString("en-US")}</span></div>{selectedProducts.length === 0 && <p className="text-muted-foreground">No catalogue products selected yet.</p>}{selectedProducts.map((selected) => { const category = catalogueCategories.find((item) => item.name === selected.category); const product = category?.products.find((item) => item.name === selected.name); return <div key={productKey(selected.category, selected.name)} className="flex items-start justify-between gap-3"><span className="min-w-0"><span className="block text-foreground/85">{selected.name}</span><button type="button" onClick={() => removeProduct(selected)} className="mt-1 text-xs text-muted-foreground underline underline-offset-4 hover:text-gold">Remove</button></span><span className="shrink-0 text-right text-gold">฿{((product?.price ?? 0) * selected.quantity).toLocaleString("en-US")}</span></div>; })}</div><div className="flex justify-between gap-4 pt-5 text-lg"><span>Total</span><span className="text-gold">฿{total.toLocaleString("en-US")}</span></div><button type="button" onClick={continueToApplication} className="mt-7 inline-flex w-full items-center justify-center rounded-full bg-gold px-6 py-3 text-eyebrow text-gold-foreground">Submit Membership Request</button><p className="mt-4 text-center text-xs leading-relaxed text-muted-foreground">No payment is taken on this page. Your selections carry into the membership request form.</p></div></aside>
+      <aside className="h-fit lg:sticky lg:top-28"><div className="rounded-sm border border-gold/50 bg-card/50 p-6 sm:p-8"><p className="text-eyebrow text-gold">Plan details</p><h2 className="mt-4 font-display text-3xl font-light italic">{plan.name}</h2><p className="mt-5 text-2xl text-gold">฿{total.toLocaleString("en-US")} / year</p><div className="mt-6 space-y-3 border-y border-border/50 py-5 text-sm"><div className="flex justify-between gap-4"><span className="text-muted-foreground">Membership</span><span>฿{plan.price.toLocaleString("en-US")}</span></div>{selectedProducts.length === 0 && <p className="text-muted-foreground">No catalogue products selected yet.</p>}{selectedProducts.map((selected) => { const category = catalogueCategories.find((item) => item.name === selected.category); const product = category?.products.find((item) => item.name === selected.name); return <div key={productKey(selected.category, selected.name)} className="flex items-start justify-between gap-3"><span className="min-w-0"><span className="block text-foreground/85">{selected.name}</span><button type="button" onClick={() => removeProduct(selected)} className="mt-1 text-xs text-muted-foreground underline underline-offset-4 hover:text-gold">Remove</button></span><span className="shrink-0 text-right text-gold">฿{((product?.price ?? 0) * selected.quantity).toLocaleString("en-US")}</span></div>; })}</div><div className="flex justify-between gap-4 pt-5 text-lg"><span>Total</span><span className="text-gold">฿{total.toLocaleString("en-US")}</span></div><button type="button" onClick={continueToApplication} className="mt-7 inline-flex w-full items-center justify-center rounded-full bg-gold px-6 py-3 text-eyebrow text-gold-foreground">Continue to Secure Checkout</button><p className="mt-4 text-center text-xs leading-relaxed text-muted-foreground">No payment is captured until you complete the checkout flow. Your package configuration is preserved automatically.</p></div></aside>
     </main>
   </div>;
 }

@@ -6,7 +6,9 @@ import { redirect } from "next/navigation";
 
 export const metadata: Metadata = { title: "Create Your Account", description: "Create your Sanbay Fusion customer account.", robots: { index: false, follow: false } };
 
-export default async function SignUpPage() {
+export default async function SignUpPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   if (await getCurrentAccount()) redirect("/dashboard");
-  return <><PageHeader eyebrow="Customer account" title="Create Your Account" lead="Create your Sanbay Fusion account to manage your membership, invoices, delivery benefits and account information." /><SignUpForm /></>;
+  const params = await searchParams;
+  const next = params.next && params.next.startsWith("/") ? params.next : "/dashboard";
+  return <><PageHeader eyebrow="Customer account" title="Create Your Account" lead="Create your Sanbay Fusion account to manage your membership, invoices, delivery benefits and account information." /><SignUpForm next={next} /></>;
 }

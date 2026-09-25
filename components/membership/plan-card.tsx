@@ -25,7 +25,7 @@ export function PlanCard({ plan }: { plan: MembershipPlan }) {
       <ul className="mt-6 space-y-3 text-sm text-foreground/75">
         {plan.benefits.map((benefit) => <li key={benefit} className="flex gap-3"><span className="text-gold">+</span><span>{benefit}</span></li>)}
       </ul>
-      {unavailable ? <p className="mt-8 rounded-sm border border-border/60 px-5 py-3 text-center text-xs leading-relaxed text-muted-foreground">Unavailable until alcohol-sale compliance is enabled.</p> : <Link href={`/plans/${plan.slug}`} className="mt-auto inline-flex items-center justify-center rounded-full bg-gold px-6 py-3 text-eyebrow text-gold-foreground transition-transform hover:-translate-y-0.5 sm:mt-8">View Membership</Link>}
+      {unavailable ? <p className="mt-8 rounded-sm border border-border/60 px-5 py-3 text-center text-xs leading-relaxed text-muted-foreground">Unavailable until alcohol-sale compliance is enabled.</p> : <Link href={`/plans/${plan.slug}`} className="mt-auto inline-flex items-center justify-center rounded-full bg-gold px-6 py-3 text-eyebrow text-gold-foreground transition-transform hover:-translate-y-0.5 sm:mt-8">Continue to Checkout</Link>}
       {containsAlcohol && <p className="mt-3 text-[0.7rem] leading-relaxed text-muted-foreground">* Alcohol is age-restricted and subject to Thai licensing, sale-hour, delivery, and identity requirements.</p>}
     </article>
   );

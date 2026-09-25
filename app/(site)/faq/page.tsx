@@ -9,8 +9,8 @@ const sections = [
     title: "Membership FAQ",
     questions: [
       ["How long is a Sanbay Fusion membership?", "All standard memberships are valid for 12 months from the confirmed membership start date, unless otherwise stated in the final membership agreement."],
-      ["How do I become a member?", "Choose a plan, configure the available preferences, submit a request, and wait for team review. If approved, you will receive a membership invoice."],
-      ["Do I pay when I submit my membership request?", "No. Submitting a request does not activate membership or take payment. The team reviews it first."],
+      ["How do I become a member?", "Choose a plan, sign in or create an account, configure your details, and complete the direct membership checkout. Payment authorizes the membership and activates access once the payment lifecycle confirms it."],
+      ["Do I pay when I choose a membership?", "Yes. The direct checkout flow collects the membership fee during the secure purchase step. This is separate from the food order payment you make later as an active member."],
       ["How long do I have to pay my membership invoice?", "The standard payment period is 3 days from invoice issue. The exact deadline appears on the invoice. An unpaid invoice may expire without activating membership."],
       ["What does the first invoice include?", "The initial invoice is for the annual membership fee only unless an administrator explicitly adds another approved charge. Future food, beverage, delivery, or order charges are separate where applicable."],
       ["What happens after I pay the membership fee?", "After payment is confirmed, the team begins membership setup. You will normally receive your membership number, card/details, activation date, expiry date, delivery entitlement, finalized package, and ordering instructions within approximately 3 days."],

@@ -13,6 +13,13 @@ const phoneSchema = z.string().trim().regex(/^(?:\+66|0)[0-9\s().-]{8,18}$/, "En
 
 export type AuthResult = { ok: true; message?: string } | { ok: false; error: string };
 
+function getSafeRedirectPath(value: FormDataEntryValue | null | undefined) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "/dashboard";
+  if (!raw.startsWith("/")) return "/dashboard";
+  return raw;
+}
+
 export async function signUp(formData: FormData): Promise<AuthResult> {
   if (!db) return { ok: false, error: "Account services are not configured yet. Please try again later." };
   const fullName = String(formData.get("fullName") ?? "").trim();
@@ -20,6 +27,7 @@ export async function signUp(formData: FormData): Promise<AuthResult> {
   const phone = String(formData.get("phone") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const confirmation = String(formData.get("confirmation") ?? "");
+  const next = getSafeRedirectPath(formData.get("next"));
   const parsed = z.object({ fullName: z.string().min(2, "Enter your full name").max(120), email: z.string().email("Enter a valid email address").max(200), phone: phoneSchema, password: passwordSchema }).safeParse({ fullName, email, phone, password });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Please check your details." };
   if (password !== confirmation) return { ok: false, error: "Passwords do not match." };
@@ -32,18 +40,19 @@ export async function signUp(formData: FormData): Promise<AuthResult> {
     console.error("[auth] account creation failed", error);
     return { ok: false, error: "We couldn't create your account. Please try again." };
   }
-  redirect("/signin?created=1");
+  redirect(`/signin?created=1&next=${encodeURIComponent(next)}`);
 }
 
 export async function signIn(formData: FormData): Promise<AuthResult> {
   if (!db) return { ok: false, error: "Account services are not configured yet. Please try again later." };
   const email = normalizeEmail(String(formData.get("email") ?? ""));
   const password = String(formData.get("password") ?? "");
+  const next = getSafeRedirectPath(formData.get("next"));
   if (!z.string().email().safeParse(email).success || !password) return { ok: false, error: "Email or password is incorrect." };
   const result = await db.select().from(customerAccounts).where(eq(customerAccounts.email, email)).limit(1);
   if (!result[0] || !(await verifyPassword(password, result[0].passwordHash))) return { ok: false, error: "Email or password is incorrect." };
   await createCustomerSession(result[0].id);
-  redirect("/dashboard");
+  redirect(next);
 }
 
 export async function signOut() {

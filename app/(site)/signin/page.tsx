@@ -6,9 +6,10 @@ import { redirect } from "next/navigation";
 
 export const metadata: Metadata = { title: "Welcome Back", description: "Sign in to manage your Sanbay Fusion membership.", robots: { index: false, follow: false } };
 
-export default async function SignInPage({ searchParams }: { searchParams: Promise<{ created?: string; reset?: string }> }) {
+export default async function SignInPage({ searchParams }: { searchParams: Promise<{ created?: string; reset?: string; next?: string }> }) {
   if (await getCurrentAccount()) redirect("/dashboard");
   const params = await searchParams;
+  const next = params.next && params.next.startsWith("/") ? params.next : "/dashboard";
   const notice = params.created === "1"
     ? "Your account is ready. Sign in to continue."
     : params.reset === "requested"
@@ -16,5 +17,5 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
       : params.reset === "complete"
         ? "Your password has been updated. Sign in with your new password."
         : undefined;
-  return <><PageHeader eyebrow="Customer account" title="Welcome Back" lead="Sign in to manage your Sanbay Fusion membership." /><SignInForm notice={notice} /></>;
+  return <><PageHeader eyebrow="Customer account" title="Welcome Back" lead="Sign in to manage your Sanbay Fusion membership." /><SignInForm notice={notice} next={next} /></>;
 }
