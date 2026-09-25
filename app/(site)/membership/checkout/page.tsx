@@ -31,7 +31,7 @@ export default async function MembershipCheckoutPage() {
       />
       <MembershipCheckoutForm
         plan={plan}
-        account={{ fullName: account.fullName, email: account.email, phone: account.phone }}
+        account={{ fullName: account.fullName ?? "", email: account.email, phone: account.phone ?? "" }}
         configuration={selection.configuration ?? {}}
       />
     </>
