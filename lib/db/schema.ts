@@ -79,6 +79,19 @@ export const membershipInvoiceStatus = pgEnum("membership_invoice_status", [
   "cancelled_by_admin",
 ]);
 
+export const customerOrderStatus = pgEnum("customer_order_status", [
+  "pending_payment",
+  "confirmed",
+  "cancelled",
+]);
+
+export const customerPaymentStatus = pgEnum("customer_payment_status", [
+  "pending",
+  "paid",
+  "failed",
+  "refunded",
+]);
+
 export const reservations = pgTable(
   "reservations",
   {
@@ -138,8 +151,44 @@ export const membershipRequests = pgTable(
   (t) => [index("membership_requests_status_idx").on(t.status), index("membership_requests_email_idx").on(t.email)],
 );
 
+export const customerOrders = pgTable(
+  "customer_orders",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    orderNumber: varchar("order_number", { length: 32 }).notNull().unique(),
+    accountId: uuid("account_id").notNull().references(() => customerAccounts.id, { onDelete: "restrict" }),
+    membershipRequestId: uuid("membership_request_id").notNull().references(() => membershipRequests.id, { onDelete: "restrict" }),
+    subtotal: integer("subtotal").notNull(),
+    total: integer("total").notNull(),
+    notes: text("notes"),
+    deliveryDetails: jsonb("delivery_details").notNull(),
+    status: customerOrderStatus("status").notNull().default("pending_payment"),
+    paymentStatus: customerPaymentStatus("payment_status").notNull().default("pending"),
+    stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 120 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+  },
+  (t) => [index("customer_orders_account_idx").on(t.accountId), index("customer_orders_membership_idx").on(t.membershipRequestId), index("customer_orders_payment_intent_idx").on(t.stripePaymentIntentId)],
+);
+
+export const customerOrderItems = pgTable(
+  "customer_order_items",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    orderId: uuid("order_id").notNull().references(() => customerOrders.id, { onDelete: "cascade" }),
+    productName: varchar("product_name", { length: 200 }).notNull(),
+    categoryName: varchar("category_name", { length: 120 }).notNull(),
+    unitPrice: integer("unit_price").notNull(),
+    quantity: integer("quantity").notNull(),
+    lineTotal: integer("line_total").notNull(),
+  },
+  (t) => [index("customer_order_items_order_idx").on(t.orderId)],
+);
+
 export type Reservation = typeof reservations.$inferSelect;
 export type NewReservation = typeof reservations.$inferInsert;
 export type CustomerAccount = typeof customerAccounts.$inferSelect;
 export type MembershipRequest = typeof membershipRequests.$inferSelect;
 export type NewMembershipRequest = typeof membershipRequests.$inferInsert;
+export type CustomerOrder = typeof customerOrders.$inferSelect;
+export type CustomerOrderItem = typeof customerOrderItems.$inferSelect;
