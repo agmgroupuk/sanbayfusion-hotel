@@ -153,7 +153,7 @@ export function SiteNav({ authenticated, onSignOut }: { authenticated: boolean; 
       className={cn(
         "fixed inset-x-0 top-0 z-50 transition-colors duration-500",
         open
-          ? "bg-gold text-gold-foreground"
+          ? "bg-background text-gold"
           : scrolled
           ? "border-b border-border/60 bg-background/80 backdrop-blur-md"
           : "border-b border-transparent bg-transparent",
@@ -171,7 +171,7 @@ export function SiteNav({ authenticated, onSignOut }: { authenticated: boolean; 
         <div className="hidden min-w-0 items-center gap-2 md:flex">
           <button type="button" aria-label="Scroll navigation left" onClick={() => scrollDesktopNav(-1)} className="flex size-8 shrink-0 items-center justify-center rounded-full border border-foreground/20 text-foreground transition-colors hover:border-gold hover:text-gold"><ChevronLeft className="size-4" /></button>
           <div ref={desktopNavRef} className="flex max-w-[min(42vw,32rem)] min-w-0 snap-x gap-7 overflow-x-auto scroll-smooth px-2 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" onPointerDown={pauseDesktopMovement} onPointerUp={resumeDesktopMovement}>
-            {[...navLinks, ...navLinks].map((link, index) => <div key={`${link.href}-${index}`} className="shrink-0"><Link data-nav-path={link.href} href={link.href} className={cn("group relative block whitespace-nowrap text-sm transition-colors", pathname === link.href ? "text-gold" : "text-foreground/85 hover:text-foreground")}><span>{link.label}</span><span className={cn("absolute -bottom-1.5 left-0 h-px w-full origin-left bg-gold transition-transform duration-300 ease-out", pathname === link.href ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100")} /></Link></div>)}
+            {[...navLinks, ...navLinks].map((link, index) => <div key={`${link.href}-${index}`} className="shrink-0"><Link data-nav-path={link.href} href={link.href} className={cn("group relative block whitespace-nowrap text-sm transition-colors", pathname === link.href ? "text-gold" : "text-foreground/85 hover:text-gold")}><span>{link.label}</span><span className={cn("absolute -bottom-1.5 left-0 h-px w-full origin-left bg-gold transition-transform duration-300 ease-out", pathname === link.href ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100")} /></Link></div>)}
           </div>
           <button type="button" aria-label="Scroll navigation right" onClick={() => scrollDesktopNav(1)} className="flex size-8 shrink-0 items-center justify-center rounded-full border border-foreground/20 text-foreground transition-colors hover:border-gold hover:text-gold"><ChevronRight className="size-4" /></button>
           <Magnetic strength={0.4}><Link href={accountAction.href} className="inline-flex rounded-full bg-gold px-5 py-2 text-eyebrow text-gold-foreground transition-colors hover:bg-gold/85">{accountAction.label}</Link></Magnetic>
@@ -185,7 +185,7 @@ export function SiteNav({ authenticated, onSignOut }: { authenticated: boolean; 
           aria-expanded={open}
           aria-controls="mobile-menu"
           onClick={() => setOpen((v) => !v)}
-          className="-mr-2 inline-flex h-10 w-10 items-center justify-center text-gold-foreground md:hidden"
+          className="-mr-2 inline-flex h-10 w-10 items-center justify-center text-gold md:hidden"
         >
           {open ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>
@@ -203,7 +203,7 @@ export function SiteNav({ authenticated, onSignOut }: { authenticated: boolean; 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 top-16 z-40 overflow-y-auto bg-gold text-gold-foreground md:hidden"
+            className="fixed inset-x-0 top-16 z-40 max-h-[calc(100dvh-4rem)] overflow-y-auto bg-background text-foreground md:hidden"
           >
             <div className="flex min-h-full flex-col gap-1 px-5 py-5 sm:px-8 sm:py-8">
               {navLinks.map((link, i) => (
@@ -216,14 +216,14 @@ export function SiteNav({ authenticated, onSignOut }: { authenticated: boolean; 
                   <Link
                     href={link.href}
                     onClick={() => setOpen(false)}
-                    className="block border-b border-gold-foreground/20 py-3.5 font-display text-2xl leading-tight sm:py-4 sm:text-3xl"
+                    className={cn("block border-b border-border/60 py-3.5 font-display text-2xl leading-tight transition-colors hover:text-gold sm:py-4 sm:text-3xl", pathname === link.href && "text-gold")}
                   >
                     {link.label}
                   </Link>
                 </motion.div>
               ))}
-              <Link href={accountAction.href} onClick={() => setOpen(false)} className="mt-4 inline-flex items-center justify-center rounded-full bg-gold-foreground px-6 py-3.5 text-eyebrow text-gold">{accountAction.label}</Link>
-              {authenticated && <form action={onSignOut}><button type="submit" className="mt-2 inline-flex items-center justify-center rounded-full border border-gold-foreground/30 px-6 py-3.5 text-eyebrow">Sign Out</button></form>}
+              <Link href={accountAction.href} onClick={() => setOpen(false)} className="mt-4 inline-flex items-center justify-center rounded-full bg-gold px-6 py-3.5 text-eyebrow text-gold-foreground transition-colors hover:bg-gold/85">{accountAction.label}</Link>
+              {authenticated && <form action={onSignOut}><button type="submit" className="mt-2 inline-flex items-center justify-center rounded-full border border-gold/60 px-6 py-3.5 text-eyebrow text-gold transition-colors hover:bg-gold/10">Sign Out</button></form>}
             </div>
           </motion.div>
         )}

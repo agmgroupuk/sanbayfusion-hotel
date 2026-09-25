@@ -7,9 +7,9 @@ export function SiteFooter() {
     <footer className="border-t border-border/60 bg-background">
       <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-24">
         <div className="grid gap-12 md:grid-cols-[1.4fr_1fr_1fr]">
-          <div>
-            <Image src="/brand/sanbayfusion-logo.webp" alt={site.name} width={240} height={120} sizes="240px" className="h-auto w-48 max-w-full object-contain object-left sm:w-56" />
-            <p className="lead mt-4 max-w-sm text-base">{site.tagline}.</p>
+          <div className="flex min-w-0 max-w-sm flex-col items-start">
+            <Image src="/brand/sanbayfusion-logo.webp" alt={site.name} width={240} height={120} sizes="240px" className="block h-auto w-48 max-w-full object-contain object-left sm:w-56" />
+            <p className="mt-3 max-w-xs text-sm leading-relaxed text-gold">{site.tagline}.</p>
           </div>
 
           <div>
@@ -18,12 +18,12 @@ export function SiteFooter() {
               <p>{site.address.line1}</p>
               <p>{site.address.line2}</p>
               <p className="pt-2">
-                <a href={`tel:${site.phone.replace(/\s/g, "")}`} className="hover:text-foreground">
+                <a href={`tel:${site.phone.replace(/\s/g, "")}`} className="transition-colors hover:text-gold">
                   {site.phone}
                 </a>
               </p>
               <p>
-                <a href={`mailto:${site.email}`} className="hover:text-foreground">
+                <a href={`mailto:${site.email}`} className="transition-colors hover:text-gold">
                   {site.email}
                 </a>
               </p>
@@ -32,10 +32,10 @@ export function SiteFooter() {
 
           <div>
             <p className="text-eyebrow text-muted-foreground">Explore</p>
-            <ul className="mt-4 flex max-w-xl flex-wrap gap-x-5 gap-y-3 text-sm text-foreground/80">
+            <ul className="mt-4 flex max-w-xl flex-wrap gap-x-5 gap-y-3 text-sm text-foreground/75">
               {navLinks.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="hover:text-foreground">
+                  <Link href={link.href} className="transition-colors hover:text-gold">
                     {link.label}
                   </Link>
                 </li>
@@ -54,16 +54,16 @@ export function SiteFooter() {
             © {new Date().getFullYear()} {site.name}. All rights reserved.
           </p>
           <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-2">
-            <Link href="/privacy-policy" className="hover:text-foreground">
+            <Link href="/privacy-policy" className="transition-colors hover:text-gold">
               Privacy
             </Link>
-            <Link href="/terms-and-conditions" className="hover:text-foreground">
+            <Link href="/terms-and-conditions" className="transition-colors hover:text-gold">
               Terms
             </Link>
-            <Link href="/cookie-policy" className="hover:text-foreground">
+            <Link href="/cookie-policy" className="transition-colors hover:text-gold">
               Cookies
             </Link>
-            <Link href="/accessibility" className="hover:text-foreground">
+            <Link href="/accessibility" className="transition-colors hover:text-gold">
               Accessibility
             </Link>
           </nav>
