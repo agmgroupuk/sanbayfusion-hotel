@@ -9,19 +9,25 @@ import { customerAccounts, passwordResetTokens } from "@/lib/db/schema";
 import { sendPasswordResetEmail } from "@/lib/email/account";
 
 const passwordSchema = z.string().min(10, "Use at least 10 characters").regex(/[a-z]/, "Include a lowercase letter").regex(/[A-Z]/, "Include an uppercase letter").regex(/[0-9]/, "Include a number");
+const phoneSchema = z.string().trim().regex(/^(?:\+66|0)[0-9\s().-]{8,18}$/, "Enter a valid Thailand mobile number");
 
 export type AuthResult = { ok: true; message?: string } | { ok: false; error: string };
 
 export async function signUp(formData: FormData): Promise<AuthResult> {
   if (!db) return { ok: false, error: "Account services are not configured yet. Please try again later." };
+  const fullName = String(formData.get("fullName") ?? "").trim();
   const email = normalizeEmail(String(formData.get("email") ?? ""));
+  const phone = String(formData.get("phone") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const parsed = z.object({ email: z.string().email("Enter a valid email address").max(200), password: passwordSchema }).safeParse({ email, password });
+  const confirmation = String(formData.get("confirmation") ?? "");
+  const parsed = z.object({ fullName: z.string().min(2, "Enter your full name").max(120), email: z.string().email("Enter a valid email address").max(200), phone: phoneSchema, password: passwordSchema }).safeParse({ fullName, email, phone, password });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Please check your details." };
+  if (password !== confirmation) return { ok: false, error: "Passwords do not match." };
+  if (formData.get("agreements") !== "on") return { ok: false, error: "Please accept the Terms & Conditions and Privacy Policy." };
   const existing = await db.select({ id: customerAccounts.id }).from(customerAccounts).where(eq(customerAccounts.email, email)).limit(1);
   if (existing.length) return { ok: false, error: "An account with that email already exists." };
   try {
-    await db.insert(customerAccounts).values({ email, passwordHash: await hashPassword(password) });
+    await db.insert(customerAccounts).values({ fullName, email, phone, passwordHash: await hashPassword(password) });
   } catch (error) {
     console.error("[auth] account creation failed", error);
     return { ok: false, error: "We couldn't create your account. Please try again." };
