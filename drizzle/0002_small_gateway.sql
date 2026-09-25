@@ -1,8 +1,8 @@
 CREATE TABLE "customer_accounts" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"full_name" varchar(120) NOT NULL,
+	"full_name" varchar(120),
 	"email" varchar(200) NOT NULL,
-	"phone" varchar(40) NOT NULL,
+	"phone" varchar(40),
 	"password_hash" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL

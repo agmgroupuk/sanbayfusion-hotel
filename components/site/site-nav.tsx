@@ -169,7 +169,7 @@ export function SiteNav() {
           <button type="button" aria-label="Scroll navigation right" onClick={() => scrollDesktopNav(1)} className="flex size-8 shrink-0 items-center justify-center rounded-full border border-foreground/20 text-foreground transition-colors hover:border-gold hover:text-gold"><ChevronRight className="size-4" /></button>
           <Magnetic strength={0.4}>
             <Link
-              href="/join"
+              href="/signup"
               className="inline-flex rounded-full bg-gold px-5 py-2 text-eyebrow text-gold-foreground transition-colors hover:bg-gold/85"
             >
               Join Now

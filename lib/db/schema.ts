@@ -18,7 +18,7 @@ export const customerAccounts = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     fullName: varchar("full_name", { length: 120 }).notNull(),
     email: varchar("email", { length: 200 }).notNull(),
-    phone: varchar("phone", { length: 40 }).notNull(),
+    phone: varchar("phone", { length: 40 }),
     passwordHash: text("password_hash").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

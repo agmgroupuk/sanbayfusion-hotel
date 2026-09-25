@@ -8,31 +8,25 @@ import { db } from "@/lib/db";
 import { customerAccounts, passwordResetTokens } from "@/lib/db/schema";
 import { sendPasswordResetEmail } from "@/lib/email/account";
 
-const phoneSchema = z.string().trim().regex(/^(?:\+66|0)[0-9\s().-]{8,18}$/, "Enter a valid Thailand mobile number");
 const passwordSchema = z.string().min(10, "Use at least 10 characters").regex(/[a-z]/, "Include a lowercase letter").regex(/[A-Z]/, "Include an uppercase letter").regex(/[0-9]/, "Include a number");
 
 export type AuthResult = { ok: true; message?: string } | { ok: false; error: string };
 
 export async function signUp(formData: FormData): Promise<AuthResult> {
   if (!db) return { ok: false, error: "Account services are not configured yet. Please try again later." };
-  const fullName = String(formData.get("fullName") ?? "").trim();
   const email = normalizeEmail(String(formData.get("email") ?? ""));
-  const phone = String(formData.get("phone") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const confirmation = String(formData.get("confirmation") ?? "");
-  const parsed = z.object({ fullName: z.string().min(2, "Enter your full name").max(120), email: z.string().email("Enter a valid email address").max(200), phone: phoneSchema, password: passwordSchema }).safeParse({ fullName, email, phone, password });
+  const parsed = z.object({ email: z.string().email("Enter a valid email address").max(200), password: passwordSchema }).safeParse({ email, password });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Please check your details." };
-  if (password !== confirmation) return { ok: false, error: "Passwords do not match." };
-  if (formData.get("agreements") !== "on") return { ok: false, error: "Please accept the Terms & Conditions and Privacy Policy." };
   const existing = await db.select({ id: customerAccounts.id }).from(customerAccounts).where(eq(customerAccounts.email, email)).limit(1);
   if (existing.length) return { ok: false, error: "An account with that email already exists." };
   try {
-    await db.insert(customerAccounts).values({ fullName, email, phone, passwordHash: await hashPassword(password) });
+    await db.insert(customerAccounts).values({ email, passwordHash: await hashPassword(password) });
   } catch (error) {
     console.error("[auth] account creation failed", error);
     return { ok: false, error: "We couldn't create your account. Please try again." };
   }
-  return { ok: true, message: "Your account is ready. Please sign in to continue." };
+  redirect("/signin?created=1");
 }
 
 export async function signIn(formData: FormData): Promise<AuthResult> {
@@ -60,10 +54,10 @@ export async function requestPasswordReset(formData: FormData): Promise<AuthResu
     const token = await createPasswordResetToken(account.id);
     const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
     if (token) {
-      try { await sendPasswordResetEmail(account.email, `${origin}/reset-password?token=${encodeURIComponent(token)}`); } catch (error) { console.error("[auth] password reset email failed", error); }
+      void sendPasswordResetEmail(account.email, `${origin}/reset-password?token=${encodeURIComponent(token)}`).catch((error) => console.error("[auth] password reset email failed", error));
     }
   }
-  return { ok: true, message: "If an account exists for this email address, password reset instructions have been sent." };
+  redirect("/signin?reset=requested");
 }
 
 export async function resetPassword(formData: FormData): Promise<AuthResult> {
@@ -80,7 +74,7 @@ export async function resetPassword(formData: FormData): Promise<AuthResult> {
     await tx.update(customerAccounts).set({ passwordHash: await hashPassword(password), updatedAt: new Date() }).where(eq(customerAccounts.id, reset.accountId));
     await tx.update(passwordResetTokens).set({ usedAt: new Date() }).where(and(eq(passwordResetTokens.id, reset.id), eq(passwordResetTokens.accountId, reset.accountId)));
   });
-  return { ok: true, message: "Your password has been successfully updated." };
+  redirect("/signin?reset=complete");
 }
 
 export async function currentCustomer() {

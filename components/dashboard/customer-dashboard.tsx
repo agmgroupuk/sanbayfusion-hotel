@@ -17,7 +17,7 @@ function Empty({ children }: { children: React.ReactNode }) {
 }
 
 export function CustomerDashboard({ account, membership, now }: { account: CustomerAccount; membership: MembershipRequest | null; now: number }) {
-  const firstName = account.fullName.trim().split(/\s+/)[0] || "there";
+  const firstName = account.fullName?.trim().split(/\s+/)[0] || "there";
   const active = membership?.status === "active";
   const start = membership?.membershipStartDate;
   const expiry = membership?.membershipExpiryDate;
