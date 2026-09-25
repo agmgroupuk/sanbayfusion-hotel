@@ -47,7 +47,7 @@ export async function POST() {
       validityMonths: plan.validityMonths,
       deliveryDays: plan.deliveryDays,
       annualDeliveryDays: plan.deliveryDaysPerYear,
-      fullName: account.fullName,
+      fullName: account.fullName ?? "",
       phone: account.phone ?? "",
       email: account.email,
       address: { city: "Bangkok", country: "Thailand" },
