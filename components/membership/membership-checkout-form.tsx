@@ -76,7 +76,7 @@ export function MembershipCheckoutForm({
             disabled={isPreparing}
             className="mt-7 inline-flex w-full items-center justify-center rounded-full bg-gold px-6 py-3 text-eyebrow text-gold-foreground disabled:opacity-60"
           >
-            {isPreparing ? "PREPARING…” : "START SECURE CHECKOUT"}
+            {isPreparing ? "PREPARING…" : "START SECURE CHECKOUT"}
           </button>
 
           <p className="mt-6 text-sm leading-relaxed text-foreground/75">{checkoutStatus}</p>
