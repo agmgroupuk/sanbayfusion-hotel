@@ -16,7 +16,7 @@ export const customerAccounts = pgTable(
   "customer_accounts",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    fullName: varchar("full_name", { length: 120 }).notNull(),
+    fullName: varchar("full_name", { length: 120 }),
     email: varchar("email", { length: 200 }).notNull(),
     phone: varchar("phone", { length: 40 }),
     passwordHash: text("password_hash").notNull(),
