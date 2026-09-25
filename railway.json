@@ -6,7 +6,7 @@
   },
   "deploy": {
     "runtime": "VPS",
-    "startCommand": "npm run start",
+    "startCommand": "npm run db:migrate && npm run start",
     "healthcheckPath": "/",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",

@@ -3,10 +3,13 @@ import { ScrollProgress } from "@/components/motion/scroll-progress";
 import { SiteNav } from "@/components/site/site-nav";
 import { SiteFooter } from "@/components/site/site-footer";
 import { RestaurantJsonLd } from "@/components/site/restaurant-jsonld";
+import { getCurrentAccount } from "@/lib/auth";
+import { signOut } from "@/app/auth/actions";
 
-export default function SiteLayout({
+export default async function SiteLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const account = await getCurrentAccount();
   return (
     <SmoothScroll>
       <RestaurantJsonLd />
@@ -17,7 +20,7 @@ export default function SiteLayout({
       >
         Skip to content
       </a>
-      <SiteNav />
+      <SiteNav authenticated={Boolean(account)} onSignOut={signOut} />
       <main id="main" className="flex-1">
         {children}
       </main>

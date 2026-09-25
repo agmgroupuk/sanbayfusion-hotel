@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/site/page-header";
 import { SignInForm } from "@/components/auth/auth-forms";
+import { getCurrentAccount } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = { title: "Welcome Back", description: "Sign in to manage your Sanbay Fusion membership." };
 
 export default async function SignInPage({ searchParams }: { searchParams: Promise<{ created?: string; reset?: string }> }) {
+  if (await getCurrentAccount()) redirect("/dashboard");
   const params = await searchParams;
   const notice = params.created === "1"
     ? "Your account is ready. Sign in to continue."

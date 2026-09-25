@@ -43,8 +43,13 @@ export async function getCurrentAccount(): Promise<CustomerAccount | null> {
   if (!db) return null;
   const token = (await cookies()).get(sessionCookie)?.value;
   if (!token) return null;
-  const result = await db.select({ account: customerAccounts }).from(customerSessions).innerJoin(customerAccounts, eq(customerSessions.accountId, customerAccounts.id)).where(and(eq(customerSessions.tokenHash, hashToken(token)), gt(customerSessions.expiresAt, new Date()))).limit(1);
-  return result[0]?.account ?? null;
+  try {
+    const result = await db.select({ account: customerAccounts }).from(customerSessions).innerJoin(customerAccounts, eq(customerSessions.accountId, customerAccounts.id)).where(and(eq(customerSessions.tokenHash, hashToken(token)), gt(customerSessions.expiresAt, new Date()))).limit(1);
+    return result[0]?.account ?? null;
+  } catch (error) {
+    console.error("[auth] session lookup failed", error);
+    return null;
+  }
 }
 
 export async function destroyCustomerSession() {
