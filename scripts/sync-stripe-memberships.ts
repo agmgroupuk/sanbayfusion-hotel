@@ -6,7 +6,6 @@ import { membershipPlans } from "@/lib/membership-plans";
 
 const secretKey = process.env.STRIPE_SECRET_KEY;
 if (!secretKey?.startsWith("sk_test_")) throw new Error("Sandbox sync requires a Stripe test-mode secret key.");
-if (!db) throw new Error("DATABASE_URL is required for catalog synchronization.");
 
 const stripe = new Stripe(secretKey, { apiVersion: "2026-08-26.dahlia" });
 
@@ -18,6 +17,8 @@ async function findProduct(plan: (typeof membershipPlans)[number]) {
 }
 
 async function syncPlan(plan: (typeof membershipPlans)[number]) {
+  const database = db;
+  if (!database) throw new Error("DATABASE_URL is required for catalog synchronization.");
   let product = await findProduct(plan);
   if (!product) {
     product = await stripe.products.create({
@@ -44,7 +45,7 @@ async function syncPlan(plan: (typeof membershipPlans)[number]) {
     });
   }
 
-  await db!.insert(stripeMembershipCatalog).values({ planId: plan.id, planSlug: plan.slug, productId: product.id, priceId: price.id, amount: plan.price * 100, currency: "thb", mode: "test", updatedAt: new Date() }).onConflictDoUpdate({ target: stripeMembershipCatalog.planId, set: { planSlug: plan.slug, productId: product.id, priceId: price.id, amount: plan.price * 100, currency: "thb", mode: "test", updatedAt: new Date() } });
+  await database.insert(stripeMembershipCatalog).values({ planId: plan.id, planSlug: plan.slug, productId: product.id, priceId: price.id, amount: plan.price * 100, currency: "thb", mode: "test", updatedAt: new Date() }).onConflictDoUpdate({ target: stripeMembershipCatalog.planId, set: { planSlug: plan.slug, productId: product.id, priceId: price.id, amount: plan.price * 100, currency: "thb", mode: "test", updatedAt: new Date() } });
   return { plan, product, price };
 }
 

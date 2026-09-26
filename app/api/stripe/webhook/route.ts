@@ -32,7 +32,8 @@ export async function POST(request: Request) {
     if (!membershipId || !customerId || paymentIntent.currency !== "thb") return NextResponse.json({ ok: true });
     const membership = (await db.select().from(membershipRequests).where(eq(membershipRequests.id, membershipId)).limit(1))[0];
     if (!membership || membership.stripeCustomerId !== customerId || paymentIntent.amount !== membership.estimatedTotal * 100) return NextResponse.json({ ok: true });
-    if (membership.stripePaymentIntentId && membership.stripePaymentIntentId !== paymentIntent.id) return NextResponse.json({ ok: true });
+    if (membership.status === "active") return NextResponse.json({ ok: true });
+    await db.update(membershipRequests).set({ stripePaymentIntentId: paymentIntent.id }).where(eq(membershipRequests.id, membershipId));
     await activateMembershipRequest({ id: membershipId, method: "STRIPE_PAYMENT", actor: "stripe-webhook" });
   }
 
