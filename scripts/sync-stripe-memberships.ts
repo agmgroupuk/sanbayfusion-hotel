@@ -44,7 +44,7 @@ async function syncPlan(plan: (typeof membershipPlans)[number]) {
     });
   }
 
-  await db.insert(stripeMembershipCatalog).values({ planId: plan.id, planSlug: plan.slug, productId: product.id, priceId: price.id, amount: plan.price * 100, currency: "thb", mode: "test", updatedAt: new Date() }).onConflictDoUpdate({ target: stripeMembershipCatalog.planId, set: { planSlug: plan.slug, productId: product.id, priceId: price.id, amount: plan.price * 100, currency: "thb", mode: "test", updatedAt: new Date() } });
+  await db!.insert(stripeMembershipCatalog).values({ planId: plan.id, planSlug: plan.slug, productId: product.id, priceId: price.id, amount: plan.price * 100, currency: "thb", mode: "test", updatedAt: new Date() }).onConflictDoUpdate({ target: stripeMembershipCatalog.planId, set: { planSlug: plan.slug, productId: product.id, priceId: price.id, amount: plan.price * 100, currency: "thb", mode: "test", updatedAt: new Date() } });
   return { plan, product, price };
 }
 
