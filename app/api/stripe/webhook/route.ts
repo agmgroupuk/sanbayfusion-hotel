@@ -24,31 +24,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid Stripe signature." }, { status: 400 });
   }
 
-  if (event.type === "customer.subscription.created" || event.type === "invoice.paid") {
-    const invoice = event.data.object as Stripe.Invoice;
-    const customerId = invoice.customer as string | null;
-    const amountPaid = invoice.amount_paid ?? 0;
-    const membershipId = invoice.metadata?.membershipRequestId ?? null;
-
-    if (!customerId || !membershipId) return NextResponse.json({ ok: true });
-
+  if (event.type === "payment_intent.succeeded") {
+    const paymentIntent = event.data.object as Stripe.PaymentIntent;
+    if (paymentIntent.metadata.payment_type !== "MEMBERSHIP_FEE") return NextResponse.json({ ok: true });
+    const membershipId = paymentIntent.metadata.membership_id;
+    const customerId = typeof paymentIntent.customer === "string" ? paymentIntent.customer : null;
+    if (!membershipId || !customerId || paymentIntent.currency !== "thb") return NextResponse.json({ ok: true });
     const membership = (await db.select().from(membershipRequests).where(eq(membershipRequests.id, membershipId)).limit(1))[0];
-    if (!membership || membership.stripeCustomerId !== customerId) return NextResponse.json({ ok: true });
-    if (amountPaid < (membership.estimatedTotal ?? 0) * 100) return NextResponse.json({ ok: true });
-
+    if (!membership || membership.stripeCustomerId !== customerId || paymentIntent.amount !== membership.estimatedTotal * 100) return NextResponse.json({ ok: true });
+    if (membership.stripePaymentIntentId && membership.stripePaymentIntentId !== paymentIntent.id) return NextResponse.json({ ok: true });
     await activateMembershipRequest({ id: membershipId, method: "STRIPE_PAYMENT", actor: "stripe-webhook" });
-    return NextResponse.json({ ok: true });
-  }
-
-  if (event.type === "charge.succeeded") {
-    const charge = event.data.object as Stripe.Charge;
-    const customerId = typeof charge.customer === "string" ? charge.customer : null;
-    if (!customerId) return NextResponse.json({ ok: true });
-    const membership = (await db.select().from(membershipRequests).where(eq(membershipRequests.stripeCustomerId, customerId)).limit(1))[0];
-    if (!membership) return NextResponse.json({ ok: true });
-    if (charge.amount !== (membership.estimatedTotal ?? 0) * 100) return NextResponse.json({ ok: true });
-    await activateMembershipRequest({ id: membership.id, method: "STRIPE_PAYMENT", actor: "stripe-webhook" });
-    return NextResponse.json({ ok: true });
   }
 
   return NextResponse.json({ ok: true });

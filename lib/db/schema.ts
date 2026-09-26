@@ -27,6 +27,20 @@ export const customerAccounts = pgTable(
   (t) => [uniqueIndex("customer_accounts_email_idx").on(t.email)],
 );
 
+export const stripeMembershipCatalog = pgTable(
+  "stripe_membership_catalog",
+  {
+    planId: varchar("plan_id", { length: 40 }).primaryKey(),
+    planSlug: varchar("plan_slug", { length: 80 }).notNull().unique(),
+    productId: varchar("product_id", { length: 120 }).notNull(),
+    priceId: varchar("price_id", { length: 120 }).notNull(),
+    amount: integer("amount").notNull(),
+    currency: varchar("currency", { length: 3 }).notNull().default("thb"),
+    mode: varchar("mode", { length: 12 }).notNull().default("test"),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+);
+
 export const customerSessions = pgTable(
   "customer_sessions",
   {

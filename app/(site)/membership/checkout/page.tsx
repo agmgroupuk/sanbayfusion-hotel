@@ -5,6 +5,7 @@ import { MembershipCheckoutForm } from "@/components/membership/membership-check
 import { getCurrentAccount } from "@/lib/auth";
 import { membershipPlans } from "@/lib/membership-plans";
 import { readMembershipCheckoutSelection } from "@/lib/membership-checkout";
+import { stripePublishableKey } from "@/lib/stripe";
 
 export const metadata: Metadata = {
   title: "Membership Checkout",
@@ -33,6 +34,7 @@ export default async function MembershipCheckoutPage() {
         plan={plan}
         account={{ fullName: account.fullName ?? "", email: account.email, phone: account.phone ?? "" }}
         configuration={selection.configuration ?? {}}
+        publishableKey={stripePublishableKey}
       />
     </>
   );
