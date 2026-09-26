@@ -165,7 +165,7 @@ export function SiteNav({ authenticated, onSignOut }: { authenticated: boolean; 
           className="relative block h-8 w-36 transition-opacity hover:opacity-80 sm:h-10 sm:w-44"
           onClick={() => setOpen(false)}
         >
-          <Image src="/brand/sanbayfusion-logo.webp" alt={site.name} fill priority sizes="(min-width: 640px) 176px, 144px" className="object-contain object-left" />
+          <Image src="/brand/sanbayfusion-logo.webp" alt={site.name} fill sizes="(min-width: 640px) 176px, 144px" className="object-contain object-left" />
         </Link>
 
         <div className="hidden min-w-0 items-center gap-2 md:flex">
