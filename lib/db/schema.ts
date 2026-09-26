@@ -19,6 +19,7 @@ export const customerAccounts = pgTable(
     fullName: varchar("full_name", { length: 120 }),
     email: varchar("email", { length: 200 }).notNull(),
     phone: varchar("phone", { length: 40 }),
+    stripeCustomerId: varchar("stripe_customer_id", { length: 120 }),
     passwordHash: text("password_hash").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

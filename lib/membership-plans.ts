@@ -17,6 +17,8 @@ export type MembershipPlan = {
   category: PlanCategory;
   level: PlanLevel;
   price: number;
+  stripeProductId?: string | null;
+  stripePriceId?: string | null;
   cadence: "annual";
   validityMonths: 12;
   deliveryDays: number;
