@@ -1,17 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { catalogueCategories, type CatalogueCategory, type CatalogueProduct } from "@/lib/catalogue";
-import { alcoholSalesEnabled, type MembershipPlan } from "@/lib/membership-plans";
+import { alcoholSalesEnabled, membershipDeliveryAreas, membershipPreferredDays, membershipPreferredTimes, type MembershipPlan } from "@/lib/membership-plans";
 import { calculateMembershipQuote, type MembershipConfiguration, type MembershipPurchaseMode } from "@/lib/membership-request";
 
 export const membershipConfigurationStorageKey = "sbf-membership-configuration";
 
 const preferenceOptions = ["Thai Food", "Seafood", "Chicken", "Beef", "Pork", "Vegetarian", "Western Food", "Asian Food"];
-const areas = ["Bangkok central", "Greater Bangkok", "Selected nearby districts"];
-const days = ["Monday", "Wednesday", "Friday", "Saturday", "Sunday"];
-const times = ["09:00–12:00", "12:00–15:00", "17:00–20:00"];
-
 type SelectedProduct = { category: string; name: string; quantity: number };
 
 function productKey(category: string, name: string) {
@@ -19,9 +15,9 @@ function productKey(category: string, name: string) {
 }
 
 export function MembershipDetail({ plan }: { plan: MembershipPlan }) {
-  const [area, setArea] = useState(areas[0]);
-  const [day, setDay] = useState(days[0]);
-  const [time, setTime] = useState(times[0]);
+  const [area, setArea] = useState<(typeof membershipDeliveryAreas)[number]>(membershipDeliveryAreas[0]);
+  const [day, setDay] = useState<(typeof membershipPreferredDays)[number]>(membershipPreferredDays[0]);
+  const [time, setTime] = useState<(typeof membershipPreferredTimes)[number]>(membershipPreferredTimes[0]);
   const [preferences, setPreferences] = useState<string[]>([]);
   const [purchaseMode, setPurchaseMode] = useState<MembershipPurchaseMode>("membership_only");
   const [alcoholOpen, setAlcoholOpen] = useState(false);
@@ -34,13 +30,15 @@ export function MembershipDetail({ plan }: { plan: MembershipPlan }) {
     try {
       const configuration = JSON.parse(stored) as MembershipConfiguration;
       if (configuration.planSlug !== plan.slug) return;
-      setArea(configuration.deliveryArea);
-      setDay(configuration.preferredDay);
-      setTime(configuration.preferredTime);
-      setPreferences(configuration.foodPreferences);
-      setPurchaseMode(configuration.purchaseMode ?? "membership_only");
-      setAlcoholOpen(configuration.alcoholEnabled);
-      setSelectedProducts(configuration.selectedProducts ?? []);
+      startTransition(() => {
+        if ((membershipDeliveryAreas as readonly string[]).includes(configuration.deliveryArea)) setArea(configuration.deliveryArea as (typeof membershipDeliveryAreas)[number]);
+        if ((membershipPreferredDays as readonly string[]).includes(configuration.preferredDay)) setDay(configuration.preferredDay as (typeof membershipPreferredDays)[number]);
+        if ((membershipPreferredTimes as readonly string[]).includes(configuration.preferredTime)) setTime(configuration.preferredTime as (typeof membershipPreferredTimes)[number]);
+        setPreferences(configuration.foodPreferences);
+        setPurchaseMode(configuration.purchaseMode ?? "membership_only");
+        setAlcoholOpen(configuration.alcoholEnabled);
+        setSelectedProducts(configuration.selectedProducts ?? []);
+      });
     } catch {
       window.sessionStorage.removeItem(membershipConfigurationStorageKey);
     }
@@ -133,7 +131,7 @@ export function MembershipDetail({ plan }: { plan: MembershipPlan }) {
         <section><p className="text-eyebrow text-gold">Your membership</p><div className="mt-6 grid gap-4 sm:grid-cols-2">{[["Annual membership fee", `฿${plan.price.toLocaleString("en-US")}`], ["Validity", "12 months from activation"], ["Monthly delivery entitlement", `${plan.deliveryDays} days`], ["Annual delivery entitlement", `${plan.deliveryDaysPerYear} days`], ["Delivery rhythm", plan.rhythm], ["Food level", plan.foodLevel]].map(([label, value]) => <div key={label} className="border-t border-border/60 pt-4"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-2 text-lg text-foreground/90">{value}</p></div>)}</div></section>
         <section><p className="text-eyebrow text-gold">Purchase option</p><fieldset className="mt-5 grid gap-3 sm:grid-cols-2"><legend className="sr-only">Choose a membership purchase mode</legend><label className={`flex cursor-pointer gap-3 rounded-sm border p-4 ${purchaseMode === "membership_only" ? "border-gold bg-gold/5" : "border-border/60"}`}><input type="radio" name="purchaseMode" value="membership_only" checked={purchaseMode === "membership_only"} onChange={() => setPurchaseMode("membership_only")} className="mt-1 size-4 accent-[var(--gold)]" /><span><span className="block text-sm">Membership only</span><span className="mt-1 block text-xs leading-relaxed text-muted-foreground">Pay the annual membership fee. Future orders are paid separately.</span></span></label><label className={`flex cursor-pointer gap-3 rounded-sm border p-4 ${purchaseMode === "membership_with_package" ? "border-gold bg-gold/5" : "border-border/60"}`}><input type="radio" name="purchaseMode" value="membership_with_package" checked={purchaseMode === "membership_with_package"} onChange={() => setPurchaseMode("membership_with_package")} className="mt-1 size-4 accent-[var(--gold)]" /><span><span className="block text-sm">Membership + prepaid annual package</span><span className="mt-1 block text-xs leading-relaxed text-muted-foreground">Prepay selected items for each scheduled annual delivery.</span></span></label></fieldset></section>
         <section><p className="text-eyebrow text-gold">Build your package</p><p className="mt-4 max-w-2xl text-sm text-muted-foreground">Selected products become prepaid only with the annual package option. Otherwise they remain preferences and future orders are charged separately.</p><div className="mt-8 space-y-3">{foodCategories.map(renderCategory)}{drinkCategories.map(renderCategory)}</div></section>
-        <section><p className="text-eyebrow text-gold">Delivery details</p><div className="mt-6 grid gap-4 sm:grid-cols-3">{[["Delivery area", area, setArea, areas], ["Preferred day", day, setDay, days], ["Preferred time", time, setTime, times]].map(([label, value, setter, options]) => <label key={label as string} className="text-sm"><span className="mb-2 block text-xs text-muted-foreground">{label as string}</span><select value={value as string} onChange={(event) => (setter as (nextValue: string) => void)(event.target.value)} className="h-11 w-full rounded-sm border border-input bg-background px-3">{(options as string[]).map((option) => <option key={option}>{option}</option>)}</select></label>)}</div></section>
+        <section><p className="text-eyebrow text-gold">Delivery details</p><div className="mt-6 grid gap-4 sm:grid-cols-3">{[["Delivery area", area, setArea, membershipDeliveryAreas], ["Preferred day", day, setDay, membershipPreferredDays], ["Preferred time", time, setTime, membershipPreferredTimes]].map(([label, value, setter, options]) => <label key={label as string} className="text-sm"><span className="mb-2 block text-xs text-muted-foreground">{label as string}</span><select value={value as string} onChange={(event) => (setter as (nextValue: string) => void)(event.target.value)} className="h-11 w-full rounded-sm border border-input bg-background px-3">{(options as readonly string[]).map((option) => <option key={option}>{option}</option>)}</select></label>)}</div></section>
         <section><p className="text-eyebrow text-gold">Food preferences</p><p className="mt-4 text-sm text-muted-foreground">Preferences help us plan your menu alongside the products you select.</p><div className="mt-6 grid gap-3 sm:grid-cols-2">{preferenceOptions.map((preference) => <label key={preference} className="flex items-center gap-3 rounded-sm border border-border/60 px-4 py-3 text-sm"><input type="checkbox" checked={preferences.includes(preference)} onChange={() => togglePreference(preference)} className="size-4 accent-[var(--gold)]" />{preference}</label>)}</div></section>
         <section><div className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-eyebrow text-gold">Beverage options</p><p className="mt-3 text-sm text-muted-foreground">Open the full alcohol catalogue and select individual bottles.</p></div><button type="button" disabled={!alcoholSalesEnabled} aria-pressed={alcoholOpen} onClick={() => setAlcoholOpen((value) => !value)} className={`rounded-full px-5 py-3 text-eyebrow disabled:cursor-not-allowed disabled:opacity-50 ${alcoholOpen ? "bg-gold text-gold-foreground" : "border border-foreground/30"}`}>{alcoholSalesEnabled ? `Add Alcohol · ${alcoholOpen ? "On" : "Off"}` : "Alcohol · unavailable"}</button></div>{alcoholOpen && <div className="mt-6 space-y-3"><div className="rounded-sm border border-gold/40 bg-gold/5 p-5 text-sm leading-relaxed text-foreground/75">Alcohol products are age-restricted and subject to Thai licensing, identity, permitted-hours, and delivery requirements. Availability is enabled for configuration.</div>{alcoholCategories.map(renderCategory)}</div>}</section>
       </div>

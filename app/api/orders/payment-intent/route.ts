@@ -13,10 +13,10 @@ export async function POST(request: Request) {
   if (!account) return NextResponse.json({ error: "Please sign in to order." }, { status: 401 });
   if (!db || !stripe) return NextResponse.json({ error: "Payment services are not configured." }, { status: 503 });
   const body = await request.json().catch(() => null) as { cart?: unknown; notes?: string } | null;
-  const priced = priceCart(body?.cart);
-  if (!priced.ok) return NextResponse.json({ error: priced.error }, { status: 400 });
   const membership = (await db.select().from(membershipRequests).where(eq(membershipRequests.email, account.email)).orderBy(desc(membershipRequests.createdAt)).limit(1))[0];
   if (!membership || membership.status !== "active") return NextResponse.json({ error: "An active membership is required to place an order." }, { status: 403 });
+  const priced = priceCart(body?.cart, membership.planId);
+  if (!priced.ok) return NextResponse.json({ error: priced.error }, { status: 400 });
   const number = orderNumber();
   const [order] = await db.insert(customerOrders).values({ orderNumber: number, accountId: account.id, membershipRequestId: membership.id, subtotal: priced.subtotal, total: priced.total, notes: typeof body?.notes === "string" ? body.notes.slice(0, 2000) : null, deliveryDetails: membership.address, }).returning();
   await db.insert(customerOrderItems).values(priced.items.map((item) => ({ orderId: order.id, productName: item.name, categoryName: item.category, unitPrice: item.price, quantity: item.quantity, lineTotal: item.lineTotal })));

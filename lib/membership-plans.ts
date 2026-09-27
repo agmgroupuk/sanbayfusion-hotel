@@ -33,6 +33,18 @@ export type MembershipPlan = {
   featured?: boolean;
 };
 
+export const membershipDeliveryAreas = ["Bangkok central", "Greater Bangkok", "Selected nearby districts"] as const;
+export const membershipPreferredDays = ["Monday", "Wednesday", "Friday", "Saturday", "Sunday"] as const;
+export const membershipPreferredTimes = ["09:00–12:00", "12:00–15:00", "17:00–20:00"] as const;
+
+export function membershipPlanAllowsCatalogueCategory(plan: MembershipPlan, categoryName: string, group: string) {
+  if (group !== "alcohol") return true;
+  const planCategory = categoryName === "Champagne & sparkling wine"
+    ? "wine"
+    : categoryName.toLowerCase().replace(/[^a-z]+/g, "-").replace(/^-|-$/g, "");
+  return plan.allowedBeverageCategories.includes(planCategory);
+}
+
 // Fixed package catalogue. Prices and contents remain editable data, not checkout logic.
 const rows: [string, string, string, PlanCategory, PlanLevel, number, number, PackageRowItem[], string[]][] = [
   ["01", "starter", "Starter Membership", "food-only", "budget", 4000, 2, [["Thai starter food package", 1]], ["Every 2 weeks", "Standard delivery"]],

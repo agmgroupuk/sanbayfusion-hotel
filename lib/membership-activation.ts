@@ -1,10 +1,11 @@
 import "server-only";
 
-import { addMonths, formatISO } from "date-fns";
+import { addMonths, formatISO, parseISO } from "date-fns";
 import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { membershipRequests } from "@/lib/db/schema";
+import { membershipDeliveryEntitlements, membershipRequests, type MembershipRequest } from "@/lib/db/schema";
 import { sendMembershipPaymentReviewEmail } from "@/lib/email/membership-request";
+import { buildMembershipDeliverySchedule } from "@/lib/membership-delivery";
 
 export type MembershipLifecycleStatus =
   | "pending_review"
@@ -116,22 +117,60 @@ export async function activateMembershipRequest({ id, actor }: { id: string; act
     const memberId = membership.memberId ?? nextMemberNumber(latest?.memberId);
     const activatedAt = new Date();
     const expiryDate = addMonths(activatedAt, membership.validityMonths || 12);
+    const membershipStartDate = formatISO(activatedAt, { representation: "date" });
+    const membershipExpiryDate = formatISO(expiryDate, { representation: "date" });
     const [row] = await tx.update(membershipRequests)
       .set({
         status: "active",
         memberId,
         membershipNumber: memberId,
-        membershipStartDate: formatISO(activatedAt, { representation: "date" }),
-        membershipExpiryDate: formatISO(expiryDate, { representation: "date" }),
+        membershipStartDate,
+        membershipExpiryDate,
         activatedAt,
         activatedBy: actor,
         activationMethod: "APPROVED_AFTER_PAYMENT",
         invoiceStatus: "paid",
+        finalMembershipSnapshot: {
+          purchase: membership.purchaseSnapshot,
+          memberId,
+          membershipStartDate,
+          membershipExpiryDate,
+          activatedAt: activatedAt.toISOString(),
+          activatedBy: actor,
+        },
       })
       .where(and(eq(membershipRequests.id, id), eq(membershipRequests.status, "payment_received")))
       .returning();
-    return row ?? null;
+    if (!row) return null;
+
+    const schedule = buildMembershipDeliverySchedule({
+      membershipRequestId: membership.id,
+      startDate: activatedAt,
+      validityMonths: membership.validityMonths || 12,
+      deliveriesPerMonth: membership.deliveryDays,
+      purchaseSnapshot: membership.purchaseSnapshot as import("@/lib/membership-request").MembershipPurchaseSnapshot | null,
+    });
+    await tx.insert(membershipDeliveryEntitlements).values(schedule).onConflictDoNothing();
+    return row;
   });
+}
+
+export async function ensureMembershipDeliverySchedule(membership: MembershipRequest) {
+  if (!db || membership.status !== "active" || !membership.membershipStartDate || membership.validityMonths < 1 || membership.deliveryDays < 1) return;
+  const existing = await db.select({ id: membershipDeliveryEntitlements.id })
+    .from(membershipDeliveryEntitlements)
+    .where(eq(membershipDeliveryEntitlements.membershipRequestId, membership.id))
+    .limit(1);
+  if (existing.length) return;
+
+  const schedule = buildMembershipDeliverySchedule({
+    membershipRequestId: membership.id,
+    startDate: parseISO(membership.membershipStartDate),
+    validityMonths: membership.validityMonths,
+    deliveriesPerMonth: membership.deliveryDays,
+    purchaseSnapshot: membership.purchaseSnapshot as import("@/lib/membership-request").MembershipPurchaseSnapshot | null,
+  });
+  await db.insert(membershipDeliveryEntitlements).values(schedule).onConflictDoNothing();
 }
 
 export async function findMembershipByStripeCustomerId(stripeCustomerId: string) {

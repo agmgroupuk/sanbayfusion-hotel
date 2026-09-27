@@ -2,8 +2,11 @@ import "server-only";
 
 import Stripe from "stripe";
 
-export const stripe = process.env.STRIPE_SECRET_KEY
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2026-08-26.dahlia" })
+const secretKey = process.env.STRIPE_SECRET_KEY ?? "";
+const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "";
+
+export const stripe = secretKey.startsWith("sk_test_")
+  ? new Stripe(secretKey, { apiVersion: "2026-08-26.dahlia" })
   : null;
 
-export const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "";
+export const stripePublishableKey = publishableKey.startsWith("pk_test_") ? publishableKey : "";

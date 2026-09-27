@@ -110,6 +110,13 @@ export const customerPaymentStatus = pgEnum("customer_payment_status", [
   "refunded",
 ]);
 
+export const membershipDeliveryStatus = pgEnum("membership_delivery_status", [
+  "available",
+  "scheduled",
+  "fulfilled",
+  "cancelled",
+]);
+
 export const reservations = pgTable(
   "reservations",
   {
@@ -200,6 +207,28 @@ export const customerOrders = pgTable(
   (t) => [index("customer_orders_account_idx").on(t.accountId), index("customer_orders_membership_idx").on(t.membershipRequestId), index("customer_orders_payment_intent_idx").on(t.stripePaymentIntentId)],
 );
 
+export const membershipDeliveryEntitlements = pgTable(
+  "membership_delivery_entitlements",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    membershipRequestId: uuid("membership_request_id").notNull().references(() => membershipRequests.id, { onDelete: "cascade" }),
+    cycleStartDate: date("cycle_start_date").notNull(),
+    cycleEndDate: date("cycle_end_date").notNull(),
+    sequence: integer("sequence").notNull(),
+    scheduledDate: date("scheduled_date"),
+    status: membershipDeliveryStatus("status").notNull().default("available"),
+    packageSnapshot: jsonb("package_snapshot").notNull(),
+    fulfilledAt: timestamp("fulfilled_at", { withTimezone: true }),
+    fulfilledBy: varchar("fulfilled_by", { length: 120 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("membership_delivery_entitlement_slot_idx").on(t.membershipRequestId, t.cycleStartDate, t.sequence),
+    index("membership_delivery_entitlement_schedule_idx").on(t.status, t.scheduledDate),
+  ],
+);
+
 export const customerOrderItems = pgTable(
   "customer_order_items",
   {
@@ -221,3 +250,4 @@ export type MembershipRequest = typeof membershipRequests.$inferSelect;
 export type NewMembershipRequest = typeof membershipRequests.$inferInsert;
 export type CustomerOrder = typeof customerOrders.$inferSelect;
 export type CustomerOrderItem = typeof customerOrderItems.$inferSelect;
+export type MembershipDeliveryEntitlement = typeof membershipDeliveryEntitlements.$inferSelect;
