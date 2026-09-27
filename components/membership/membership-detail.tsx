@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { catalogueCategories, type CatalogueCategory, type CatalogueProduct } from "@/lib/catalogue";
 import { alcoholSalesEnabled, type MembershipPlan } from "@/lib/membership-plans";
-import type { MembershipConfiguration } from "@/lib/membership-request";
+import { calculateMembershipQuote, type MembershipConfiguration, type MembershipPurchaseMode } from "@/lib/membership-request";
 
 export const membershipConfigurationStorageKey = "sbf-membership-configuration";
 
@@ -23,6 +23,7 @@ export function MembershipDetail({ plan }: { plan: MembershipPlan }) {
   const [day, setDay] = useState(days[0]);
   const [time, setTime] = useState(times[0]);
   const [preferences, setPreferences] = useState<string[]>([]);
+  const [purchaseMode, setPurchaseMode] = useState<MembershipPurchaseMode>("membership_only");
   const [alcoholOpen, setAlcoholOpen] = useState(false);
   const [openCategories, setOpenCategories] = useState<string[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
@@ -37,6 +38,7 @@ export function MembershipDetail({ plan }: { plan: MembershipPlan }) {
       setDay(configuration.preferredDay);
       setTime(configuration.preferredTime);
       setPreferences(configuration.foodPreferences);
+      setPurchaseMode(configuration.purchaseMode ?? "membership_only");
       setAlcoholOpen(configuration.alcoholEnabled);
       setSelectedProducts(configuration.selectedProducts ?? []);
     } catch {
@@ -45,13 +47,20 @@ export function MembershipDetail({ plan }: { plan: MembershipPlan }) {
   }, [plan.slug]);
 
   const foodCategories = catalogueCategories.filter((category) => category.group === "food");
+  const drinkCategories = catalogueCategories.filter((category) => category.group === "drinks");
   const alcoholCategories = catalogueCategories.filter((category) => category.group === "alcohol");
-  const selectedProductTotal = useMemo(() => selectedProducts.reduce((total, selected) => {
-    const category = catalogueCategories.find((item) => item.name === selected.category);
-    const product = category?.products.find((item) => item.name === selected.name);
-    return total + (product?.price ?? 0) * selected.quantity;
-  }, 0), [selectedProducts]);
-  const total = plan.price + selectedProductTotal;
+  const configuration: MembershipConfiguration = {
+    planSlug: plan.slug,
+    purchaseMode,
+    foodPreferences: preferences,
+    deliveryArea: area,
+    preferredDay: day,
+    preferredTime: time,
+    alcoholEnabled: alcoholOpen,
+    selectedAddOns: [],
+    selectedProducts,
+  };
+  const quote = calculateMembershipQuote(configuration, plan);
 
   function togglePreference(preference: string) {
     setPreferences((current) => current.includes(preference) ? current.filter((item) => item !== preference) : [...current, preference]);
@@ -74,9 +83,16 @@ export function MembershipDetail({ plan }: { plan: MembershipPlan }) {
     setSelectedProducts((current) => current.filter((item) => productKey(item.category, item.name) !== productKey(selected.category, selected.name)));
   }
 
+  function changeProductQuantity(selected: SelectedProduct, quantity: number) {
+    if (quantity < 1) return removeProduct(selected);
+    if (quantity > 5) return;
+    setSelectedProducts((current) => current.map((item) => productKey(item.category, item.name) === productKey(selected.category, selected.name) ? { ...item, quantity } : item));
+  }
+
   async function continueToApplication() {
     const configuration: MembershipConfiguration = {
       planSlug: plan.slug,
+      purchaseMode,
       foodPreferences: preferences,
       deliveryArea: area,
       preferredDay: day,
@@ -115,12 +131,13 @@ export function MembershipDetail({ plan }: { plan: MembershipPlan }) {
     <main className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="space-y-20">
         <section><p className="text-eyebrow text-gold">Your membership</p><div className="mt-6 grid gap-4 sm:grid-cols-2">{[["Annual membership fee", `฿${plan.price.toLocaleString("en-US")}`], ["Validity", "12 months from activation"], ["Monthly delivery entitlement", `${plan.deliveryDays} days`], ["Annual delivery entitlement", `${plan.deliveryDaysPerYear} days`], ["Delivery rhythm", plan.rhythm], ["Food level", plan.foodLevel]].map(([label, value]) => <div key={label} className="border-t border-border/60 pt-4"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-2 text-lg text-foreground/90">{value}</p></div>)}</div></section>
-        <section><p className="text-eyebrow text-gold">Build your package</p><p className="mt-4 max-w-2xl text-sm text-muted-foreground">Open a food category to browse the shared catalogue. Select individual products and they will appear in your plan summary immediately.</p><div className="mt-8 space-y-3">{foodCategories.map(renderCategory)}</div></section>
+        <section><p className="text-eyebrow text-gold">Purchase option</p><fieldset className="mt-5 grid gap-3 sm:grid-cols-2"><legend className="sr-only">Choose a membership purchase mode</legend><label className={`flex cursor-pointer gap-3 rounded-sm border p-4 ${purchaseMode === "membership_only" ? "border-gold bg-gold/5" : "border-border/60"}`}><input type="radio" name="purchaseMode" value="membership_only" checked={purchaseMode === "membership_only"} onChange={() => setPurchaseMode("membership_only")} className="mt-1 size-4 accent-[var(--gold)]" /><span><span className="block text-sm">Membership only</span><span className="mt-1 block text-xs leading-relaxed text-muted-foreground">Pay the annual membership fee. Future orders are paid separately.</span></span></label><label className={`flex cursor-pointer gap-3 rounded-sm border p-4 ${purchaseMode === "membership_with_package" ? "border-gold bg-gold/5" : "border-border/60"}`}><input type="radio" name="purchaseMode" value="membership_with_package" checked={purchaseMode === "membership_with_package"} onChange={() => setPurchaseMode("membership_with_package")} className="mt-1 size-4 accent-[var(--gold)]" /><span><span className="block text-sm">Membership + prepaid annual package</span><span className="mt-1 block text-xs leading-relaxed text-muted-foreground">Prepay selected items for each scheduled annual delivery.</span></span></label></fieldset></section>
+        <section><p className="text-eyebrow text-gold">Build your package</p><p className="mt-4 max-w-2xl text-sm text-muted-foreground">Selected products become prepaid only with the annual package option. Otherwise they remain preferences and future orders are charged separately.</p><div className="mt-8 space-y-3">{foodCategories.map(renderCategory)}{drinkCategories.map(renderCategory)}</div></section>
         <section><p className="text-eyebrow text-gold">Delivery details</p><div className="mt-6 grid gap-4 sm:grid-cols-3">{[["Delivery area", area, setArea, areas], ["Preferred day", day, setDay, days], ["Preferred time", time, setTime, times]].map(([label, value, setter, options]) => <label key={label as string} className="text-sm"><span className="mb-2 block text-xs text-muted-foreground">{label as string}</span><select value={value as string} onChange={(event) => (setter as (nextValue: string) => void)(event.target.value)} className="h-11 w-full rounded-sm border border-input bg-background px-3">{(options as string[]).map((option) => <option key={option}>{option}</option>)}</select></label>)}</div></section>
         <section><p className="text-eyebrow text-gold">Food preferences</p><p className="mt-4 text-sm text-muted-foreground">Preferences help us plan your menu alongside the products you select.</p><div className="mt-6 grid gap-3 sm:grid-cols-2">{preferenceOptions.map((preference) => <label key={preference} className="flex items-center gap-3 rounded-sm border border-border/60 px-4 py-3 text-sm"><input type="checkbox" checked={preferences.includes(preference)} onChange={() => togglePreference(preference)} className="size-4 accent-[var(--gold)]" />{preference}</label>)}</div></section>
-        <section><div className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-eyebrow text-gold">Beverage options</p><p className="mt-3 text-sm text-muted-foreground">Open the full alcohol catalogue and select individual bottles.</p></div><button type="button" aria-pressed={alcoholOpen} onClick={() => setAlcoholOpen((value) => !value)} className={`rounded-full px-5 py-3 text-eyebrow ${alcoholOpen ? "bg-gold text-gold-foreground" : "border border-foreground/30"}`}>Add Alcohol · {alcoholOpen ? "On" : "Off"}</button></div>{alcoholOpen && <div className="mt-6 space-y-3"><div className="rounded-sm border border-gold/40 bg-gold/5 p-5 text-sm leading-relaxed text-foreground/75">Alcohol products are age-restricted and subject to Thai licensing, identity, permitted-hours, and delivery requirements. {alcoholSalesEnabled ? "Availability is enabled for configuration." : "The catalogue is available to browse, but alcohol sales are currently disabled."}</div>{alcoholCategories.map(renderCategory)}</div>}</section>
+        <section><div className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-eyebrow text-gold">Beverage options</p><p className="mt-3 text-sm text-muted-foreground">Open the full alcohol catalogue and select individual bottles.</p></div><button type="button" disabled={!alcoholSalesEnabled} aria-pressed={alcoholOpen} onClick={() => setAlcoholOpen((value) => !value)} className={`rounded-full px-5 py-3 text-eyebrow disabled:cursor-not-allowed disabled:opacity-50 ${alcoholOpen ? "bg-gold text-gold-foreground" : "border border-foreground/30"}`}>{alcoholSalesEnabled ? `Add Alcohol · ${alcoholOpen ? "On" : "Off"}` : "Alcohol · unavailable"}</button></div>{alcoholOpen && <div className="mt-6 space-y-3"><div className="rounded-sm border border-gold/40 bg-gold/5 p-5 text-sm leading-relaxed text-foreground/75">Alcohol products are age-restricted and subject to Thai licensing, identity, permitted-hours, and delivery requirements. Availability is enabled for configuration.</div>{alcoholCategories.map(renderCategory)}</div>}</section>
       </div>
-      <aside className="h-fit lg:sticky lg:top-28"><div className="rounded-sm border border-gold/50 bg-card/50 p-6 sm:p-8"><p className="text-eyebrow text-gold">Plan details</p><h2 className="mt-4 font-display text-3xl font-light italic">{plan.name}</h2><p className="mt-5 text-2xl text-gold">฿{total.toLocaleString("en-US")} / year</p><div className="mt-6 space-y-3 border-y border-border/50 py-5 text-sm"><div className="flex justify-between gap-4"><span className="text-muted-foreground">Membership</span><span>฿{plan.price.toLocaleString("en-US")}</span></div>{selectedProducts.length === 0 && <p className="text-muted-foreground">No catalogue products selected yet.</p>}{selectedProducts.map((selected) => { const category = catalogueCategories.find((item) => item.name === selected.category); const product = category?.products.find((item) => item.name === selected.name); return <div key={productKey(selected.category, selected.name)} className="flex items-start justify-between gap-3"><span className="min-w-0"><span className="block text-foreground/85">{selected.name}</span><button type="button" onClick={() => removeProduct(selected)} className="mt-1 text-xs text-muted-foreground underline underline-offset-4 hover:text-gold">Remove</button></span><span className="shrink-0 text-right text-gold">฿{((product?.price ?? 0) * selected.quantity).toLocaleString("en-US")}</span></div>; })}</div><div className="flex justify-between gap-4 pt-5 text-lg"><span>Total</span><span className="text-gold">฿{total.toLocaleString("en-US")}</span></div><button type="button" onClick={continueToApplication} className="mt-7 inline-flex w-full items-center justify-center rounded-full bg-gold px-6 py-3 text-eyebrow text-gold-foreground">Continue to Secure Checkout</button><p className="mt-4 text-center text-xs leading-relaxed text-muted-foreground">No payment is captured until you complete the checkout flow. Your package configuration is preserved automatically.</p></div></aside>
+      <aside className="h-fit lg:sticky lg:top-28"><div className="rounded-sm border border-gold/50 bg-card/50 p-6 sm:p-8"><p className="text-eyebrow text-gold">Membership summary</p><h2 className="mt-4 font-display text-3xl font-light italic">{plan.name}</h2><p className="mt-5 text-sm text-muted-foreground">{purchaseMode === "membership_with_package" ? `Prepaid for ${plan.deliveryDaysPerYear} scheduled deliveries` : "Membership only · future orders paid separately"}</p><div className="mt-6 space-y-3 border-y border-border/50 py-5 text-sm"><div className="flex justify-between gap-4"><span className="text-muted-foreground">Membership fee</span><span>฿{quote.membershipFee.toLocaleString("en-US")}</span></div>{selectedProducts.length === 0 ? <p className="text-muted-foreground">{purchaseMode === "membership_only" ? "No product preferences selected." : "Select at least one product for the prepaid package."}</p> : <><p className="pt-2 text-xs text-eyebrow text-gold">{purchaseMode === "membership_with_package" ? "Prepaid annual package" : "Selected preferences · not prepaid"}</p>{quote.selectedProducts.map((item) => <div key={`${item.category}:${item.name}`} className="flex items-start justify-between gap-3"><span className="min-w-0"><span className="block text-foreground/85">{item.name}</span><span className="mt-1 block text-xs text-muted-foreground">{item.category} · {item.quantityPerDelivery} per delivery{purchaseMode === "membership_with_package" ? ` · ${item.annualQuantity} annually` : ""}</span><span className="mt-2 flex items-center gap-2"><button type="button" aria-label={`Decrease ${item.name} quantity`} onClick={() => changeProductQuantity({ category: item.category, name: item.name, quantity: item.quantityPerDelivery }, item.quantityPerDelivery - 1)} className="size-7 rounded-sm border border-border/60">−</button><span className="min-w-5 text-center">{item.quantityPerDelivery}</span><button type="button" aria-label={`Increase ${item.name} quantity`} onClick={() => changeProductQuantity({ category: item.category, name: item.name, quantity: item.quantityPerDelivery }, item.quantityPerDelivery + 1)} className="size-7 rounded-sm border border-border/60">+</button><button type="button" onClick={() => removeProduct({ category: item.category, name: item.name, quantity: item.quantityPerDelivery })} className="ml-1 text-xs text-muted-foreground underline">Remove</button></span></span><span className="shrink-0 text-right text-gold">{purchaseMode === "membership_with_package" ? `฿${item.lineTotal.toLocaleString("en-US")}` : "Not prepaid"}</span></div>)}</>}{purchaseMode === "membership_with_package" && <div className="flex justify-between gap-4 border-t border-border/50 pt-3"><span className="text-muted-foreground">Package subtotal</span><span>฿{quote.packageSubtotal.toLocaleString("en-US")}</span></div>}<div className="flex justify-between gap-4"><span className="text-muted-foreground">Delivery area</span><span>{area}</span></div><div className="flex justify-between gap-4"><span className="text-muted-foreground">Preferred day</span><span>{day}</span></div><div className="flex justify-between gap-4"><span className="text-muted-foreground">Preferred time</span><span>{time}</span></div>{alcoholOpen && <p className="text-gold">Alcohol selection enabled</p>}</div><div className="flex justify-between gap-4 pt-5 text-lg"><span>Total due today</span><span className="text-gold">฿{quote.total.toLocaleString("en-US")}</span></div>{purchaseMode === "membership_with_package" && <p className="mt-4 text-xs leading-relaxed text-muted-foreground">Your selected package is prepaid for the applicable membership term and fulfilled according to its delivery schedule. Included items are not charged again.</p>}<button type="button" disabled={purchaseMode === "membership_with_package" && !selectedProducts.length} onClick={continueToApplication} className="mt-7 inline-flex w-full items-center justify-center rounded-full bg-gold px-6 py-3 text-eyebrow text-gold-foreground disabled:opacity-50">Continue to Secure Checkout</button></div></aside>
     </main>
   </div>;
 }

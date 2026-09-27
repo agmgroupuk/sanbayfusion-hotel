@@ -2,12 +2,13 @@ import "server-only";
 
 import { cookies } from "next/headers";
 import { z } from "zod";
+import { membershipConfigurationSchema } from "@/lib/membership-request";
 
 export const membershipCheckoutCookie = "sbf_membership_checkout";
 
 export const membershipCheckoutSelectionSchema = z.object({
   planSlug: z.string().min(1),
-  configuration: z.any(),
+  configuration: membershipConfigurationSchema,
 });
 
 export async function saveMembershipCheckoutSelection(planSlug: string, configuration: unknown) {

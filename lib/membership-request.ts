@@ -17,10 +17,17 @@ export const membershipRequestStatuses = [
   "cancelled",
 ] as const;
 
+export const membershipPurchaseModes = ["membership_only", "membership_with_package"] as const;
+export type MembershipPurchaseMode = (typeof membershipPurchaseModes)[number];
+
 const phoneNumberSchema = z.string().trim().regex(/^\+?[0-9][0-9\s().-]{5,38}$/, "Enter a valid phone number");
+const catalogueAlcoholPlanCategory: Record<string, string> = {
+  "Champagne & sparkling wine": "wine",
+};
 
 export const membershipConfigurationSchema = z.object({
   planSlug: z.string().min(1),
+  purchaseMode: z.enum(membershipPurchaseModes).default("membership_only"),
   foodPreferences: z.array(z.string().min(1)).max(8),
   deliveryArea: z.string().min(1),
   preferredDay: z.string().min(1),
@@ -91,8 +98,62 @@ export type MembershipApplicationInput = z.infer<typeof membershipApplicationSch
 export type ValidatedMembershipApplication = MembershipApplicationInput & {
   plan: (typeof membershipPlans)[number];
   addOnTotal: number;
+  packageSubtotal: number;
+  membershipFee: number;
+  total: number;
+  purchaseSnapshot: MembershipPurchaseSnapshot;
+};
+
+export type MembershipPurchaseSnapshot = {
+  version: 1;
+  purchaseMode: MembershipPurchaseMode;
+  plan: { id: string; slug: string; name: string; validityMonths: number; membershipFee: number };
+  delivery: { area: string; preferredDay: string; preferredTime: string; deliveriesPerMonth: number; deliveriesPerYear: number };
+  products: Array<{ category: string; name: string; unitPrice: number; quantityPerDelivery: number; annualQuantity: number; lineTotal: number }>;
+  preferences: Array<{ category: string; name: string; quantityPerDelivery: number }>;
+  addOns: Array<{ category: string; name: string; unitPrice: number; quantity: number; lineTotal: number }>;
+  membershipFee: number;
+  packageSubtotal: number;
   total: number;
 };
+
+export function calculateMembershipQuote(configuration: MembershipConfiguration, plan: (typeof membershipPlans)[number]) {
+  const selectedProducts = configuration.selectedProducts.map((selected) => {
+    const category = catalogueCategories.find((item) => item.name === selected.category);
+    const product = category?.products.find((item) => item.name === selected.name);
+    const unitPrice = product?.price ?? 0;
+    const annualQuantity = selected.quantity * plan.deliveryDaysPerYear;
+    return { category: selected.category, name: selected.name, unitPrice, quantityPerDelivery: selected.quantity, annualQuantity, lineTotal: unitPrice * annualQuantity };
+  });
+  const selectedAddOns = configuration.selectedAddOns.flatMap((selected) => {
+    const addOn = beverageAddOns.find((item) => item.category === selected.category);
+    return addOn ? [{ category: selected.category, name: selected.name, unitPrice: addOn.price, quantity: selected.quantity, lineTotal: addOn.price * selected.quantity }] : [];
+  });
+  const prepaid = configuration.purchaseMode === "membership_with_package";
+  const membershipFee = plan.price;
+  const packageSubtotal = prepaid
+    ? selectedProducts.reduce((total, item) => total + item.lineTotal, 0) + selectedAddOns.reduce((total, item) => total + item.lineTotal, 0)
+    : 0;
+  const purchaseSnapshot: MembershipPurchaseSnapshot = {
+    version: 1,
+    purchaseMode: configuration.purchaseMode,
+    plan: { id: plan.id, slug: plan.slug, name: plan.name, validityMonths: plan.validityMonths, membershipFee },
+    delivery: {
+      area: configuration.deliveryArea,
+      preferredDay: configuration.preferredDay,
+      preferredTime: configuration.preferredTime,
+      deliveriesPerMonth: plan.deliveryDays,
+      deliveriesPerYear: plan.deliveryDaysPerYear,
+    },
+    products: prepaid ? selectedProducts : [],
+    preferences: prepaid ? [] : selectedProducts.map(({ category, name, quantityPerDelivery }) => ({ category, name, quantityPerDelivery })),
+    addOns: prepaid ? selectedAddOns : [],
+    membershipFee,
+    packageSubtotal,
+    total: membershipFee + packageSubtotal,
+  };
+  return { membershipFee, selectedProducts, selectedAddOns, packageSubtotal, total: membershipFee + packageSubtotal, purchaseSnapshot };
+}
 
 export function validateMembershipConfiguration(configuration: MembershipConfiguration) {
   const plan = membershipPlans.find((item) => item.slug === configuration.planSlug);
@@ -106,7 +167,6 @@ export function validateMembershipConfiguration(configuration: MembershipConfigu
   }
 
   const allowed = new Map<string, (typeof beverageAddOns)[number]>(beverageAddOns.map((addOn) => [addOn.category, addOn]));
-  let addOnTotal = 0;
   for (const selected of configuration.selectedAddOns) {
     const addOn = allowed.get(selected.category);
     if (!addOn || !(plan.allowedBeverageCategories as readonly string[]).includes(selected.category) || !addOn.options.includes(selected.name as never)) {
@@ -115,27 +175,44 @@ export function validateMembershipConfiguration(configuration: MembershipConfigu
     if (!configuration.alcoholEnabled || selected.quantity === 0) {
       return { ok: false as const, error: "Alcohol selections require the beverage option to be enabled." };
     }
-    addOnTotal += addOn.price * selected.quantity;
   }
 
+  const selectedProductKeys = new Set<string>();
   for (const selected of configuration.selectedProducts) {
     const category = catalogueCategories.find((item) => item.name === selected.category);
     const product = category?.products.find((item) => item.name === selected.name);
     if (!category || !product) {
       return { ok: false as const, error: "One or more catalogue selections are no longer available." };
     }
+    const key = `${selected.category}:${selected.name}`;
+    if (selectedProductKeys.has(key)) return { ok: false as const, error: "A catalogue product was selected more than once." };
+    selectedProductKeys.add(key);
     if (category.group === "alcohol" && !configuration.alcoholEnabled) {
       return { ok: false as const, error: "Enable alcohol options before selecting alcoholic products." };
     }
     if (category.group === "alcohol" && !alcoholSalesEnabled) {
       return { ok: false as const, error: "Alcohol options are not currently available." };
     }
-    addOnTotal += product.price * selected.quantity;
+    if (category.group === "alcohol") {
+      const planCategory = catalogueAlcoholPlanCategory[category.name] ?? category.name.toLowerCase().replace(/[^a-z]+/g, "-").replace(/^-|-$/g, "");
+      if (!(plan.allowedBeverageCategories as readonly string[]).includes(planCategory)) {
+        return { ok: false as const, error: "One or more beverage selections are not included in this membership plan." };
+      }
+    }
   }
 
-  if (configuration.alcoholEnabled && !configuration.selectedAddOns.length && !configuration.selectedProducts.some((selected) => catalogueCategories.find((category) => category.name === selected.category)?.group === "alcohol")) {
-    return { ok: false as const, error: "Choose a beverage add-on or turn alcohol options off." };
+  if (configuration.purchaseMode === "membership_with_package" && !configuration.selectedProducts.length && !configuration.selectedAddOns.length) {
+    return { ok: false as const, error: "Select at least one product for your prepaid annual package, or choose membership only." };
   }
 
-  return { ok: true as const, plan, addOnTotal, total: plan.price + addOnTotal };
+  const quote = calculateMembershipQuote(configuration, plan);
+  return {
+    ok: true as const,
+    plan,
+    addOnTotal: quote.packageSubtotal,
+    packageSubtotal: quote.packageSubtotal,
+    membershipFee: quote.membershipFee,
+    total: quote.total,
+    purchaseSnapshot: quote.purchaseSnapshot,
+  };
 }

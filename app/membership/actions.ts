@@ -84,6 +84,7 @@ export async function submitMembershipApplication(raw: unknown): Promise<Members
           },
         },
         configuration: data.configuration,
+        purchaseSnapshot: checked.purchaseSnapshot,
         notes: data.notes || null,
         allergies: data.allergies || null,
       });

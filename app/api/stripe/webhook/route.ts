@@ -2,9 +2,7 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { db } from "@/lib/db";
-import { membershipRequests } from "@/lib/db/schema";
-import { activateMembershipRequest } from "@/lib/membership-activation";
-import { eq } from "drizzle-orm";
+import { recordMembershipPayment } from "@/lib/membership-activation";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -26,15 +24,19 @@ export async function POST(request: Request) {
 
   if (event.type === "payment_intent.succeeded") {
     const paymentIntent = event.data.object as Stripe.PaymentIntent;
-    if (paymentIntent.metadata.payment_type !== "MEMBERSHIP_FEE") return NextResponse.json({ ok: true });
+    if (paymentIntent.metadata.payment_type !== "MEMBERSHIP_PURCHASE") return NextResponse.json({ ok: true });
     const membershipId = paymentIntent.metadata.membership_id;
     const customerId = typeof paymentIntent.customer === "string" ? paymentIntent.customer : null;
     if (!membershipId || !customerId || paymentIntent.currency !== "thb") return NextResponse.json({ ok: true });
-    const membership = (await db.select().from(membershipRequests).where(eq(membershipRequests.id, membershipId)).limit(1))[0];
-    if (!membership || membership.stripeCustomerId !== customerId || paymentIntent.amount !== membership.estimatedTotal * 100) return NextResponse.json({ ok: true });
-    if (membership.status === "active") return NextResponse.json({ ok: true });
-    await db.update(membershipRequests).set({ stripePaymentIntentId: paymentIntent.id }).where(eq(membershipRequests.id, membershipId));
-    await activateMembershipRequest({ id: membershipId, method: "STRIPE_PAYMENT", actor: "stripe-webhook" });
+    const membership = await recordMembershipPayment({
+      id: membershipId,
+      stripeCustomerId: customerId,
+      paymentIntentId: paymentIntent.id,
+      amount: paymentIntent.amount,
+      currency: paymentIntent.currency,
+      purchaseMode: paymentIntent.metadata.purchase_mode ?? "",
+    });
+    if (!membership) console.warn("[stripe webhook] Membership payment did not match a pending purchase", paymentIntent.id);
   }
 
   return NextResponse.json({ ok: true });

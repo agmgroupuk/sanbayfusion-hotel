@@ -6,6 +6,7 @@ import { getCurrentAccount } from "@/lib/auth";
 import { membershipPlans } from "@/lib/membership-plans";
 import { readMembershipCheckoutSelection } from "@/lib/membership-checkout";
 import { stripePublishableKey } from "@/lib/stripe";
+import { validateMembershipConfiguration } from "@/lib/membership-request";
 
 export const metadata: Metadata = {
   title: "Membership Checkout",
@@ -22,6 +23,8 @@ export default async function MembershipCheckoutPage() {
 
   const plan = membershipPlans.find((item) => item.slug === selection.planSlug);
   if (!plan) redirect("/plans");
+  const checked = validateMembershipConfiguration(selection.configuration);
+  if (!checked.ok) redirect(`/plans/${plan.slug}`);
 
   return (
     <>
@@ -33,7 +36,7 @@ export default async function MembershipCheckoutPage() {
       <MembershipCheckoutForm
         plan={plan}
         account={{ fullName: account.fullName ?? "", email: account.email, phone: account.phone ?? "" }}
-        configuration={selection.configuration ?? {}}
+        purchaseSnapshot={checked.purchaseSnapshot}
         publishableKey={stripePublishableKey}
       />
     </>

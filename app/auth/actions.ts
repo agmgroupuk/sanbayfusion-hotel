@@ -7,6 +7,7 @@ import { consumePasswordResetToken, createCustomerSession, createPasswordResetTo
 import { db } from "@/lib/db";
 import { customerAccounts, passwordResetTokens } from "@/lib/db/schema";
 import { sendPasswordResetEmail } from "@/lib/email/account";
+import { isMembershipAdmin } from "@/lib/membership-admin";
 
 const passwordSchema = z.string().min(10, "Use at least 10 characters").regex(/[a-z]/, "Include a lowercase letter").regex(/[A-Z]/, "Include an uppercase letter").regex(/[0-9]/, "Include a number");
 const phoneSchema = z.string().trim().regex(/^(?:\+66|0)[0-9\s().-]{8,18}$/, "Enter a valid Thailand mobile number");
@@ -30,6 +31,7 @@ export async function signUp(formData: FormData): Promise<AuthResult> {
   const next = getSafeRedirectPath(formData.get("next"));
   const parsed = z.object({ fullName: z.string().min(2, "Enter your full name").max(120), email: z.string().email("Enter a valid email address").max(200), phone: phoneSchema, password: passwordSchema }).safeParse({ fullName, email, phone, password });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Please check your details." };
+  if (isMembershipAdmin(email)) return { ok: false, error: "Staff accounts cannot be created through customer registration." };
   if (password !== confirmation) return { ok: false, error: "Passwords do not match." };
   if (formData.get("agreements") !== "on") return { ok: false, error: "Please accept the Terms & Conditions and Privacy Policy." };
   const existing = await db.select({ id: customerAccounts.id }).from(customerAccounts).where(eq(customerAccounts.email, email)).limit(1);

@@ -153,6 +153,7 @@ export const membershipRequests = pgTable(
     address: jsonb("address").notNull(),
     contactPreferences: jsonb("contact_preferences").notNull(),
     configuration: jsonb("configuration").notNull(),
+    purchaseSnapshot: jsonb("purchase_snapshot"),
     invoiceNumber: varchar("invoice_number", { length: 40 }),
     invoiceIssuedAt: timestamp("invoice_issued_at", { withTimezone: true }),
     paymentDueAt: timestamp("payment_due_at", { withTimezone: true }),
