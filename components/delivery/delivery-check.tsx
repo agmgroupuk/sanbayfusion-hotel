@@ -47,7 +47,7 @@ export function DeliveryCheck() {
       const map = new api.maps.Map(mapRef.current, { center: { lat: 13.7563, lng: 100.5018 }, zoom: 11, mapTypeControl: false, streetViewControl: false });
       mapInstanceRef.current = map;
       deliveryZones.filter((zone) => zone.active).forEach((zone) => zone.polygons.forEach((polygon) => new api.maps.Polygon({ map, paths: polygon.map((point) => ({ lat: point.latitude, lng: point.longitude })), strokeColor: "#c9a86a", fillColor: "#c9a86a", fillOpacity: 0.16 })));
-      const autocomplete = new api.maps.places.Autocomplete(inputRef.current, { componentRestrictions: { country: ["th"] }, fields: ["place_id", "formatted_address", "geometry", "address_components"] });
+      const autocomplete = new api.maps.places.Autocomplete(inputRef.current, { fields: ["place_id", "formatted_address", "geometry", "address_components"] });
       autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace();
         const location = place.geometry?.location;

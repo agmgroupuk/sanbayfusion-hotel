@@ -48,7 +48,33 @@ export type DeliveryAvailability = {
   reasonCode?: "NO_ACTIVE_ZONE" | "BLOCKED_LOCATION" | "OUTSIDE_COVERAGE" | "PLAN_RESTRICTION" | "COVERED";
 };
 
+const normalizeAdministrativeName = (value: string) => value.trim().toLocaleLowerCase().replace(/[\s\p{P}\p{S}]+/gu, "");
+const bangkokProvinceNames = new Set(["bangkok", "bangkokprovince", "bangkokmetropolis", "krungthepmahanakhon", "กรุงเทพมหานคร", "กรุงเทพ"]);
+
+export function isBangkokProvince(value: string | null | undefined) {
+  return typeof value === "string" && bangkokProvinceNames.has(normalizeAdministrativeName(value));
+}
+
 export const deliveryZones: DeliveryZone[] = [
+  {
+    id: "bangkok",
+    code: "BKK",
+    title: "Bangkok delivery area",
+    summary: "Delivery is currently available throughout Bangkok province.",
+    coverage: "All districts within Bangkok province.",
+    conditions: ["Scheduled delivery windows", "Eligible memberships only", "Address access and delivery instructions required"],
+    deliveryRange: "Confirmed against the selected address",
+    additionalCharge: "Included with eligible memberships",
+    active: true,
+    province: "Bangkok",
+    districts: [],
+    subdistricts: [],
+    postalCodes: [],
+    polygons: [],
+    blockedPolygons: [],
+    deliveryFee: 0,
+    estimatedDeliveryWindow: "Confirmed after address selection",
+  },
   {
     id: "central",
     code: "ZONE_A",
@@ -120,15 +146,24 @@ function polygonContains(point: Coordinate, polygons: Coordinate[][]) {
 }
 
 function zoneMatchesAdministrativeData(zone: DeliveryZone, place: DeliveryEligibilityRequest) {
-  const provinceMatches = !zone.province || !place.province || zone.province === place.province;
+  const provinceMatches = !zone.province || (Boolean(place.province) && (
+    (isBangkokProvince(zone.province) && isBangkokProvince(place.province))
+    || normalizeAdministrativeName(zone.province) === normalizeAdministrativeName(place.province!)
+  ));
+  if (!provinceMatches) return false;
+  const hasAdministrativeRestrictions = zone.districts.length > 0 || zone.subdistricts.length > 0 || zone.postalCodes.length > 0;
+  if (!hasAdministrativeRestrictions) return Boolean(zone.province);
   const districtMatches = zone.districts.length > 0 && !!place.district && zone.districts.includes(place.district);
   const subdistrictMatches = zone.subdistricts.length > 0 && !!place.subdistrict && zone.subdistricts.includes(place.subdistrict);
   const postalMatches = zone.postalCodes.length > 0 && !!place.postalCode && zone.postalCodes.includes(place.postalCode);
-  return provinceMatches && (districtMatches || subdistrictMatches || postalMatches);
+  return districtMatches || subdistrictMatches || postalMatches;
 }
 
 export function checkDeliveryEligibility(request: DeliveryEligibilityRequest, selectedPlanLevel?: string): DeliveryAvailability {
   const activeZones = deliveryZones.filter((zone) => zone.active);
+  if (request.province && !isBangkokProvince(request.province)) {
+    return { status: "unavailable", title: "Delivery unavailable outside Bangkok", detail: "Sanbay Fusion currently delivers only within Bangkok. Your selected address is outside the delivery area.", planEligible: false, reasonCode: "OUTSIDE_COVERAGE" };
+  }
   const hasCoordinates = typeof request.latitude === "number" && typeof request.longitude === "number";
   const blockedZone = hasCoordinates ? activeZones.find((zone) => polygonContains(request as Required<Pick<DeliveryPlace, "latitude" | "longitude">>, zone.blockedPolygons)) : undefined;
   if (blockedZone) return { status: "unavailable", title: "Currently outside our delivery area", detail: "This location is explicitly excluded from the configured delivery coverage.", zone: blockedZone.title, zoneId: blockedZone.id, planEligible: false, reasonCode: "BLOCKED_LOCATION" };

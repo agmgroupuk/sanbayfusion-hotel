@@ -21,7 +21,7 @@ function PaymentStep({ clientSecret, purchaseSnapshot, onMessage }: { clientSecr
   const elements = useElements();
   const [pending, setPending] = useState(false);
   async function pay() {
-    if (!stripe || !elements || pending) return;
+    if (!clientSecret || !stripe || !elements || pending) return;
     setPending(true);
     const result = await stripe.confirmPayment({ elements, confirmParams: { return_url: `${window.location.origin}/membership/thank-you` }, redirect: "if_required" });
     if (result.error) {
@@ -56,9 +56,16 @@ export function MembershipCheckoutForm({ plan, account, purchaseSnapshot, publis
     event.preventDefault();
     if (!terms) { setMessage("Please confirm your details and accept the membership terms before payment."); return; }
     setMessage("Preparing secure payment...");
-    const response = await fetch("/api/membership/payment-intent", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ customer: { fullName, phone }, billingAddress: billing, deliveryAddress: delivery, sameAsBilling, savePaymentMethod }) });
+    let response: Response;
+    try {
+      response = await fetch("/api/membership/payment-intent", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ customer: { fullName, phone }, billingAddress: billing, deliveryAddress: delivery, sameAsBilling, savePaymentMethod }) });
+    } catch {
+      setMessage("We couldn’t reach the secure payment service. Check your connection and try again.");
+      return;
+    }
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) { setMessage(payload.error ?? "Unable to start payment. Please review your details or try again."); return; }
+    if (typeof payload.clientSecret !== "string") { setMessage("The secure payment service did not return a payment session. Please try again or contact support."); return; }
     setClientSecret(payload.clientSecret);
     setMessage("Secure payment fields are ready.");
   }

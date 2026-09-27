@@ -5,6 +5,8 @@ import { z } from "zod";
 import { getCurrentAccount } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { customerAccounts, membershipRequests, stripeMembershipCatalog } from "@/lib/db/schema";
+import { isBangkokProvince } from "@/lib/delivery";
+import { geocodeGoogleAddress } from "@/lib/google-geocoding";
 import { membershipPlans } from "@/lib/membership-plans";
 import { readMembershipCheckoutSelection } from "@/lib/membership-checkout";
 import { validateMembershipConfiguration } from "@/lib/membership-request";
@@ -50,14 +52,33 @@ export async function POST(request: Request) {
   const input = parsedInput.data;
   const deliveryAddress = input.sameAsBilling ? input.billingAddress : addressSchema.safeParse(input.deliveryAddress).data;
   if (!deliveryAddress) return NextResponse.json({ error: "Complete your delivery address before payment." }, { status: 400 });
+  let verifiedProvince = deliveryAddress.province;
+  if (process.env.GOOGLE_MAPS_SERVER_API_KEY) {
+    try {
+      const address = [deliveryAddress.line1, deliveryAddress.line2, deliveryAddress.subdistrict, deliveryAddress.district, deliveryAddress.province, deliveryAddress.postalCode, deliveryAddress.country].filter(Boolean).join(", ");
+      const geocoded = await geocodeGoogleAddress({ address });
+      if (!geocoded.ok) return NextResponse.json({ error: "We couldn't verify the delivery address. Check it and try again." }, { status: 400 });
+      verifiedProvince = geocoded.place.province ?? "";
+    } catch (error) {
+      console.error("[membership payment-intent] Delivery address verification failed", error);
+      return NextResponse.json({ error: "Delivery address verification is temporarily unavailable. Please try again." }, { status: 503 });
+    }
+  }
+  if (!isBangkokProvince(verifiedProvince)) {
+    return NextResponse.json({ error: "Membership delivery is currently available only within Bangkok." }, { status: 400 });
+  }
 
   const checked = validateMembershipConfiguration(selection.configuration);
   if (!checked.ok) return NextResponse.json({ error: checked.error }, { status: 400 });
   const { total, membershipFee, packageSubtotal, purchaseSnapshot } = checked;
   const snapshotHash = createHash("sha256").update(JSON.stringify(purchaseSnapshot)).digest("hex");
 
-  if (!db || !stripe) {
-    console.error("[membership payment-intent] Stripe is not configured: missing STRIPE_SECRET_KEY or environment settings.");
+  if (!db) {
+    console.error("[membership payment-intent] Database is not configured: missing DATABASE_URL.");
+    return NextResponse.json({ error: "Membership checkout is unavailable because the account database is not configured." }, { status: 503 });
+  }
+  if (!stripe) {
+    console.error("[membership payment-intent] Stripe Sandbox is not configured: expected an sk_test_ secret key.");
     return NextResponse.json({ error: "Stripe Sandbox credentials are not configured for this environment. Add STRIPE_SECRET_KEY and NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY before checkout can run." }, { status: 503 });
   }
 
@@ -96,10 +117,11 @@ export async function POST(request: Request) {
     if (!membership) {
       membership = (await db.select().from(membershipRequests).where(eq(membershipRequests.email, account.email)).orderBy(desc(membershipRequests.createdAt)).limit(1))[0];
     }
-    if (membership?.status === "active" || membership?.status === "payment_received") {
+    if (membership?.status === "active" || membership?.status === "payment_received" || membership?.invoiceStatus === "paid") {
       return NextResponse.json({ error: "A paid membership request already exists for this account. Check your dashboard for its status." }, { status: 409 });
     }
-    if (membership?.status !== undefined && membership.status !== "payment_pending") {
+    const reusableLegacyDraft = membership?.status === "pending_review" && !membership.stripePaymentIntentId;
+    if (membership?.status !== undefined && membership.status !== "payment_pending" && !reusableLegacyDraft) {
       return NextResponse.json({ error: "A membership request is already under review for this account." }, { status: 409 });
     }
 

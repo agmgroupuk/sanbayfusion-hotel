@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function DeliveryAreaCheckPage() {
-  return <div className="pb-28"><PageHeader eyebrow="Delivery checker" title="Check Delivery Availability" lead="Enter your delivery address to see whether Sanbay Fusion currently delivers to your area." /><div className="mx-auto max-w-7xl px-5 sm:px-8"><DeliveryCheck /></div></div>;
+  return <div className="pb-28"><PageHeader eyebrow="Delivery checker" title="Check Delivery Availability" lead="Search any address worldwide. Sanbay Fusion currently delivers throughout Bangkok only." /><div className="mx-auto max-w-7xl px-5 sm:px-8"><DeliveryCheck /></div></div>;
 }

@@ -1,6 +1,8 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { isBangkokProvince } from "@/lib/delivery";
+import { geocodeGoogleAddress } from "@/lib/google-geocoding";
 import { membershipRequests } from "@/lib/db/schema";
 import { sendMembershipRequestEmails } from "@/lib/email/membership-request";
 import {
@@ -24,6 +26,19 @@ export async function submitMembershipApplication(raw: unknown): Promise<Members
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Please check your request details." };
 
   const data: MembershipApplicationInput = parsed.data;
+  let verifiedProvince = data.province;
+  if (process.env.GOOGLE_MAPS_SERVER_API_KEY) {
+    try {
+      const address = [data.addressLine1, data.addressLine2, data.subdistrict, data.district, data.province, data.postalCode, data.country].filter(Boolean).join(", ");
+      const geocoded = await geocodeGoogleAddress({ address });
+      if (!geocoded.ok) return { ok: false, error: "We couldn't verify the delivery address. Check it and try again." };
+      verifiedProvince = geocoded.place.province ?? "";
+    } catch (error) {
+      console.error("[membership] Delivery address verification failed", error);
+      return { ok: false, error: "Delivery address verification is temporarily unavailable. Please try again." };
+    }
+  }
+  if (!isBangkokProvince(verifiedProvince)) return { ok: false, error: "Membership delivery is currently available only within Bangkok." };
   const checked = validateMembershipConfiguration(data.configuration);
   if (!checked.ok) return checked;
 

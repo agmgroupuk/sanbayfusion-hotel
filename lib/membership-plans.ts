@@ -33,7 +33,7 @@ export type MembershipPlan = {
   featured?: boolean;
 };
 
-export const membershipDeliveryAreas = ["Bangkok central", "Greater Bangkok", "Selected nearby districts"] as const;
+export const membershipDeliveryAreas = ["Bangkok"] as const;
 export const membershipPreferredDays = ["Monday", "Wednesday", "Friday", "Saturday", "Sunday"] as const;
 export const membershipPreferredTimes = ["09:00–12:00", "12:00–15:00", "17:00–20:00"] as const;
 
