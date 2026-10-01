@@ -10,13 +10,16 @@ import {
   jsonb,
   index,
   uniqueIndex,
+  boolean,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export const customerAccounts = pgTable(
   "customer_accounts",
   {
     id: uuid("id").defaultRandom().primaryKey(),
     fullName: varchar("full_name", { length: 120 }),
+    displayName: varchar("display_name", { length: 80 }),
     email: varchar("email", { length: 200 }).notNull(),
     phone: varchar("phone", { length: 40 }),
     stripeCustomerId: varchar("stripe_customer_id", { length: 120 }),
@@ -26,6 +29,42 @@ export const customerAccounts = pgTable(
   },
   (t) => [uniqueIndex("customer_accounts_email_idx").on(t.email)],
 );
+
+export const accountAddresses = pgTable("account_addresses", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  accountId: uuid("account_id").notNull().references(() => customerAccounts.id, { onDelete: "cascade" }),
+  kind: varchar("kind", { length: 12 }).notNull(),
+  details: jsonb("details").notNull(),
+  isDefault: boolean("is_default").notNull().default(false),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("account_addresses_owner_idx").on(t.accountId), uniqueIndex("account_addresses_default_idx").on(t.accountId, t.kind).where(sql`${t.isDefault} = true`)]);
+
+export const accountSecurity = pgTable("account_security", {
+  accountId: uuid("account_id").primaryKey().references(() => customerAccounts.id, { onDelete: "cascade" }),
+  totpSecret: text("totp_secret"),
+  enabledAt: timestamp("enabled_at", { withTimezone: true }),
+  pendingSecret: text("pending_secret"),
+  pendingExpiresAt: timestamp("pending_expires_at", { withTimezone: true }),
+  lastCounter: integer("last_counter").notNull().default(-1),
+  recoveryHashes: jsonb("recovery_hashes").$type<string[]>().notNull().default([]),
+});
+export const accountEmailChanges = pgTable("account_email_changes", {
+  accountId: uuid("account_id").primaryKey().references(() => customerAccounts.id, { onDelete: "cascade" }),
+  newEmail: varchar("new_email", { length: 200 }).notNull(),
+  tokenHash: varchar("token_hash", { length: 64 }).notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+});
+export const accountRateLimits = pgTable("account_rate_limits", {
+  key: varchar("key", { length: 128 }).primaryKey(),
+  attempts: integer("attempts").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+});
+export const accountAuditEvents = pgTable("account_audit_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  accountId: uuid("account_id").notNull().references(() => customerAccounts.id, { onDelete: "cascade" }),
+  event: varchar("event", { length: 80 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("account_audit_owner_idx").on(t.accountId)]);
 
 export const stripeMembershipCatalog = pgTable(
   "stripe_membership_catalog",

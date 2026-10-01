@@ -7,6 +7,9 @@ import { consumePasswordResetToken, createCustomerSession, createPasswordResetTo
 import { db } from "@/lib/db";
 import { customerAccounts, passwordResetTokens } from "@/lib/db/schema";
 import { sendPasswordResetEmail } from "@/lib/email/account";
+import { consumeSecondFactor, rateLimit } from "@/lib/account/security";
+import { AccountError } from "@/lib/account/types";
+import { customerSessions } from "@/lib/db/schema";
 import { isMembershipAdmin } from "@/lib/membership-admin";
 
 const passwordSchema = z.string().min(10, "Use at least 10 characters").regex(/[a-z]/, "Include a lowercase letter").regex(/[A-Z]/, "Include an uppercase letter").regex(/[0-9]/, "Include a number");
@@ -51,8 +54,12 @@ export async function signIn(formData: FormData): Promise<AuthResult> {
   const password = String(formData.get("password") ?? "");
   const next = getSafeRedirectPath(formData.get("next"));
   if (!z.string().email().safeParse(email).success || !password) return { ok: false, error: "Email or password is incorrect." };
+  try { await rateLimit("signin", email); } catch (error) { return { ok: false, error: error instanceof AccountError ? error.message : "Sign-in is temporarily unavailable." }; }
   const result = await db.select().from(customerAccounts).where(eq(customerAccounts.email, email)).limit(1);
   if (!result[0] || !(await verifyPassword(password, result[0].passwordHash))) return { ok: false, error: "Email or password is incorrect." };
+  try {
+    if (!await consumeSecondFactor(result[0].id, String(formData.get("code") ?? ""))) return { ok: false, error: "Enter a valid authenticator code or unused recovery code." };
+  } catch { return { ok: false, error: "Authentication is temporarily unavailable. Please try again." }; }
   await createCustomerSession(result[0].id);
   redirect(next);
 }
@@ -89,11 +96,13 @@ export async function resetPassword(formData: FormData): Promise<AuthResult> {
   if (!reset) return { ok: false, error: "This reset link is invalid or has expired." };
   await db.transaction(async (tx) => {
     await tx.update(customerAccounts).set({ passwordHash: await hashPassword(password), updatedAt: new Date() }).where(eq(customerAccounts.id, reset.accountId));
+    await tx.delete(customerSessions).where(eq(customerSessions.accountId, reset.accountId));
     await tx.update(passwordResetTokens).set({ usedAt: new Date() }).where(and(eq(passwordResetTokens.id, reset.id), eq(passwordResetTokens.accountId, reset.accountId)));
   });
   redirect("/signin?reset=complete");
 }
 
 export async function currentCustomer() {
-  return getCurrentAccount();
+  const account = await getCurrentAccount();
+  return account ? { fullName: account.fullName, displayName: account.displayName, email: account.email, phone: account.phone } : null;
 }

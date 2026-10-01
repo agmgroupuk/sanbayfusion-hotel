@@ -1,37 +1,14 @@
-export const dynamic = "force-dynamic";
-import { resolveMembershipStatus } from "@/lib/membership-status";
-import { hasActiveMembership, membershipDate } from "@/lib/membership-term";
-import type { Metadata } from "next";
+﻿import Link from "next/link";
 import { redirect } from "next/navigation";
-import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
-import { CustomerDashboard } from "@/components/dashboard/customer-dashboard";
 import { getCurrentAccount } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { customerOrders, membershipDeliveryEntitlements, membershipRequests, type MembershipDeliveryEntitlement } from "@/lib/db/schema";
-import { ensureMembershipDeliverySchedule } from "@/lib/membership-activation";
-
-export const metadata: Metadata = { title: "Member Dashboard", description: "Your Sanbay Fusion membership overview.", robots: { index: false, follow: false } };
-
+import { accountMemberships, addresses, listCards, accountPayments } from "@/lib/account/service";
+import { hasActiveMembership, membershipHasExpired } from "@/lib/membership-term";
+export const dynamic = "force-dynamic";
+const box = "space-y-4 rounded-sm border border-border/60 bg-card/40 p-6";
 export default async function DashboardPage() {
-  const account = await getCurrentAccount();
-  if (!account) redirect("/signin?next=/dashboard");
-  const membership = await resolveMembershipStatus(db ? (await db.select().from(membershipRequests).where(sql`lower(${membershipRequests.email}) = ${account.email}`).orderBy(desc(membershipRequests.createdAt)).limit(1))[0] ?? null : null);
-  const orders = db ? (await db.select().from(customerOrders).where(eq(customerOrders.accountId, account.id)).orderBy(desc(customerOrders.createdAt)).limit(5)) : [];
-  const today = membershipDate();
-  let deliveryEntitlements: MembershipDeliveryEntitlement[] = [];
-  if (db && membership && hasActiveMembership(membership)) {
-    try {
-      await ensureMembershipDeliverySchedule(membership);
-      deliveryEntitlements = await db.select().from(membershipDeliveryEntitlements)
-        .where(and(
-          eq(membershipDeliveryEntitlements.membershipRequestId, membership.id),
-          lte(membershipDeliveryEntitlements.cycleStartDate, today),
-          gte(membershipDeliveryEntitlements.cycleEndDate, today),
-        ))
-        .orderBy(asc(membershipDeliveryEntitlements.sequence));
-    } catch (error) {
-      console.error("[dashboard] Delivery ledger unavailable; apply the latest database migration.", error);
-    }
-  }
-  return <CustomerDashboard account={account} membership={membership} orders={orders} deliveryEntitlements={deliveryEntitlements} />;
+ const account = await getCurrentAccount(); if (!account) redirect("/signin?next=%2Fdashboard");
+ const [memberships, savedAddresses, cards, payments] = await Promise.all([accountMemberships(account.id), addresses(account.id), listCards(account.id).catch(() => null), accountPayments(account.id)]);
+ const membership = memberships[0]; const active = hasActiveMembership(membership); const defaultCard = cards?.find(card => card.isDefault);
+ const status = !membership ? "INACTIVE" : membershipHasExpired(membership) ? "EXPIRED" : active ? "ACTIVE" : ["declined", "rejected", "cancelled"].includes(membership.status) ? "INACTIVE" : "PENDING";
+ return <div className="space-y-7"><div><h2 className="font-display text-3xl">Account overview</h2><p className="mt-3 text-sm text-muted-foreground">Your details, saved payment methods, and membership in one place.</p></div><div className="grid gap-5 md:grid-cols-2"><section className={box}><p className="text-eyebrow text-gold">Your account</p><h3 className="text-xl">{account.fullName || "Customer"}</h3><p className="break-all text-sm">{account.email}</p><p className="text-sm text-muted-foreground">Account status: Active · Signed in</p><Link href="/dashboard/personal" className="inline-block text-sm text-gold underline">Manage personal information</Link></section><section className={box}><p className="text-eyebrow text-gold">Membership · {status}</p><h3 className="text-xl">{membership?.planName ?? "No active membership"}</h3><dl className="grid gap-3 text-sm"><div>Member ID: {membership?.memberId ?? "Not issued"}</div><div>Activation date: {membership?.membershipStartDate ?? "Not activated"}</div><div>Expiry date: {membership?.membershipExpiryDate ?? "Not activated"}</div></dl><Link href="/dashboard/membership" className="inline-block text-sm text-gold underline">View membership</Link>{active && <Link href="/dashboard/order" className="ml-5 inline-block text-sm text-gold underline">Place order</Link>}</section><section className={box}><p className="text-eyebrow text-gold">Default payment method</p><p className="capitalize">{cards === null ? "Payment methods temporarily unavailable" : defaultCard ? `${defaultCard.brand} ending ${defaultCard.last4}` : "No default card saved"}</p>{defaultCard && <p className="text-sm text-muted-foreground">Expires {defaultCard.expMonth}/{defaultCard.expYear}</p>}<Link href="/dashboard/payment-methods" className="inline-block text-sm text-gold underline">Manage payment methods</Link></section><section className={box}><p className="text-eyebrow text-gold">Security</p><h3 className="text-xl">Keep your account protected</h3><p className="text-sm text-muted-foreground">Manage your password and authenticator-app verification.</p><Link href="/dashboard/security" className="inline-block text-sm text-gold underline">Manage security</Link></section>{(["billing", "delivery"] as const).map(kind => { const address = savedAddresses.find(row => row.kind === kind && row.isDefault); return <section key={kind} className={box}><p className="text-eyebrow text-gold">Default {kind} address</p><p className="break-words text-sm">{address ? [address.details.name, address.details.line1, address.details.city || address.details.district, address.details.state || address.details.province, address.details.postalCode, address.details.country].filter(Boolean).join(", ") : `No ${kind} address saved`}</p><Link href="/dashboard/addresses" className="inline-block text-sm text-gold underline">Manage addresses</Link></section>; })}</div><section className={box}><div className="flex flex-wrap justify-between gap-3"><h3 className="text-xl">Recent invoices / payments</h3><Link href="/dashboard/payments" className="text-sm text-gold underline">View all</Link></div>{!payments.length ? <p className="text-sm text-muted-foreground">No payment records yet.</p> : payments.slice(0, 3).map(payment => <div key={payment.reference} className="flex flex-wrap justify-between gap-3 border-t border-border/50 pt-3 text-sm"><span>{payment.description}<small className="mt-1 block text-muted-foreground">{payment.reference}</small></span><span>{payment.currency} {payment.amount.toLocaleString("en-US")} · {payment.status.replaceAll("_", " ").toUpperCase()}</span></div>)}</section></div>;
 }
