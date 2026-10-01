@@ -11,18 +11,12 @@ import { consumeSecondFactor, rateLimit } from "@/lib/account/security";
 import { AccountError } from "@/lib/account/types";
 import { customerSessions } from "@/lib/db/schema";
 import { isMembershipAdmin } from "@/lib/membership-admin";
+import { getSafeRedirectPath } from "@/lib/auth-redirect";
 
 const passwordSchema = z.string().min(10, "Use at least 10 characters").regex(/[a-z]/, "Include a lowercase letter").regex(/[A-Z]/, "Include an uppercase letter").regex(/[0-9]/, "Include a number");
 const phoneSchema = z.string().trim().regex(/^(?:\+66|0)[0-9\s().-]{8,18}$/, "Enter a valid Thailand mobile number");
 
 export type AuthResult = { ok: true; message?: string } | { ok: false; error: string };
-
-function getSafeRedirectPath(value: FormDataEntryValue | null | undefined) {
-  const raw = String(value ?? "").trim();
-  if (!raw) return "/dashboard";
-  if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\")) return "/dashboard";
-  return raw;
-}
 
 export async function signUp(formData: FormData): Promise<AuthResult> {
   if (!db) return { ok: false, error: "Account services are not configured yet. Please try again later." };

@@ -55,10 +55,25 @@ try {
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     await page.screenshot({ path: `.next/verification/service-months-${viewport.width}.png`, fullPage: true });
     const saved = page.waitForResponse(response => response.url().endsWith("/api/membership/checkout-selection") && response.request().method() === "POST");
+    const applicationRequests = [];
+    const trackApplication = request => {
+      if (["/membership/checkout", "/api/membership/application"].includes(new URL(request.url()).pathname)) applicationRequests.push(request.url());
+    };
+    page.on("request", trackApplication);
     await proceed.click();
-    assert.equal((await saved).status(), 200);
+    const savedResponse = await saved;
+    assert.equal(savedResponse.status(), 200);
     await page.waitForURL(/\/signin/);
+    assert.equal(new URL(page.url()).searchParams.get("next"), "/membership/checkout");
+    assert.deepEqual(applicationRequests, [], "Guests must sign in before opening or creating an application");
+    page.off("request", trackApplication);
     assert.ok((await page.context().cookies()).find(cookie => cookie.name === "sbf_membership_checkout")?.httpOnly);
+    await page.getByRole("link", { name: "CREATE ACCOUNT", exact: true }).click();
+    await page.waitForURL(/\/signup/);
+    assert.equal(new URL(page.url()).searchParams.get("next"), "/membership/checkout");
+    const stored = await page.evaluate(() => JSON.parse(sessionStorage.getItem("sbf-membership-configuration")));
+    assert.deepEqual(stored.selectedServiceMonths, [`${nextYear}-02`, `${nextYear}-07`, `${nextYear}-11`]);
+    assert.equal(stored.selectedProducts[0].quantity, 4);
   }
   await page.goto(`${origin}/plans/12-month-membership`);
   await page.waitForLoadState("networkidle");
@@ -86,7 +101,7 @@ try {
   assert.ok(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth));
   await page.screenshot({ path: ".next/verification/service-plan-modal-mobile.png", fullPage: true });
   assert.deepEqual(errors, []);
-  console.log(process.argv.includes("--active-only") ? "Verified active-member notice, information dialog, unavailable purchase actions and mobile modal layout." : "Verified all 12 plan dialogs, exact non-consecutive selections, all-12 selection, unchanged prepaid arithmetic, saved checkout redirect, active-member blocking, keyboard dismissal and desktop/tablet/mobile layouts.");
+  console.log(process.argv.includes("--active-only") ? "Verified active-member notice, information dialog, unavailable purchase actions and mobile modal layout." : "Verified all 12 plan dialogs, exact non-consecutive selections, all-12 selection, unchanged prepaid arithmetic, guest sign-in before application requests, sign-up return path and cart preservation, active-member blocking, keyboard dismissal and desktop/tablet/mobile layouts.");
 } catch (error) {
   await page.screenshot({ path: ".next/verification/service-months-debug.png", fullPage: true });
   console.error("Page at failure:", page.url(), (await page.locator("body").innerText()).slice(0, 2400));

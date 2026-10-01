@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
+import { trustedPublicOrigins } from "./lib/request-origin";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: { allowedOrigins: trustedPublicOrigins().map(origin => new URL(origin).host) },
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [{ protocol: "https", hostname: "cdn.sanity.io" }],

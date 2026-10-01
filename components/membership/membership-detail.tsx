@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { catalogueCategories, type CatalogueCategory, type CatalogueProduct } from "@/lib/catalogue";
 import { alcoholSalesEnabled, beverageAddOns, membershipDeliveryAreas, membershipPreferredDays, membershipPreferredTimes, type MembershipPlan } from "@/lib/membership-plans";
 import { calculateMembershipQuote, type MembershipConfiguration, type MembershipPurchaseMode } from "@/lib/membership-request";
+import { membershipApplicationPath, membershipSignInPath } from "@/lib/auth-redirect";
 
 export const membershipConfigurationStorageKey = "sbf-membership-configuration";
 
@@ -37,9 +38,9 @@ export function MembershipDetail({ plan, activeMembership = false, today }: { pl
   const [selectedAddOns, setSelectedAddOns] = useState<SelectedProduct[]>([]);
 
   useEffect(() => {
-    const stored = window.sessionStorage.getItem(membershipConfigurationStorageKey);
-    if (!stored) return;
     try {
+      const stored = window.sessionStorage.getItem(membershipConfigurationStorageKey);
+      if (!stored) return;
       const configuration = JSON.parse(stored) as MembershipConfiguration;
       if (configuration.planSlug !== plan.slug) return;
       startTransition(() => {
@@ -64,7 +65,7 @@ export function MembershipDetail({ plan, activeMembership = false, today }: { pl
           : []);
       });
     } catch {
-      window.sessionStorage.removeItem(membershipConfigurationStorageKey);
+      try { window.sessionStorage.removeItem(membershipConfigurationStorageKey); } catch { /* Storage may be disabled. */ }
     }
   }, [plan.slug, plan.durationMonths, today]);
 
@@ -130,7 +131,7 @@ export function MembershipDetail({ plan, activeMembership = false, today }: { pl
     setSaving(true);
     const configuration: MembershipConfiguration = {
       planSlug: plan.slug,
-    selectedServiceMonths,
+      selectedServiceMonths,
       purchaseMode,
       foodPreferences: preferences,
       deliveryArea: area,
@@ -140,14 +141,14 @@ export function MembershipDetail({ plan, activeMembership = false, today }: { pl
       selectedAddOns,
       selectedProducts,
     };
-    window.sessionStorage.setItem(membershipConfigurationStorageKey, JSON.stringify(configuration));
+    // The server cookie preserves the cart even when browser storage is unavailable.
+    try { window.sessionStorage.setItem(membershipConfigurationStorageKey, JSON.stringify(configuration)); } catch { /* Storage may be disabled. */ }
     let response: Response;
     try {
       response = await fetch("/api/membership/checkout-selection", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planSlug: plan.slug,
-    selectedServiceMonths, configuration }),
+        body: JSON.stringify({ planSlug: plan.slug, configuration }),
       });
     } catch {
       setSaving(false);
@@ -161,7 +162,13 @@ export function MembershipDetail({ plan, activeMembership = false, today }: { pl
       toast.error(payload.error ?? "Unable to save your membership selection.");
       return;
     }
-    window.location.href = "/membership/checkout";
+    const payload = await response.json().catch(() => ({}));
+    if (payload.next !== membershipApplicationPath && payload.next !== membershipSignInPath) {
+      setSaving(false);
+      toast.error("Unable to continue. Please reload the page and try again.");
+      return;
+    }
+    window.location.href = payload.next;
   }
 
   function renderCategory(category: CatalogueCategory) {

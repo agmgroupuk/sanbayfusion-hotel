@@ -3,13 +3,14 @@ import { PageHeader } from "@/components/site/page-header";
 import { SignInForm } from "@/components/auth/auth-forms";
 import { getCurrentAccount } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { getSafeRedirectPath } from "@/lib/auth-redirect";
 
 export const metadata: Metadata = { title: "Welcome Back", description: "Sign in to manage your Sanbay Fusion membership.", robots: { index: false, follow: false } };
 
 export default async function SignInPage({ searchParams }: { searchParams: Promise<{ created?: string; reset?: string; next?: string }> }) {
-  if (await getCurrentAccount()) redirect("/dashboard");
   const params = await searchParams;
-  const next = params.next && params.next.startsWith("/") ? params.next : "/dashboard";
+  const next = getSafeRedirectPath(params.next);
+  if (await getCurrentAccount()) redirect(next);
   const notice = params.created === "1"
     ? "Your account is ready. Sign in to continue."
     : params.reset === "requested"

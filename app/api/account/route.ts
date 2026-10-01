@@ -5,10 +5,11 @@ import { db } from "@/lib/db";
 import { AccountError } from "@/lib/account/types";
 import { addCardSetup, completeCardSetup, changeCard, listCards, updateProfile, saveAddress, changeAddress, requestEmailChange, confirmEmailChange } from "@/lib/account/service";
 import { beginTwoFactor, enableTwoFactor, disableTwoFactor, changePassword, rateLimit, securityStatus } from "@/lib/account/security";
+import { hasValidRequestOrigin, originRejection } from "@/lib/request-origin";
 export async function POST(request: Request) {
   const account = await getCurrentAccount();
   if (!account || !db) return NextResponse.json({ error: "Please sign in to continue." }, { status: 401 });
-  if (request.headers.get("origin") && request.headers.get("origin") !== new URL(request.url).origin) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+  if (!hasValidRequestOrigin(request)) return NextResponse.json(originRejection, { status: 403 });
   try {
     await rateLimit("account-mutation", account.id, 100);
     const body = await request.json();

@@ -4,12 +4,12 @@ import { getCurrentAccount } from "@/lib/auth";
 import { readMembershipCheckoutSelection } from "@/lib/membership-checkout";
 import { ApplicationError, getRecoveryPayment, chargeApprovedApplication, getApplicationForAccount } from "@/lib/membership-application";
 import { prepareInvoiceApplication, submitInvoiceApplication, invoiceRecovery } from "@/lib/membership-invoice";
+import { hasValidRequestOrigin, originRejection } from "@/lib/request-origin";
 
 export async function POST(request: Request) {
   const account = await getCurrentAccount();
   if (!account) return NextResponse.json({ error: "Please sign in to continue." }, { status: 401 });
-  const origin = request.headers.get("origin");
-  if (origin && origin !== new URL(request.url).origin) return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
+  if (!hasValidRequestOrigin(request)) return NextResponse.json(originRejection, { status: 403 });
   try {
     const body = await request.json();
     if (body.action === "prepare") {
