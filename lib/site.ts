@@ -24,6 +24,7 @@ export const site = {
 export const navLinks = [
   { href: "/plans", label: "Membership Plans" },
   { href: "/how-it-works", label: "How It Works" },
+  { href: "/about", label: "About Us" },
   { href: "/catalogue", label: "Catalogue" },
   { href: "/events", label: "Private Events" },
   { href: "/delivery-areas", label: "Delivery Areas" },
