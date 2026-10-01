@@ -1,121 +1,56 @@
-export type PlanCategory = "food-only" | "food-drinks" | "family" | "executive" | "corporate";
-export type PlanLevel = "budget" | "standard" | "premium" | "vip";
-
-export type PackageItem = {
-  name: string;
-  quantity: number | string;
-  alcohol?: boolean;
-};
-
-export type PackageRowItem = [string, number | string, boolean?];
-
 export type MembershipPlan = {
   id: string;
   slug: string;
   name: string;
   description: string;
-  category: PlanCategory;
-  level: PlanLevel;
   price: number;
-  stripeProductId?: string | null;
-  stripePriceId?: string | null;
-  cadence: "annual";
-  validityMonths: 12;
-  deliveryDays: number;
-  deliveryDaysPerYear: number;
-  rhythm: string;
-  foodLevel: string;
-  foodValueRange: [number, number];
-  exampleMenu: string[];
+  durationMonths: number;
   allowedBeverageCategories: string[];
-  items: PackageItem[];
-  benefits: string[];
-  featured?: boolean;
 };
 
 export const membershipDeliveryAreas = ["Bangkok"] as const;
 export const membershipPreferredDays = ["Monday", "Wednesday", "Friday", "Saturday", "Sunday"] as const;
 export const membershipPreferredTimes = ["09:00–12:00", "12:00–15:00", "17:00–20:00"] as const;
 
-export function membershipPlanAllowsCatalogueCategory(plan: MembershipPlan, categoryName: string, group: string) {
+export function membershipPlanAllowsCatalogueCategory(plan: Pick<MembershipPlan, "allowedBeverageCategories">, categoryName: string, group: string) {
   if (group !== "alcohol") return true;
-  const planCategory = categoryName === "Champagne & sparkling wine"
-    ? "wine"
-    : categoryName.toLowerCase().replace(/[^a-z]+/g, "-").replace(/^-|-$/g, "");
-  return plan.allowedBeverageCategories.includes(planCategory);
+  const category = categoryName === "Champagne & sparkling wine" ? "wine" : categoryName.toLowerCase().replace(/[^a-z]+/g, "-").replace(/^-|-$/g, "");
+  return plan.allowedBeverageCategories.includes(category);
 }
 
-// Fixed package catalogue. Prices and contents remain editable data, not checkout logic.
-const rows: [string, string, string, PlanCategory, PlanLevel, number, number, PackageRowItem[], string[]][] = [
-  ["01", "starter", "Starter Membership", "food-only", "budget", 4000, 2, [["Thai starter food package", 1]], ["Every 2 weeks", "Standard delivery"]],
-  ["02", "essential", "Essential Membership", "food-only", "budget", 6000, 2, [["Essential food package", 1]], ["Every 2 weeks", "Standard delivery"]],
-  ["03", "bronze", "Bronze Membership", "food-only", "budget", 8000, 2, [["Bronze food package", 1]], ["Every 2 weeks", "Standard delivery"]],
-  ["04", "bronze-plus", "Bronze Plus", "food-only", "budget", 10000, 4, [["Bronze Plus food package", 1]], ["About 1/week", "Standard delivery"]],
-  ["05", "silver", "Silver Membership", "food-only", "standard", 12000, 4, [["Silver food package", 1]], ["About 1/week", "Standard delivery"]],
-  ["06", "silver-plus", "Silver Plus", "food-only", "standard", 14000, 4, [["Silver Plus food package", 1]], ["About 1/week", "Standard delivery"]],
-  ["07", "gold", "Gold Membership", "food-only", "standard", 16000, 4, [["Gold food package", 1]], ["About 1/week", "Premium delivery"]],
-  ["08", "gold-plus", "Gold Plus", "food-only", "standard", 18000, 6, [["Gold Plus food package", 1]], ["About 1–2/week", "Premium delivery"]],
-  ["09", "premium", "Premium Membership", "food-drinks", "premium", 20000, 6, [["Premium food package", 1], ["Selected beverage allocation", 1]], ["About 1–2/week", "Premium menu"]],
-  ["10", "premium-plus", "Premium Plus", "food-drinks", "premium", 22500, 6, [["Premium Plus food package", 1], ["Selected beverage allocation", 1]], ["About 1–2/week", "Premium menu"]],
-  ["11", "platinum-membership", "Platinum Membership", "food-drinks", "premium", 25000, 6, [["Platinum food package", 1], ["Premium beverage allocation", 1]], ["About 1–2/week", "Priority delivery"]],
-  ["12", "platinum-plus", "Platinum Plus", "food-drinks", "premium", 27500, 8, [["Platinum Plus food package", 1], ["Premium beverage allocation", 1]], ["About 2/week", "Priority delivery"]],
-  ["13", "executive", "Executive Membership", "executive", "premium", 30000, 8, [["Executive food package", 1], ["Premium beverage allocation", 1]], ["About 2/week", "Executive support"]],
-  ["14", "executive-plus", "Executive Plus", "executive", "premium", 32500, 8, [["Executive Plus food package", 1], ["Premium beverage allocation", 1]], ["About 2/week", "Executive support"]],
-  ["15", "diamond-membership", "Diamond Membership", "executive", "premium", 35000, 8, [["Diamond food package", 1], ["Premium beverage allocation", 1]], ["About 2/week", "Priority delivery"]],
-  ["16", "diamond-plus", "Diamond Plus", "executive", "vip", 38000, 10, [["Diamond Plus food package", 1], ["Premium beverage allocation", 1]], ["About 2–3/week", "VIP support"]],
-  ["17", "vip", "VIP Membership", "executive", "vip", 41000, 10, [["VIP food package", 1], ["Premium beverage allocation", 1]], ["About 2–3/week", "VIP support"]],
-  ["18", "vip-plus", "VIP Plus", "executive", "vip", 44000, 10, [["VIP Plus food package", 1], ["Premium beverage allocation", 1]], ["About 2–3/week", "VIP support"]],
-  ["19", "royal", "Royal Membership", "executive", "vip", 47000, 12, [["Royal food package", 1], ["Premium beverage allocation", 1]], ["About 3/week", "Priority service"]],
-  ["20", "elite-membership", "Elite Membership", "executive", "vip", 50000, 12, [["Elite food package", 1], ["Premium beverage allocation", 1]], ["About 3/week", "Dedicated member support"]],
-];
-
-export const membershipPlans: MembershipPlan[] = rows.map(([id, slug, name, category, level, price, deliveryDays, items, benefits], index) => ({
-  id,
-  slug,
-  name,
-  description: `${name} delivers a fixed recurring food package for ${deliveryDays} scheduled deliveries each month, with a ${level} membership experience built around simple, predictable meal planning.`,
-  category,
-  level,
-  price,
-  cadence: "annual",
-  validityMonths: 12,
-  deliveryDays,
-  deliveryDaysPerYear: deliveryDays * 12,
-  rhythm: benefits[0],
-  foodLevel: level === "budget" ? "Essential Thai" : level === "standard" ? "Thai Plus" : level === "premium" ? "Premium" : "Elite",
-  foodValueRange: level === "budget" ? [250, 450] : level === "standard" ? [450, 800] : level === "premium" ? [850, 1400] : [1400, 2500],
-  exampleMenu: items.filter(([, , alcohol]) => !alcohol).slice(0, 6).map(([itemName]) => itemName),
-  allowedBeverageCategories: level === "budget" ? ["beer", "house-wine"] : level === "standard" ? ["beer", "wine", "whisky"] : level === "premium" ? ["beer", "wine", "whisky", "rum", "vodka", "gin"] : ["beer", "wine", "whisky", "rum", "vodka", "gin", "tequila"],
-  items: items.map(([itemName, quantity, alcohol]) => ({ name: itemName, quantity, alcohol })),
-  benefits,
-  featured: index === 4 || index === 19,
-}));
+// Distinct IDs preserve the meaning of historical 01–20 plan references.
+export const membershipPlans: MembershipPlan[] = [6000, 11000, 15000, 19000, 23000, 27000, 31000, 35000, 39000, 43000, 47000, 50000].map((price, index) => {
+  const durationMonths = index + 1;
+  return {
+    id: `duration-${durationMonths}`,
+    slug: `${durationMonths}-month-membership`,
+    name: `${durationMonths}-Month Membership`,
+    description: `${durationMonths} calendar ${durationMonths === 1 ? "month" : "months"} of membership from final activation.`,
+    price,
+    durationMonths,
+    allowedBeverageCategories: ["beer", "wine", "whisky", "rum", "vodka", "gin", "tequila"],
+  };
+});
 
 // Keep alcohol disabled until Thai licensing, age checks, permitted hours,
 // advertising, import, premises, and delivery requirements are verified.
 export const alcoholSalesEnabled = process.env.NEXT_PUBLIC_ALCOHOL_SALES_ENABLED === "true";
 
-export const beverageAddOns = [
-  { category: "beer", label: "Beer", options: ["Thai Beer", "Premium Beer", "Imported Beer"], price: 790 },
-  { category: "wine", label: "Wine", options: ["House Red Wine", "House White Wine", "Premium Red Wine", "Premium White Wine", "Sparkling Wine"], price: 1490 },
-  { category: "whisky", label: "Whisky", options: ["House Whisky", "Blended Whisky", "Scotch Whisky", "Premium Whisky"], price: 2490 },
-  { category: "rum", label: "Rum", options: ["White Rum", "Dark Rum", "Spiced Rum", "Premium Rum"], price: 1290 },
-  { category: "vodka", label: "Vodka", options: ["House Vodka", "Premium Vodka", "Imported Vodka"], price: 1290 },
-  { category: "gin", label: "Gin", options: ["House Gin", "London Dry Gin", "Premium Gin"], price: 1290 },
-  { category: "tequila", label: "Tequila", options: ["Blanco Tequila", "Reposado Tequila", "Añejo Tequila"], price: 1890 },
+export type AddOnPricingType = "MONTHLY" | "ONE_TIME";
+
+// Existing beverage add-ons are one-time purchases; only catalog data sets pricing.
+export const beverageAddOns: ReadonlyArray<{ category: string; label: string; options: readonly string[]; price: number; pricingType: AddOnPricingType }> = [
+  { category: "beer", label: "Beer", options: ["Thai Beer", "Premium Beer", "Imported Beer"], price: 790, pricingType: "ONE_TIME" },
+  { category: "wine", label: "Wine", options: ["House Red Wine", "House White Wine", "Premium Red Wine", "Premium White Wine", "Sparkling Wine"], price: 1490, pricingType: "ONE_TIME" },
+  { category: "whisky", label: "Whisky", options: ["House Whisky", "Blended Whisky", "Scotch Whisky", "Premium Whisky"], price: 2490, pricingType: "ONE_TIME" },
+  { category: "rum", label: "Rum", options: ["White Rum", "Dark Rum", "Spiced Rum", "Premium Rum"], price: 1290, pricingType: "ONE_TIME" },
+  { category: "vodka", label: "Vodka", options: ["House Vodka", "Premium Vodka", "Imported Vodka"], price: 1290, pricingType: "ONE_TIME" },
+  { category: "gin", label: "Gin", options: ["House Gin", "London Dry Gin", "Premium Gin"], price: 1290, pricingType: "ONE_TIME" },
+  { category: "tequila", label: "Tequila", options: ["Blanco Tequila", "Reposado Tequila", "Añejo Tequila"], price: 1890, pricingType: "ONE_TIME" },
 ] as const;
 
 export const membershipValueProps = [
-  ["Join", "Choose one fixed package with fixed food, quantities, beverages, and delivery days."],
-  ["Subscribe", "Confirm your area, dates, dietary needs, and recurring membership terms."],
-  ["Receive", "Your predefined package arrives on scheduled delivery days."],
-  ["Enjoy", "The menu rotates, but your package stays clear and predictable."],
+  ["Choose", "Select a membership lasting 1 to 12 months."],
+  ["Pay", "Buy membership only or add a prepaid package."],
+  ["Activate", "Your term starts after payment, team review, and final approval."],
 ] as const;
-
-export const packageCategoryLabels: Record<PlanCategory, string> = {
-  "food-only": "Food only",
-  "food-drinks": "Food + drinks",
-  family: "Family",
-  executive: "Executive",
-  corporate: "Corporate",
-};

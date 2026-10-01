@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: PlanPageProps): Promise<Metad
   const plan = membershipPlans.find((item) => item.slug === slug);
   return {
     title: plan ? `${plan.name} · Membership` : "Membership detail",
-    description: plan ? `${plan.name}: ฿${plan.price.toLocaleString("en-US")} per year, ${plan.deliveryDays} delivery days per month, valid for 12 months.` : "Membership details.",
+    description: plan ? `${plan.name}: ฿${plan.price.toLocaleString("en-US")} one time for ${plan.durationMonths} calendar months from final activation.` : "Membership details.",
   };
 }
 

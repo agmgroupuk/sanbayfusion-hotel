@@ -1,5 +1,7 @@
-import Stripe from "stripe";
-import { and, eq, inArray } from "drizzle-orm";
+from pathlib import Path
+root=Path(__file__).resolve().parents[1]
+(root/'scripts/sync-stripe-memberships.ts').write_text('''import Stripe from "stripe";
+import { inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { stripeMembershipCatalog } from "@/lib/db/schema";
 import { membershipPlans } from "@/lib/membership-plans";
@@ -18,7 +20,7 @@ async function main() {
     if (product.livemode) throw new Error("Live data detected; refusing synchronization.");
     allProducts.push(product);
   }
-  const synced: Array<{ plan: (typeof membershipPlans)[number]; product: Stripe.Product; price: Stripe.Price }> = [];
+  const synced = [];
   for (const plan of membershipPlans) {
     const metadata = { sanbay_plan_id: plan.id, sanbay_plan_slug: plan.slug, duration_months: String(plan.durationMonths), environment: "sandbox", catalog_version: "duration-v3" };
     let product = allProducts.find(item => item.metadata.sanbay_plan_id === plan.id);
@@ -41,7 +43,7 @@ async function main() {
     }
     // Historical mappings remain queryable, but can no longer be selected for new purchases.
     const legacyIds = Array.from({ length: 20 }, (_, index) => String(index + 1).padStart(2, "0"));
-    await tx.update(stripeMembershipCatalog).set({ mode: "archived", updatedAt: new Date() }).where(and(inArray(stripeMembershipCatalog.planId, legacyIds), eq(stripeMembershipCatalog.mode, "test")));
+    await tx.update(stripeMembershipCatalog).set({ mode: "archived", updatedAt: new Date() }).where(inArray(stripeMembershipCatalog.planId, legacyIds));
   });
   const keep = new Set(synced.map(item => item.product.id));
   const knownPlans = new Set([...membershipPlans.map(plan => plan.id), ...Array.from({ length: 20 }, (_, i) => String(i + 1).padStart(2, "0"))]);
@@ -62,3 +64,4 @@ async function main() {
   console.log("Verified 12 active Sandbox products and prices. Legacy products/prices archived; historical mappings retained. No customer or membership records changed.");
 }
 main().then(() => process.exit(0)).catch(() => { console.error("Sandbox catalog synchronization failed; sensitive error details suppressed."); process.exit(1); });
+''',encoding='utf-8')

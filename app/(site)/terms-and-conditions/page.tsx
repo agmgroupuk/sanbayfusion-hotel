@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 };
 
 const keyRules = [
-  ["12-month membership", "The term begins on the confirmed activation date."],
-  ["3-day invoice window", "Approved members must pay the annual invoice within 3 days."],
+  ["1 to 12 month membership", "Your selected duration begins on final activation after admin approval."],
+  ["Paid, pending review", "After payment, our team contacts you within up to 3 days before final approval."],
   ["Non-refundable fee", "Membership fees are non-refundable after payment and activation except where required by law."],
   ["3-day delivery notice", "Eligible delivery requests normally require at least 3 days' advance notice."],
   ["Final package lock", "The agreed plan and package are locked after activation."],
@@ -22,8 +22,8 @@ export default function TermsPage() {
     <LegalPage
       eyebrow="Membership terms"
       title="Clear terms for a considered service"
-      lead="These terms explain how membership requests, annual invoices, activation, delivery entitlements, food packages, regulated products, and cancellation work. Please read them before applying or paying."
-      updated="20 September 2026"
+      lead="These terms explain how membership requests, payments, activation, package quantities, food packages, regulated products, and cancellation work. Please read them before applying or paying."
+      updated="1 October 2026"
     >
       <div className="rounded-sm border border-gold/50 bg-gold/5 p-6 sm:p-8">
         <p className="text-eyebrow text-gold">Read first</p>
@@ -39,13 +39,14 @@ export default function TermsPage() {
 
       <LegalSection title="1. Applying for membership">
         <p>
-          Submitting a membership request does not create or activate a membership and
-          does not take payment. Every application is subject to review by {site.name}.
+          Selecting a plan does not activate membership. Checkout collects the membership fee
+          and any selected prepaid package charges once. Successful payment places the
+          membership in paid, pending review status with {site.name}.
           We may request identity, contact, delivery, age-verification, dietary, or
           product information before deciding whether to accept it.
         </p>
         <p>
-          An approved application may receive an annual membership invoice. The
+          A paid application is reviewed before activation. The
           membership becomes active only after the required fee is received and the
           team confirms activation.
         </p>
@@ -53,15 +54,15 @@ export default function TermsPage() {
 
       <LegalSection title="2. Term, fee, and invoice">
         <p>
-          Unless the final membership agreement says otherwise, every membership lasts
-          12 months from the official confirmed activation date. The annual membership
+          Each new membership lasts for the selected 1 to 12 calendar months from final
+          activation after admin approval. The start and exclusive expiry dates appear in the dashboard. The membership
           fee provides access to the finalized plan benefits and entitlements; it does
           not necessarily include future delivery, food, beverage, or additional order
           charges.
         </p>
         <p>
           An invoice will show the customer, application reference, selected plan,
-          annual fee, issue date, payment deadline, amount due, and instructions. The
+          membership fee, issue date, payment deadline, amount due, and instructions. The
           standard payment period is three days from invoice issuance. The exact date
           shown on the invoice controls.
         </p>
@@ -76,7 +77,7 @@ export default function TermsPage() {
         <p>
           After confirmed payment, the team normally completes membership setup within
           approximately three days. Final details may include a membership number or
-          card, plan, package, delivery entitlement, start date, expiry date, and
+          card, plan, package, package quantity, start date, expiry date, and
           ordering instructions.
         </p>
         <p>
@@ -90,7 +91,7 @@ export default function TermsPage() {
       <LegalSection title="4. Package changes and substitutions">
         <p>
           After activation, a member may not ordinarily change plan, upgrade, downgrade,
-          exchange the package, alter delivery entitlement, transfer unused benefits, or
+          exchange the package, alter package quantity, transfer unused benefits, or
           replace included products merely because preferences changed. Any exception
           must be expressly approved by {site.name}.
         </p>
@@ -104,9 +105,11 @@ export default function TermsPage() {
 
       <LegalSection title="5. Delivery entitlements and notice">
         <p>
-          Each plan has a defined number of eligible delivery days per month. An
-          entitlement means the member may request a delivery according to the plan; it
-          does not mean a package is sent automatically.
+          Selected prepaid product quantities are monthly quantities. Each product is priced
+          at its unit price multiplied by its monthly quantity and the membership duration.
+          Monthly add-ons follow the same rule; one-time add-ons are charged once.
+          Package quantities do not specify delivery counts. Scheduling and distribution
+          are arranged separately within the membership term.
         </p>
         <p>
           Unless another deadline is shown, delivery requests must be made at least
@@ -115,7 +118,7 @@ export default function TermsPage() {
           automatic refund, cash credit, replacement delivery, extension, or rollover.
         </p>
         <p>
-          Unused delivery entitlements do not automatically roll over to another month
+          Unused package quantities do not automatically roll over to another month
           or membership unless the final membership terms expressly allow it.
         </p>
       </LegalSection>
@@ -172,12 +175,12 @@ export default function TermsPage() {
           non-refundable except where a refund or other remedy is required by applicable
           law. Members may request cancellation at any time, but cancellation does not
           automatically refund membership fees, fulfilled orders, unused benefits, or
-          unused delivery entitlements.
+          unused package quantities.
         </p>
         <p>
           Memberships are personal and non-transferable unless the plan expressly
           permits an approved household or business arrangement. At the end of the
-          12-month term, benefits expire unless a new or renewed membership is agreed.
+          selected membership term, benefits expire unless a new or renewed membership is agreed.
         </p>
       </LegalSection>
 

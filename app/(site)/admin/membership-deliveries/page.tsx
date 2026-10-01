@@ -1,3 +1,4 @@
+import { hasActiveMembership, membershipDate } from "@/lib/membership-term";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, asc, desc, eq, gte } from "drizzle-orm";
@@ -25,7 +26,7 @@ export default async function MembershipDeliveriesPage() {
   const account = await getCurrentAccount();
   if (!account) redirect("/signin?next=%2Fadmin%2Fmembership-deliveries");
   if (!isMembershipAdmin(account.email)) redirect("/dashboard");
-  const today = new Date().toISOString().slice(0, 10);
+  const today = membershipDate();
 
   const scheduleDelivery = async (formData: FormData) => {
     "use server";
@@ -41,8 +42,8 @@ export default async function MembershipDeliveriesPage() {
       .innerJoin(membershipRequests, eq(membershipDeliveryEntitlements.membershipRequestId, membershipRequests.id))
       .where(eq(membershipDeliveryEntitlements.id, id))
       .limit(1);
-    const today = new Date().toISOString().slice(0, 10);
-    if (!record || record.membership.status !== "active" || record.entitlement.status !== "available" || scheduledDate < today || scheduledDate < record.entitlement.cycleStartDate || scheduledDate > record.entitlement.cycleEndDate) return;
+    const today = membershipDate();
+    if (!record || !hasActiveMembership(record.membership) || record.entitlement.status !== "available" || scheduledDate < today || scheduledDate >= (record.membership.membershipExpiryDate ?? "") || scheduledDate < record.entitlement.cycleStartDate || scheduledDate > record.entitlement.cycleEndDate) return;
     await db.update(membershipDeliveryEntitlements)
       .set({ status: "scheduled", scheduledDate, updatedAt: new Date() })
       .where(and(eq(membershipDeliveryEntitlements.id, id), eq(membershipDeliveryEntitlements.status, "available")));
@@ -60,8 +61,8 @@ export default async function MembershipDeliveriesPage() {
       .innerJoin(membershipRequests, eq(membershipDeliveryEntitlements.membershipRequestId, membershipRequests.id))
       .where(eq(membershipDeliveryEntitlements.id, id))
       .limit(1);
-    const today = new Date().toISOString().slice(0, 10);
-    if (!record || record.membership.status !== "active" || record.entitlement.status !== "scheduled" || !record.entitlement.scheduledDate || record.entitlement.scheduledDate > today) return;
+    const today = membershipDate();
+    if (!record || !hasActiveMembership(record.membership) || record.entitlement.status !== "scheduled" || !record.entitlement.scheduledDate || record.entitlement.scheduledDate > today) return;
     await db.update(membershipDeliveryEntitlements)
       .set({ status: "fulfilled", fulfilledAt: new Date(), fulfilledBy: current.email, updatedAt: new Date() })
       .where(and(eq(membershipDeliveryEntitlements.id, id), eq(membershipDeliveryEntitlements.status, "scheduled")));
@@ -76,7 +77,7 @@ export default async function MembershipDeliveriesPage() {
     .orderBy(asc(membershipDeliveryEntitlements.cycleStartDate), desc(membershipRequests.createdAt), asc(membershipDeliveryEntitlements.sequence))
     .limit(500) : [];
 
-  return <main className="mx-auto max-w-6xl px-5 py-28 sm:px-8"><p className="text-eyebrow text-gold">Membership operations</p><h1 className="mt-3 font-display text-5xl font-light italic">Delivery entitlements</h1><p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">Schedule and record included delivery days. Prepaid package fulfilment is recorded here without creating an additional payment.</p><div className="mt-8 space-y-5">{rows.length === 0 && <p className="border-t border-border/60 pt-5 text-sm text-muted-foreground">No active delivery entitlements are available.</p>}{rows.map(({ entitlement, membership }) => {
+  return <main className="mx-auto max-w-6xl px-5 py-28 sm:px-8"><p className="text-eyebrow text-gold">Membership operations</p><h1 className="mt-3 font-display text-5xl font-light italic">Historical delivery schedules</h1><p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">This ledger preserves earlier delivery agreements. New duration memberships contain monthly product quantities; their delivery scheduling is arranged separately.</p><div className="mt-8 space-y-5">{rows.length === 0 && <p className="border-t border-border/60 pt-5 text-sm text-muted-foreground">No active delivery entitlements are available.</p>}{rows.filter(({ membership }) => hasActiveMembership(membership)).map(({ entitlement, membership }) => {
     const snapshot = readPackageSnapshot(entitlement.packageSnapshot);
     const includedItems = [...(snapshot?.products ?? []), ...(snapshot?.addOns ?? [])];
     const minDate = entitlement.cycleStartDate > today ? entitlement.cycleStartDate : today;

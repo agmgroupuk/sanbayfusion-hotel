@@ -52,13 +52,7 @@ export async function submitMembershipApplication(raw: unknown): Promise<Members
     slug: checked.plan.slug,
     name: checked.plan.name,
     price: checked.plan.price,
-    validityMonths: checked.plan.validityMonths,
-    deliveryDays: checked.plan.deliveryDays,
-    deliveryDaysPerYear: checked.plan.deliveryDaysPerYear,
-    foodLevel: checked.plan.foodLevel,
-    items: checked.plan.items,
-    exampleMenu: checked.plan.exampleMenu,
-    foodValueRange: checked.plan.foodValueRange,
+    durationMonths: checked.plan.durationMonths,
   };
 
   try {
@@ -71,9 +65,9 @@ export async function submitMembershipApplication(raw: unknown): Promise<Members
         annualFee: checked.plan.price,
         addOnTotal: checked.addOnTotal,
         estimatedTotal: checked.total,
-        validityMonths: checked.plan.validityMonths,
-        deliveryDays: checked.plan.deliveryDays,
-        annualDeliveryDays: checked.plan.deliveryDaysPerYear,
+        durationMonths: checked.plan.durationMonths,
+        deliveryDays: 0,
+        annualDeliveryDays: 0,
         fullName: data.fullName,
         phone: data.phone,
         email: data.email,
@@ -115,7 +109,7 @@ export async function submitMembershipApplication(raw: unknown): Promise<Members
       email: data.email,
       requestNumber,
       planName: checked.plan.name,
-      deliveryDays: checked.plan.deliveryDays,
+      durationMonths: checked.plan.durationMonths,
       estimatedTotal: checked.total,
     });
   } catch (error) {

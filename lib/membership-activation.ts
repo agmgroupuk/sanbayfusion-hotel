@@ -1,6 +1,8 @@
 import "server-only";
 
-import { addMonths, formatISO, parseISO } from "date-fns";
+import { hashPurchaseSnapshot } from "@/lib/membership-snapshot-hash";
+import { parseISO } from "date-fns";
+import { membershipTerm } from "@/lib/membership-term";
 import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { membershipDeliveryEntitlements, membershipRequests, type MembershipRequest } from "@/lib/db/schema";
@@ -53,6 +55,7 @@ export async function recordMembershipPayment({
   amount,
   currency,
   purchaseMode,
+  snapshotHash,
 }: {
   id: string;
   stripeCustomerId: string;
@@ -60,23 +63,27 @@ export async function recordMembershipPayment({
   amount: number;
   currency: string;
   purchaseMode: string;
+  snapshotHash?: string;
 }) {
   if (!db || currency !== "thb") return null;
-  const membership = (await db.select().from(membershipRequests).where(eq(membershipRequests.id, id)).limit(1))[0];
-  if (!membership || membership.stripeCustomerId !== stripeCustomerId || amount !== membership.estimatedTotal * 100) return null;
-  const snapshot = membership.purchaseSnapshot as { purchaseMode?: string } | null;
-  const expectedMode = snapshot?.purchaseMode === "membership_with_package" ? "MEMBERSHIP_WITH_PACKAGE" : "MEMBERSHIP_ONLY";
-  if (purchaseMode !== expectedMode) return null;
-  if (membership.status === "active" || membership.status === "payment_received") {
-    return membership.stripePaymentIntentId === paymentIntentId ? membership : null;
-  }
-  if (membership.status !== "payment_pending") return null;
-
-  const [row] = await db.update(membershipRequests)
-    .set({ status: "payment_received", invoiceStatus: "paid", stripePaymentIntentId: paymentIntentId })
-    .where(and(eq(membershipRequests.id, id), eq(membershipRequests.status, "payment_pending")))
-    .returning();
-  if (row) {
+  let notifyStaff = false;
+  const row = await db.transaction(async tx => {
+    const membership = (await tx.select().from(membershipRequests).where(eq(membershipRequests.id, id)).limit(1).for("update"))[0];
+    if (!membership || membership.stripeCustomerId !== stripeCustomerId || amount !== membership.estimatedTotal * 100) return null;
+    const snapshot = membership.purchaseSnapshot as { version?: number; purchaseMode?: string } | null;
+    const expectedMode = snapshot?.purchaseMode === "membership_with_package" ? "MEMBERSHIP_WITH_PACKAGE" : "MEMBERSHIP_ONLY";
+    if (purchaseMode !== expectedMode) return null;
+    if (snapshot?.version === 3 && (membership.stripePaymentIntentId !== paymentIntentId || snapshotHash !== hashPurchaseSnapshot(snapshot))) return null;
+    if (membership.invoiceStatus === "paid") return membership.stripePaymentIntentId === paymentIntentId ? membership : null;
+    if (membership.status !== "payment_pending") return null;
+    const [paid] = await tx.update(membershipRequests)
+      .set({ status: "payment_received", invoiceStatus: "paid", stripePaymentIntentId: paymentIntentId })
+      .where(and(eq(membershipRequests.id, id), eq(membershipRequests.status, "payment_pending")))
+      .returning();
+    notifyStaff = !!paid;
+    return paid ?? null;
+  });
+  if (row && notifyStaff) {
     const purchase = row.purchaseSnapshot as { purchaseMode?: string; membershipFee?: number; packageSubtotal?: number } | null;
     try {
       await sendMembershipPaymentReviewEmail({
@@ -85,12 +92,11 @@ export async function recordMembershipPayment({
         customerPhone: row.phone,
         requestNumber: row.requestNumber,
         planName: row.planName,
-        purchaseMode: purchase?.purchaseMode === "membership_with_package" ? "Membership + prepaid annual package" : "Membership only",
+        purchaseMode: purchase?.purchaseMode === "membership_with_package" ? "Membership + prepaid package" : "Membership only",
         membershipFee: purchase?.membershipFee ?? row.annualFee,
         packageSubtotal: purchase?.packageSubtotal ?? row.addOnTotal,
         totalPaid: row.estimatedTotal,
-        deliveryDaysPerMonth: row.deliveryDays,
-        deliveryDaysPerYear: row.annualDeliveryDays,
+        durationMonths: row.durationMonths,
         paymentReference: paymentIntentId,
       });
     } catch (error) {
@@ -107,7 +113,7 @@ export async function activateMembershipRequest({ id, actor }: { id: string; act
     const [membership] = await tx.select().from(membershipRequests).where(eq(membershipRequests.id, id)).limit(1);
     if (!membership) return null;
     if (membership.status === "active") return membership;
-    if (membership.status !== "payment_received") return null;
+    if (membership.status !== "payment_received" || membership.invoiceStatus !== "paid") return null;
 
     const [latest] = await tx.select({ memberId: membershipRequests.memberId })
       .from(membershipRequests)
@@ -116,9 +122,7 @@ export async function activateMembershipRequest({ id, actor }: { id: string; act
       .limit(1);
     const memberId = membership.memberId ?? nextMemberNumber(latest?.memberId);
     const activatedAt = new Date();
-    const expiryDate = addMonths(activatedAt, membership.validityMonths || 12);
-    const membershipStartDate = formatISO(activatedAt, { representation: "date" });
-    const membershipExpiryDate = formatISO(expiryDate, { representation: "date" });
+    const { startDate: membershipStartDate, expiryDate: membershipExpiryDate } = membershipTerm(activatedAt, membership.durationMonths);
     const [row] = await tx.update(membershipRequests)
       .set({
         status: "active",
@@ -146,17 +150,17 @@ export async function activateMembershipRequest({ id, actor }: { id: string; act
     const schedule = buildMembershipDeliverySchedule({
       membershipRequestId: membership.id,
       startDate: activatedAt,
-      validityMonths: membership.validityMonths || 12,
+      durationMonths: membership.durationMonths,
       deliveriesPerMonth: membership.deliveryDays,
       purchaseSnapshot: membership.purchaseSnapshot as import("@/lib/membership-request").MembershipPurchaseSnapshot | null,
     });
-    await tx.insert(membershipDeliveryEntitlements).values(schedule).onConflictDoNothing();
+    if (schedule.length) await tx.insert(membershipDeliveryEntitlements).values(schedule).onConflictDoNothing();
     return row;
   });
 }
 
 export async function ensureMembershipDeliverySchedule(membership: MembershipRequest) {
-  if (!db || membership.status !== "active" || !membership.membershipStartDate || membership.validityMonths < 1 || membership.deliveryDays < 1) return;
+  if (!db || membership.status !== "active" || !membership.membershipStartDate || membership.durationMonths < 1 || membership.deliveryDays < 1) return;
   const existing = await db.select({ id: membershipDeliveryEntitlements.id })
     .from(membershipDeliveryEntitlements)
     .where(eq(membershipDeliveryEntitlements.membershipRequestId, membership.id))
@@ -166,11 +170,11 @@ export async function ensureMembershipDeliverySchedule(membership: MembershipReq
   const schedule = buildMembershipDeliverySchedule({
     membershipRequestId: membership.id,
     startDate: parseISO(membership.membershipStartDate),
-    validityMonths: membership.validityMonths,
+    durationMonths: membership.durationMonths,
     deliveriesPerMonth: membership.deliveryDays,
     purchaseSnapshot: membership.purchaseSnapshot as import("@/lib/membership-request").MembershipPurchaseSnapshot | null,
   });
-  await db.insert(membershipDeliveryEntitlements).values(schedule).onConflictDoNothing();
+  if (schedule.length) await db.insert(membershipDeliveryEntitlements).values(schedule).onConflictDoNothing();
 }
 
 export async function findMembershipByStripeCustomerId(stripeCustomerId: string) {

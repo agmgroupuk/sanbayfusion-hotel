@@ -4,6 +4,7 @@ import { getCurrentAccount } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { customerOrders } from "@/lib/db/schema";
 import { stripe } from "@/lib/stripe";
+import { recordOrderPayment } from "@/lib/order-payment";
 
 export async function POST(request: Request) {
   const account = await getCurrentAccount();
@@ -14,6 +15,6 @@ export async function POST(request: Request) {
   if (!order?.stripePaymentIntentId) return NextResponse.json({ error: "Order not found." }, { status: 404 });
   const intent = await stripe.paymentIntents.retrieve(order.stripePaymentIntentId);
   if (intent.status !== "succeeded") return NextResponse.json({ error: "Payment has not been completed." }, { status: 402 });
-  await db.update(customerOrders).set({ status: "confirmed", paymentStatus: "paid", paidAt: new Date() }).where(and(eq(customerOrders.id, order.id), eq(customerOrders.accountId, account.id)));
+  if (!await recordOrderPayment(intent)) return NextResponse.json({ error: "Payment did not match this order." }, { status: 409 });
   return NextResponse.json({ orderNumber: order.orderNumber, total: order.total });
 }

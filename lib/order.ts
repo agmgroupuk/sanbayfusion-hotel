@@ -1,5 +1,6 @@
 import "server-only";
 
+import { legacyOrderingPermissions } from "@/lib/legacy-membership-ordering";
 import { z } from "zod";
 import { catalogueCategories } from "@/lib/catalogue";
 import { alcoholSalesEnabled, membershipPlanAllowsCatalogueCategory, membershipPlans } from "@/lib/membership-plans";
@@ -15,7 +16,7 @@ export const cartSchema = z.array(cartItemSchema).min(1).max(100);
 export function priceCart(raw: unknown, membershipPlanId: string) {
   const parsed = cartSchema.safeParse(raw);
   if (!parsed.success) return { ok: false as const, error: "Your cart is invalid. Please rebuild it and try again." };
-  const plan = membershipPlans.find((item) => item.id === membershipPlanId);
+  const plan = membershipPlans.find((item) => item.id === membershipPlanId) ?? legacyOrderingPermissions(membershipPlanId);
   if (!plan) return { ok: false as const, error: "Your membership plan is no longer available for ordering." };
   const productKeys = new Set<string>();
   for (const item of parsed.data) {

@@ -7,23 +7,25 @@ export type MembershipDeliveryPackageSnapshot = {
   addOns: Array<{ category: string; name: string; unitPrice: number; quantity: number }>;
 };
 
+/** Legacy v1/v2 agreements only. New packages do not imply delivery frequency. */
 export function buildMembershipDeliverySchedule({
   membershipRequestId,
   startDate,
-  validityMonths,
+  durationMonths,
   deliveriesPerMonth,
   purchaseSnapshot,
 }: {
   membershipRequestId: string;
   startDate: Date;
-  validityMonths: number;
+  durationMonths: number;
   deliveriesPerMonth: number;
   purchaseSnapshot: MembershipPurchaseSnapshot | null;
 }) {
+  if (purchaseSnapshot?.version === 3) return [];
   const schedule = [];
-  const annualDeliveryCount = validityMonths * deliveriesPerMonth;
+  const annualDeliveryCount = durationMonths * deliveriesPerMonth;
 
-  for (let monthIndex = 0; monthIndex < validityMonths; monthIndex += 1) {
+  for (let monthIndex = 0; monthIndex < durationMonths; monthIndex += 1) {
     const cycleStart = addMonths(startDate, monthIndex);
     const cycleEnd = addDays(addMonths(startDate, monthIndex + 1), -1);
 
@@ -39,7 +41,7 @@ export function buildMembershipDeliverySchedule({
               productName: item.productName,
               variant: item.variant,
               unitPrice: item.unitPrice,
-              quantity: item.quantityPerDelivery,
+              quantity: item.quantityPerDelivery ?? 0,
             }))
           : [],
         addOns: purchaseSnapshot?.purchaseMode === "membership_with_package"

@@ -33,6 +33,7 @@ export async function POST(request: Request) {
     }
   }
   const selectedPlan = data.selectedPlanId ? membershipPlans.find((plan) => plan.id === data.selectedPlanId || plan.slug === data.selectedPlanId) : undefined;
-  const result = checkDeliveryEligibility(data, selectedPlan?.level);
+  if (data.selectedPlanId && !selectedPlan) return NextResponse.json({ error: "Membership plan is not available." }, { status: 400 });
+  const result = checkDeliveryEligibility(data);
   return NextResponse.json({ ...result, address: data.formattedAddress, province: data.province, district: data.district, subdistrict: data.subdistrict, postalCode: data.postalCode });
 }

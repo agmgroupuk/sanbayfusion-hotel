@@ -1,10 +1,11 @@
+import { membershipHasExpired } from "@/lib/membership-term";
+import { hashPurchaseSnapshot } from "@/lib/membership-snapshot-hash";
 import { NextResponse } from "next/server";
-import { createHash } from "node:crypto";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getCurrentAccount } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { customerAccounts, membershipRequests, stripeMembershipCatalog } from "@/lib/db/schema";
+import { customerAccounts, membershipRequests, stripeMembershipCatalog, type MembershipRequest } from "@/lib/db/schema";
 import { isBangkokProvince } from "@/lib/delivery";
 import { geocodeGoogleAddress } from "@/lib/google-geocoding";
 import { membershipPlans } from "@/lib/membership-plans";
@@ -68,10 +69,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Membership delivery is currently available only within Bangkok." }, { status: 400 });
   }
 
+  if (selection.configuration.planSlug !== plan.slug) return NextResponse.json({ error: "Membership selection does not match the configuration." }, { status: 400 });
   const checked = validateMembershipConfiguration(selection.configuration);
   if (!checked.ok) return NextResponse.json({ error: checked.error }, { status: 400 });
   const { total, membershipFee, packageSubtotal, purchaseSnapshot } = checked;
-  const snapshotHash = createHash("sha256").update(JSON.stringify(purchaseSnapshot)).digest("hex");
+  const snapshotHash = hashPurchaseSnapshot(purchaseSnapshot);
 
   if (!db) {
     console.error("[membership payment-intent] Database is not configured: missing DATABASE_URL.");
@@ -102,21 +104,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "This membership plan is not configured for Stripe Sandbox yet." }, { status: 503 });
     }
 
-    let stripeCustomerId = account.stripeCustomerId ?? null;
+    const payments = stripe;
+    return await db.transaction(async (tx) => {
+      // Serialize draft creation/renewal per account. Row locks also coordinate
+      // with webhook recording, so paid commercial snapshots cannot be replaced.
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${account.id}, 0))`);
+    const storedAccount = (await tx.select().from(customerAccounts).where(eq(customerAccounts.id, account.id)).limit(1))[0];
+    let stripeCustomerId = storedAccount?.stripeCustomerId ?? null;
     if (!stripeCustomerId) {
-      const customer = await stripe.customers.create({
+      const customer = await payments.customers.create({
         email: account.email,
         name: account.fullName ?? undefined,
         metadata: { sanbayAccountId: account.id, accountType: "customer" },
       });
       stripeCustomerId = customer.id;
-      await db.update(customerAccounts).set({ stripeCustomerId, updatedAt: new Date() }).where(eq(customerAccounts.id, account.id));
+      await tx.update(customerAccounts).set({ stripeCustomerId, updatedAt: new Date() }).where(eq(customerAccounts.id, account.id));
     }
 
-    let membership = (await db.select().from(membershipRequests).where(eq(membershipRequests.customerAccountId, account.id)).orderBy(desc(membershipRequests.createdAt)).limit(1))[0];
+    let membership: MembershipRequest | undefined = (await tx.select().from(membershipRequests).where(eq(membershipRequests.customerAccountId, account.id)).orderBy(desc(membershipRequests.createdAt)).limit(1).for("update"))[0];
     if (!membership) {
-      membership = (await db.select().from(membershipRequests).where(eq(membershipRequests.email, account.email)).orderBy(desc(membershipRequests.createdAt)).limit(1))[0];
+      membership = (await tx.select().from(membershipRequests).where(eq(membershipRequests.email, account.email)).orderBy(desc(membershipRequests.createdAt)).limit(1).for("update"))[0];
     }
+    if (membership?.status === "active" && membershipHasExpired(membership)) {
+      await tx.update(membershipRequests).set({ status: "expired" }).where(eq(membershipRequests.id, membership.id));
+      membership = { ...membership, status: "expired" };
+    }
+    // Renewal creates a separate term and preserves the previous paid agreement.
+    if (membership?.status === "expired" || membership?.status === "cancelled") membership = undefined;
     if (membership?.status === "active" || membership?.status === "payment_received" || membership?.invoiceStatus === "paid") {
       return NextResponse.json({ error: "A paid membership request already exists for this account. Check your dashboard for its status." }, { status: 409 });
     }
@@ -125,13 +139,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "A membership request is already under review for this account." }, { status: 409 });
     }
 
+    const previousIntentId = membership?.stripePaymentIntentId ?? "initial";
     if (membership?.stripePaymentIntentId) {
-      const existingIntent = await stripe.paymentIntents.retrieve(membership.stripePaymentIntentId);
+      const existingIntent = await payments.paymentIntents.retrieve(membership.stripePaymentIntentId);
       if (existingIntent.status === "succeeded" || existingIntent.status === "processing") {
         return NextResponse.json({ error: "Your payment is already processing. Please check your dashboard before retrying." }, { status: 409 });
       }
-      if (existingIntent.metadata.purchase_snapshot_hash === snapshotHash && existingIntent.amount === total * 100 && existingIntent.client_secret) {
+      if (existingIntent.status !== "canceled" && existingIntent.metadata.purchase_snapshot_hash === snapshotHash && existingIntent.amount === total * 100 && existingIntent.client_secret) {
+        await tx.update(membershipRequests).set({ fullName: input.customer.fullName, phone: input.customer.phone, address: { billing: input.billingAddress, delivery: deliveryAddress, sameAsBilling: input.sameAsBilling } }).where(eq(membershipRequests.id, membership.id));
+        await payments.paymentIntents.update(existingIntent.id, { setup_future_usage: input.savePaymentMethod ? "off_session" : "" });
         return NextResponse.json({
+          purchaseSnapshot,
           clientSecret: existingIntent.client_secret,
           membershipRequestId: membership.id,
           requestNumber: membership.requestNumber,
@@ -144,24 +162,24 @@ export async function POST(request: Request) {
         });
       }
       if (existingIntent.status === "requires_payment_method" || existingIntent.status === "requires_confirmation" || existingIntent.status === "requires_action") {
-        await stripe.paymentIntents.cancel(existingIntent.id);
+        await payments.paymentIntents.cancel(existingIntent.id);
       }
     }
 
     if (!membership) {
       const requestNumber = `M-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-      const inserted = await db.insert(membershipRequests).values({
+      const inserted = await tx.insert(membershipRequests).values({
         customerAccountId: account.id,
         requestNumber,
         planId: plan.id,
         planName: plan.name,
-        planSnapshot: { slug: plan.slug, name: plan.name, price: plan.price, description: plan.description, validityMonths: plan.validityMonths },
+        planSnapshot: { slug: plan.slug, name: plan.name, price: plan.price, description: plan.description, durationMonths: plan.durationMonths },
         annualFee: membershipFee,
         addOnTotal: packageSubtotal,
         estimatedTotal: total,
-        validityMonths: plan.validityMonths,
-        deliveryDays: plan.deliveryDays,
-        annualDeliveryDays: plan.deliveryDaysPerYear,
+        durationMonths: plan.durationMonths,
+        deliveryDays: 0,
+        annualDeliveryDays: 0,
         fullName: input.customer.fullName,
         phone: input.customer.phone,
         email: account.email,
@@ -185,18 +203,18 @@ export async function POST(request: Request) {
       membership = inserted[0];
     }
 
-    await db.update(customerAccounts).set({ fullName: input.customer.fullName, phone: input.customer.phone, updatedAt: new Date() }).where(eq(customerAccounts.id, account.id));
-    await db.update(membershipRequests).set({
+    await tx.update(customerAccounts).set({ fullName: input.customer.fullName, phone: input.customer.phone, updatedAt: new Date() }).where(eq(customerAccounts.id, account.id));
+    await tx.update(membershipRequests).set({
       customerAccountId: account.id,
       planId: plan.id,
       planName: plan.name,
-      planSnapshot: { slug: plan.slug, name: plan.name, price: plan.price, description: plan.description, validityMonths: plan.validityMonths },
+      planSnapshot: { slug: plan.slug, name: plan.name, price: plan.price, description: plan.description, durationMonths: plan.durationMonths },
       annualFee: membershipFee,
       addOnTotal: packageSubtotal,
       estimatedTotal: total,
-      validityMonths: plan.validityMonths,
-      deliveryDays: plan.deliveryDays,
-      annualDeliveryDays: plan.deliveryDaysPerYear,
+      durationMonths: plan.durationMonths,
+      deliveryDays: 0,
+      annualDeliveryDays: 0,
       fullName: input.customer.fullName,
       phone: input.customer.phone,
       address: { billing: input.billingAddress, delivery: deliveryAddress, sameAsBilling: input.sameAsBilling },
@@ -208,7 +226,7 @@ export async function POST(request: Request) {
       stripePaymentIntentId: null,
     }).where(eq(membershipRequests.id, membership.id));
 
-    const paymentIntent = await stripe.paymentIntents.create({
+    const paymentIntent = await payments.paymentIntents.create({
       amount: total * 100,
       currency: "thb",
       customer: stripeCustomerId,
@@ -223,11 +241,12 @@ export async function POST(request: Request) {
         purchase_snapshot_hash: snapshotHash,
       },
       description: `${plan.name} membership purchase`,
-    }, { idempotencyKey: `membership-${membership.id}-${snapshotHash}` });
+    }, { idempotencyKey: `membership-${membership.id}-${snapshotHash}-${previousIntentId}` });
 
-    await db.update(membershipRequests).set({ stripePaymentIntentId: paymentIntent.id }).where(eq(membershipRequests.id, membership.id));
+    await tx.update(membershipRequests).set({ stripePaymentIntentId: paymentIntent.id }).where(eq(membershipRequests.id, membership.id));
 
     return NextResponse.json({
+      purchaseSnapshot,
       clientSecret: paymentIntent.client_secret,
       membershipRequestId: membership.id,
       requestNumber: membership.requestNumber,
@@ -238,9 +257,9 @@ export async function POST(request: Request) {
       membershipFee,
       packageSubtotal,
     });
+    });
   } catch (error) {
     console.error("[membership payment-intent] Failed to create Stripe PaymentIntent", error);
-    const message = error instanceof Error ? error.message : "Unknown Stripe error";
-    return NextResponse.json({ error: `Unable to create a payment intent: ${message}` }, { status: 500 });
+    return NextResponse.json({ error: "Unable to prepare payment. Please retry or contact the team." }, { status: 500 });
   }
 }

@@ -1,3 +1,4 @@
+import { membershipPlans } from "@/lib/membership-plans";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -82,12 +83,7 @@ const drinkSections = [
   },
 ];
 
-const membershipPrices = [
-  ["Monthly Circle", "฿2,500 / month", "Priority booking and one welcome drink each visit."],
-  ["Weekly Table", "฿8,500 / month", "A recurring table window, priority access, and member pricing."],
-  ["Annual Membership", "฿28,000 / year", "Priority reservations, seasonal invitations, and hosted benefits."],
-  ["VIP Host Access", "By arrangement", "Private dining, events, rooms, and bespoke hospitality."],
-];
+const membershipPrices = membershipPlans.map(plan => [plan.name, `฿${plan.price.toLocaleString("en-US")} one time`, plan.description]);
 
 export default function PricingPage() {
   return (

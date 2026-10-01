@@ -1,3 +1,5 @@
+import { resolveMembershipStatus } from "@/lib/membership-status";
+import { hasActiveMembership, membershipDate } from "@/lib/membership-term";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
@@ -12,11 +14,11 @@ export const metadata: Metadata = { title: "Member Dashboard", description: "You
 export default async function DashboardPage() {
   const account = await getCurrentAccount();
   if (!account) redirect("/signin?next=/dashboard");
-  const membership = db ? (await db.select().from(membershipRequests).where(sql`lower(${membershipRequests.email}) = ${account.email}`).orderBy(desc(membershipRequests.createdAt)).limit(1))[0] ?? null : null;
+  const membership = await resolveMembershipStatus(db ? (await db.select().from(membershipRequests).where(sql`lower(${membershipRequests.email}) = ${account.email}`).orderBy(desc(membershipRequests.createdAt)).limit(1))[0] ?? null : null);
   const orders = db ? (await db.select().from(customerOrders).where(eq(customerOrders.accountId, account.id)).orderBy(desc(customerOrders.createdAt)).limit(5)) : [];
-  const today = new Date().toISOString().slice(0, 10);
+  const today = membershipDate();
   let deliveryEntitlements: MembershipDeliveryEntitlement[] = [];
-  if (db && membership?.status === "active") {
+  if (db && membership && hasActiveMembership(membership)) {
     try {
       await ensureMembershipDeliverySchedule(membership);
       deliveryEntitlements = await db.select().from(membershipDeliveryEntitlements)

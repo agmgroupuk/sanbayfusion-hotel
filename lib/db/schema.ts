@@ -150,7 +150,9 @@ export const membershipRequests = pgTable(
     annualFee: integer("annual_fee").notNull(),
     addOnTotal: integer("add_on_total").notNull().default(0),
     estimatedTotal: integer("estimated_total").notNull(),
-    validityMonths: integer("validity_months").notNull(),
+    // Existing SQL column is retained to preserve all historical durations.
+    durationMonths: integer("validity_months").notNull(),
+    // Historical delivery entitlements only; new duration plans store zero.
     deliveryDays: integer("delivery_days").notNull(),
     annualDeliveryDays: integer("annual_delivery_days").notNull(),
     fullName: varchar("full_name", { length: 120 }).notNull(),

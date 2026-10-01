@@ -1,3 +1,5 @@
+import { resolveMembershipStatus } from "@/lib/membership-status";
+import { hasActiveMembership } from "@/lib/membership-term";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
@@ -15,8 +17,8 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   const params = await searchParams;
   let rawCart: unknown;
   try { rawCart = JSON.parse(decodeURIComponent(params.cart ?? "")); } catch { redirect("/dashboard/order"); }
-  const membership = db ? (await db.select().from(membershipRequests).where(eq(membershipRequests.email, account.email)).orderBy(desc(membershipRequests.createdAt)).limit(1))[0] ?? null : null;
-  if (!membership || membership.status !== "active") redirect("/dashboard");
+  const membership = await resolveMembershipStatus(db ? (await db.select().from(membershipRequests).where(eq(membershipRequests.email, account.email)).orderBy(desc(membershipRequests.createdAt)).limit(1))[0] ?? null : null);
+  if (!membership || !hasActiveMembership(membership)) redirect("/dashboard");
   const priced = priceCart(rawCart, membership.planId);
   if (!priced.ok) redirect("/dashboard/order");
   const address = membership.address && typeof membership.address === "object" ? membership.address as Record<string, unknown> : {};

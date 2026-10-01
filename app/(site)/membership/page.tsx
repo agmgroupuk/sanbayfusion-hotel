@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Crown, Sparkles, Users, ShieldCheck } from "lucide-react";
+import { Crown, Sparkles, Users, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/site/page-header";
 import { Reveal } from "@/components/motion/reveal";
 import { PlanCard } from "@/components/membership/plan-card";
@@ -18,12 +18,12 @@ export const metadata: Metadata = {
 const membershipHighlights = [
   {
     title: "Priority reservations",
-    description: "Members receive scheduled food packages on a predictable weekly or monthly rhythm.",
+    description: "Choose a membership lasting 1 to 12 months, starting after final approval.",
     icon: Crown,
   },
   {
     title: "Members’ tables",
-    description: "Choose delivery dates and package sizes that fit your household, team, or routine.",
+    description: "Select membership only or add monthly prepaid food and beverage quantities.",
     icon: Users,
   },
   {
@@ -33,7 +33,7 @@ const membershipHighlights = [
   },
   {
     title: "Discreet, elevated service",
-    description: "Pause, adjust, or request support before the next recurring delivery cycle begins.",
+    description: "Your paid package quantities and prices are saved for your membership term.",
     icon: ShieldCheck,
   },
 ];
@@ -67,7 +67,7 @@ export default function MembershipPage() {
         </div>
 
         <Reveal variant="up" className="mt-20">
-          <p className="text-eyebrow text-gold">Choose your rhythm</p>
+          <p className="text-eyebrow text-gold">Choose your duration</p>
           <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {membershipPlans.map((plan) => <PlanCard key={plan.slug} plan={plan} />)}
           </div>

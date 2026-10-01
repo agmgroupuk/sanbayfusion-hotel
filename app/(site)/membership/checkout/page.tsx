@@ -22,7 +22,7 @@ export default async function MembershipCheckoutPage() {
   if (!selection) redirect("/plans");
 
   const plan = membershipPlans.find((item) => item.slug === selection.planSlug);
-  if (!plan) redirect("/plans");
+  if (!plan || selection.configuration.planSlug !== plan.slug) redirect("/plans");
   const checked = validateMembershipConfiguration(selection.configuration);
   if (!checked.ok) redirect(`/plans/${plan.slug}`);
 

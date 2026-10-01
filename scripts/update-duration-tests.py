@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+from pathlib import Path
+root=Path(__file__).resolve().parents[1]
+(root/'lib/membership-request.test.ts').write_text('''import { describe, expect, it } from "vitest";
 import { beverageAddOns, membershipPlans } from "@/lib/membership-plans";
 import { catalogueCategories } from "@/lib/catalogue";
 import { buildMembershipDeliverySchedule } from "@/lib/membership-delivery";
@@ -80,3 +82,4 @@ describe("membership package pricing", () => {
     expect(schedule[0].packageSnapshot.products[0].quantity).toBe(2);
   });
 });
+''',encoding='utf-8')

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { pricePackageItem } from "@/lib/package-pricing";
 import { catalogueCategories, type CatalogueGroup } from "@/lib/catalogue";
 import { alcoholSalesEnabled, beverageAddOns, membershipDeliveryAreas, membershipPlanAllowsCatalogueCategory, membershipPlans, membershipPreferredDays, membershipPreferredTimes } from "@/lib/membership-plans";
 
@@ -9,9 +10,11 @@ export const membershipRequestStatuses = [
   "changes_requested",
   "invoice_issued",
   "awaiting_payment",
+  "payment_pending",
   "payment_received",
   "membership_setup",
   "active",
+  "expired",
   "cancellation_requested",
   "rejected",
   "cancelled",
@@ -32,12 +35,12 @@ export const membershipConfigurationSchema = z.object({
   selectedAddOns: z.array(z.object({
     category: z.string().min(1),
     name: z.string().min(1),
-    quantity: z.number().int().min(1).max(5),
+    quantity: z.number().int().min(1).max(100),
   })).max(7).default([]),
   selectedProducts: z.array(z.object({
     category: z.string().min(1),
     name: z.string().min(1),
-    quantity: z.number().int().min(1).max(5),
+    quantity: z.number().int().min(1).max(100),
   })).max(100).default([]),
 });
 
@@ -101,15 +104,15 @@ export type ValidatedMembershipApplication = MembershipApplicationInput & {
 };
 
 export type MembershipPurchaseSnapshot = {
-  version: 1 | 2;
+  version: 1 | 2 | 3;
   currency?: "thb";
   pricingVersion?: number;
   purchaseMode: MembershipPurchaseMode;
-  plan: { id: string; slug: string; name: string; validityMonths: number; membershipFee: number };
-  delivery: { area: string; preferredDay: string; preferredTime: string; deliveriesPerMonth: number; deliveriesPerYear: number };
-  products: Array<{ category: string; group?: CatalogueGroup; name: string; productName?: string; variant?: string | null; unitPrice: number; quantityPerDelivery: number; annualQuantity: number; lineTotal: number }>;
-  preferences: Array<{ category: string; name: string; productName?: string; variant?: string | null; quantityPerDelivery: number }>;
-  addOns: Array<{ category: string; name: string; unitPrice: number; quantity: number; lineTotal: number }>;
+  plan: { id: string; slug: string; name: string; durationMonths?: number; validityMonths?: number; membershipFee: number };
+  delivery: { area: string; preferredDay: string; preferredTime: string; deliveriesPerMonth?: number; deliveriesPerYear?: number };
+  products: Array<{ category: string; group?: CatalogueGroup; name: string; productName?: string; variant?: string | null; unitPrice: number; monthlyQuantity?: number; durationMonths?: number; totalTermQuantity?: number; pricingType?: "MONTHLY"; quantityPerDelivery?: number; annualQuantity?: number; lineTotal: number }>;
+  preferences: Array<{ category: string; name: string; productName?: string; variant?: string | null; monthlyQuantity?: number; quantityPerDelivery?: number }>;
+  addOns: Array<{ category: string; name: string; unitPrice: number; quantity: number; pricingType?: "MONTHLY" | "ONE_TIME"; monthlyQuantity?: number; durationMonths?: number; totalTermQuantity?: number; lineTotal: number }>;
   membershipFee: number;
   packageSubtotal: number;
   charges?: Array<{ code: string; label: string; amount: number }>;
@@ -126,12 +129,14 @@ export function calculateMembershipQuote(configuration: MembershipConfiguration,
     const category = catalogueCategories.find((item) => item.name === selected.category);
     const product = category?.products.find((item) => item.name === selected.name);
     const unitPrice = product?.price ?? 0;
-    const annualQuantity = selected.quantity * plan.deliveryDaysPerYear;
-    return { category: selected.category, group: category?.group, name: selected.name, ...getProductNameDetails(selected.name), unitPrice, quantityPerDelivery: selected.quantity, annualQuantity, lineTotal: unitPrice * annualQuantity };
+    const priced = pricePackageItem(unitPrice, selected.quantity, plan.durationMonths, "MONTHLY");
+    return { category: selected.category, group: category?.group, name: selected.name, ...getProductNameDetails(selected.name), unitPrice, monthlyQuantity: selected.quantity, durationMonths: plan.durationMonths, ...priced, pricingType: "MONTHLY" as const };
   });
   const selectedAddOns = configuration.selectedAddOns.flatMap((selected) => {
     const addOn = beverageAddOns.find((item) => item.category === selected.category);
-    return addOn ? [{ category: selected.category, name: selected.name, unitPrice: addOn.price, quantity: selected.quantity, lineTotal: addOn.price * selected.quantity }] : [];
+    if (!addOn) return [];
+    const priced = pricePackageItem(addOn.price, selected.quantity, plan.durationMonths, addOn.pricingType);
+    return [{ category: selected.category, name: selected.name, unitPrice: addOn.price, quantity: selected.quantity, pricingType: addOn.pricingType, monthlyQuantity: addOn.pricingType === "MONTHLY" ? selected.quantity : undefined, durationMonths: plan.durationMonths, ...priced }];
   });
   const prepaid = configuration.purchaseMode === "membership_with_package";
   const membershipFee = plan.price;
@@ -139,21 +144,19 @@ export function calculateMembershipQuote(configuration: MembershipConfiguration,
     ? selectedProducts.reduce((total, item) => total + item.lineTotal, 0) + selectedAddOns.reduce((total, item) => total + item.lineTotal, 0)
     : 0;
   const purchaseSnapshot: MembershipPurchaseSnapshot = {
-    version: 2,
+    version: 3,
     purchaseMode: configuration.purchaseMode,
-    plan: { id: plan.id, slug: plan.slug, name: plan.name, validityMonths: plan.validityMonths, membershipFee },
+    plan: { id: plan.id, slug: plan.slug, name: plan.name, durationMonths: plan.durationMonths, membershipFee },
     delivery: {
       area: configuration.deliveryArea,
       preferredDay: configuration.preferredDay,
       preferredTime: configuration.preferredTime,
-      deliveriesPerMonth: plan.deliveryDays,
-      deliveriesPerYear: plan.deliveryDaysPerYear,
     },
     products: prepaid ? selectedProducts : [],
-    preferences: prepaid ? [] : selectedProducts.map(({ category, name, productName, variant, quantityPerDelivery }) => ({ category, name, productName, variant, quantityPerDelivery })),
+    preferences: prepaid ? [] : selectedProducts.map(({ category, name, productName, variant, monthlyQuantity }) => ({ category, name, productName, variant, monthlyQuantity })),
     addOns: prepaid ? selectedAddOns : [],
     currency: "thb",
-    pricingVersion: 1,
+    pricingVersion: 2,
     charges: [],
     membershipFee,
     packageSubtotal,
@@ -162,7 +165,10 @@ export function calculateMembershipQuote(configuration: MembershipConfiguration,
   return { membershipFee, selectedProducts, selectedAddOns, packageSubtotal, total: membershipFee + packageSubtotal, purchaseSnapshot };
 }
 
-export function validateMembershipConfiguration(configuration: MembershipConfiguration) {
+export function validateMembershipConfiguration(raw: unknown) {
+  const parsed = membershipConfigurationSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false as const, error: "Invalid membership configuration or quantities." };
+  const configuration = parsed.data;
   const plan = membershipPlans.find((item) => item.slug === configuration.planSlug);
   if (!plan) return { ok: false as const, error: "That membership plan is not available." };
   if (configuration.alcoholEnabled && !alcoholSalesEnabled) {
@@ -210,7 +216,7 @@ export function validateMembershipConfiguration(configuration: MembershipConfigu
   }
 
   if (configuration.purchaseMode === "membership_with_package" && !configuration.selectedProducts.length && !configuration.selectedAddOns.length) {
-    return { ok: false as const, error: "Select at least one product for your prepaid annual package, or choose membership only." };
+    return { ok: false as const, error: "Select at least one product for your prepaid package, or choose membership only." };
   }
 
   const quote = calculateMembershipQuote(configuration, plan);
