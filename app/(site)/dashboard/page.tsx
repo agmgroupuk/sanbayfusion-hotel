@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { resolveMembershipStatus } from "@/lib/membership-status";
 import { hasActiveMembership, membershipDate } from "@/lib/membership-term";
 import type { Metadata } from "next";

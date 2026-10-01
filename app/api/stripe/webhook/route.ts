@@ -4,6 +4,7 @@ import { stripe } from "@/lib/stripe";
 import { db } from "@/lib/db";
 import { recordMembershipPayment } from "@/lib/membership-activation";
 import { recordOrderPayment } from "@/lib/order-payment";
+import { reconcileApplicationPayment } from "@/lib/membership-application";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -23,6 +24,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid Stripe signature." }, { status: 400 });
   }
 
+  if (event.livemode) return NextResponse.json({ error: "Sandbox events only." }, { status: 400 });
+  if (event.type.startsWith("payment_intent.")) {
+    const intent = event.data.object as Stripe.PaymentIntent;
+    if (intent.metadata.payment_type === "APPROVED_MEMBERSHIP" && intent.metadata.application_id) {
+      await reconcileApplicationPayment(intent.metadata.application_id);
+      return NextResponse.json({ ok: true });
+    }
+  }
   if (event.type === "payment_intent.succeeded") {
     const paymentIntent = event.data.object as Stripe.PaymentIntent;
     if (paymentIntent.livemode) return NextResponse.json({ error: "Sandbox events only." }, { status: 400 });

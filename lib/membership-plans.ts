@@ -51,6 +51,6 @@ export const beverageAddOns: ReadonlyArray<{ category: string; label: string; op
 
 export const membershipValueProps = [
   ["Choose", "Select a membership lasting 1 to 12 months."],
-  ["Pay", "Buy membership only or add a prepaid package."],
-  ["Activate", "Your term starts after payment, team review, and final approval."],
+  ["Apply", "Save a payment method and authorize your membership and optional package."],
+  ["Activate", "Your term starts after admin approval and successful authorized payment."],
 ] as const;

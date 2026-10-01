@@ -1,0 +1,19 @@
+import type { MembershipPurchaseSnapshot } from "@/lib/membership-request";
+
+/** Validate the saved arithmetic without substituting today's catalog prices. */
+export function validSavedQuote(quote: MembershipPurchaseSnapshot): boolean {
+  const months = quote.plan?.durationMonths;
+  if (quote.version !== 3 || quote.currency !== "thb" || !Number.isInteger(months) || !months || months < 1 || months > 12 || !Number.isSafeInteger(quote.membershipFee) || quote.membershipFee <= 0 || quote.plan.membershipFee !== quote.membershipFee) return false;
+  let subtotal = 0;
+  for (const item of [...quote.products, ...quote.addOns]) {
+    const quantity = "quantity" in item ? item.quantity : item.monthlyQuantity;
+    if (!Number.isInteger(quantity) || !quantity || quantity < 1 || quantity > 100 || !Number.isSafeInteger(item.unitPrice) || item.unitPrice < 0 || item.durationMonths !== months || !["MONTHLY", "ONE_TIME"].includes(item.pricingType ?? "")) return false;
+    const termQuantity = quantity * (item.pricingType === "MONTHLY" ? months : 1);
+    if (item.totalTermQuantity !== termQuantity || item.lineTotal !== item.unitPrice * termQuantity) return false;
+    subtotal += item.lineTotal;
+  }
+  if (quote.purchaseMode === "membership_only" && (quote.products.length || quote.addOns.length)) return false;
+  const charges = quote.charges ?? [];
+  if (charges.some(charge => !Number.isSafeInteger(charge.amount) || charge.amount < 0 || !charge.label)) return false;
+  return quote.packageSubtotal === subtotal && quote.total === quote.membershipFee + subtotal + charges.reduce((sum, charge) => sum + charge.amount, 0);
+}

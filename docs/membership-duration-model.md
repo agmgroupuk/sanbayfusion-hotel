@@ -4,8 +4,11 @@ The authoritative catalog is `lib/membership-plans.ts`: twelve one-time plans
 lasting 1–12 calendar months, with fees of THB 6,000, 11,000, 15,000, 19,000,
 23,000, 27,000, 31,000, 35,000, 39,000, 43,000, 47,000, and 50,000.
 
-Payment moves a purchase to **paid / pending review**. Only final admin approval
-issues a Member ID and sets its start and expiry dates. Dates follow Bangkok's
+SetupIntent saves a reusable card without a membership charge. Explicit consent
+and the exact quote are frozen on submission to **pending_review**. Admin approval
+creates one exact-amount PaymentIntent; successful payment alone permits activation,
+Member ID issuance, and start and expiry dates. Decline never charges. Failed or
+authentication-required payments remain inactive with dashboard recovery. Dates follow Bangkok's
 calendar. Expiry is exclusive at midnight on the expiry date. Calendar-month
 arithmetic clamps month-end dates (31 January + one month → 28/29 February).
 
@@ -24,7 +27,7 @@ entries. No browser price, pricing type, duration, or total is trusted.
 Version 3 purchase snapshots store each product's unit price, monthly quantity,
 duration, total term quantity, pricing type, and total. Add-ons also record their
 pricing type and term quantity. Checkout locks account draft creation and paid
-recording uses a row lock. Verified payment locks the agreement; catalog edits
+recording uses a row lock. Submission locks the agreement; catalog edits
 do not reprice paid records. Payment metadata is checked against a canonical
 snapshot hash that remains stable when Postgres JSONB reorders object keys.
 
@@ -75,3 +78,16 @@ file is written and tunnel connection details are suppressed.
 data without secret values. `scripts/verify-stripe-membership-checkout.ts`
 checks both quote modes against Sandbox PaymentIntent creation and cancels the
 verification intents without charging or changing application records.
+
+## Application-first verification
+
+`lib/membership-application.sandbox.test.ts` uses the existing Railway Sandbox key
+and real Stripe objects. Database fixture accounts and memberships are enclosed
+in transactions that always roll back. No existing customer records are changed.
+Sandbox Stripe verification objects remain as test evidence; no Live API is used.
+Run through `scripts/verify-membership-applications.mjs` with the Railway wrapper.
+
+The production database uses an older baselined migration journal. The reviewed
+`scripts/migrate-membership-applications.ts` applies only missing additive schema
+from 0007, 0008, and 0009, preserving the existing journal and historical rows.
+Do not blindly replay older migrations against that environment.

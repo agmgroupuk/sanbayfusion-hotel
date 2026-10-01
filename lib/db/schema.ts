@@ -73,7 +73,12 @@ export const reservationStatus = pgEnum("reservation_status", [
 ]);
 
 export const membershipRequestStatus = pgEnum("membership_request_status", [
+  "application_draft",
   "pending_review",
+  "approved_payment_pending",
+  "approved_payment_action_required",
+  "approved_payment_failed",
+  "declined",
   "contacting_customer",
   "verified",
   "approved",
@@ -163,6 +168,15 @@ export const membershipRequests = pgTable(
     contactPreferences: jsonb("contact_preferences").notNull(),
     configuration: jsonb("configuration").notNull(),
     purchaseSnapshot: jsonb("purchase_snapshot"),
+    applicationSnapshot: jsonb("application_snapshot"),
+    stripeSetupIntentId: varchar("stripe_setup_intent_id", { length: 120 }),
+    stripePaymentMethodId: varchar("stripe_payment_method_id", { length: 120 }),
+    paymentMethodSummary: jsonb("payment_method_summary"),
+    submittedAt: timestamp("submitted_at", { withTimezone: true }),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    reviewedBy: varchar("reviewed_by", { length: 200 }),
+    paymentAttempt: integer("payment_attempt").notNull().default(0),
+    paymentFailure: text("payment_failure"),
     invoiceNumber: varchar("invoice_number", { length: 40 }),
     invoiceIssuedAt: timestamp("invoice_issued_at", { withTimezone: true }),
     paymentDueAt: timestamp("payment_due_at", { withTimezone: true }),

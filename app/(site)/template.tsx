@@ -1,10 +1,11 @@
 "use client";
+import { useHydratedReducedMotion } from "@/components/motion/use-hydrated-reduced-motion";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
 
 /** Soft per-route entrance — fades and lifts page content on navigation. */
 export default function Template({ children }: { children: React.ReactNode }) {
-  const reduce = useReducedMotion();
+  const reduce = useHydratedReducedMotion();
   if (reduce) return <>{children}</>;
 
   return (

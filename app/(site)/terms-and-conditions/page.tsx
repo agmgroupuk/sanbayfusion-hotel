@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 const keyRules = [
   ["1 to 12 month membership", "Your selected duration begins on final activation after admin approval."],
-  ["Paid, pending review", "After payment, our team contacts you within up to 3 days before final approval."],
+  ["Apply before payment", "Submit without a membership charge. Approval triggers the exact authorized charge; successful payment activates membership."],
   ["Non-refundable fee", "Membership fees are non-refundable after payment and activation except where required by law."],
   ["3-day delivery notice", "Eligible delivery requests normally require at least 3 days' advance notice."],
   ["Final package lock", "The agreed plan and package are locked after activation."],
@@ -39,20 +39,22 @@ export default function TermsPage() {
 
       <LegalSection title="1. Applying for membership">
         <p>
-          Selecting a plan does not activate membership. Checkout collects the membership fee
-          and any selected prepaid package charges once. Successful payment places the
-          membership in paid, pending review status with {site.name}.
+          Selecting a plan does not activate membership. Application checkout saves your payment method securely and records your authorization
+          for the displayed membership and package amount. Submission places the application
+          in pending review status without charging the membership fee.
           We may request identity, contact, delivery, age-verification, dietary, or
           product information before deciding whether to accept it.
         </p>
         <p>
-          A paid application is reviewed before activation. The
+          If approved, we attempt the exact authorized charge using your saved payment method.
+          Declined applications are not charged. Your bank may require further authentication
+          or a different payment method. The
           membership becomes active only after the required fee is received and the
           team confirms activation.
         </p>
       </LegalSection>
 
-      <LegalSection title="2. Term, fee, and invoice">
+      <LegalSection title="2. Term, fee, and authorized charge">
         <p>
           Each new membership lasts for the selected 1 to 12 calendar months from final
           activation after admin approval. The start and exclusive expiry dates appear in the dashboard. The membership
@@ -61,28 +63,26 @@ export default function TermsPage() {
           charges.
         </p>
         <p>
-          An invoice will show the customer, application reference, selected plan,
-          membership fee, issue date, payment deadline, amount due, and instructions. The
-          standard payment period is three days from invoice issuance. The exact date
-          shown on the invoice controls.
+          Your submitted application records the exact membership and package amount
+          you authorize. The saved payment method is charged only after approval.
+          Any changed amount requires new customer confirmation.
         </p>
         <p>
-          If payment is not received in time, the membership will not activate. The
-          invoice or application may expire, be placed on hold, or require a new
-          invoice with updated availability or pricing.
+          Saving a card does not guarantee payment. If the issuer requires authentication
+          or declines the charge, membership remains inactive until payment succeeds.
+          Use your dashboard to authenticate, update the payment method, or retry.
         </p>
       </LegalSection>
 
       <LegalSection title="3. Setup and final membership package">
         <p>
-          After confirmed payment, the team normally completes membership setup within
-          approximately three days. Final details may include a membership number or
+          After approval and confirmed payment, membership activates. Details include a membership number or
           card, plan, package, package quantity, start date, expiry date, and
           ordering instructions.
         </p>
         <p>
           Before activation, the member should review the final plan, food and beverage
-          configuration, included products, delivery frequency, and agreed preferences.
+          configuration, included products, monthly quantities, and agreed preferences.
           Once finalized and activated, that package becomes the member&apos;s historical
           membership snapshot and is ordinarily locked for the term.
         </p>

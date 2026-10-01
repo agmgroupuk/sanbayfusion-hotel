@@ -17,7 +17,7 @@ export type AuthResult = { ok: true; message?: string } | { ok: false; error: st
 function getSafeRedirectPath(value: FormDataEntryValue | null | undefined) {
   const raw = String(value ?? "").trim();
   if (!raw) return "/dashboard";
-  if (!raw.startsWith("/")) return "/dashboard";
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\")) return "/dashboard";
   return raw;
 }
 

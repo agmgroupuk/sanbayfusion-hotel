@@ -114,6 +114,7 @@ export async function activateMembershipRequest({ id, actor }: { id: string; act
     if (!membership) return null;
     if (membership.status === "active") return membership;
     if (membership.status !== "payment_received" || membership.invoiceStatus !== "paid") return null;
+    if (membership.applicationSnapshot && !membership.approvedAt) return null;
 
     const [latest] = await tx.select({ memberId: membershipRequests.memberId })
       .from(membershipRequests)

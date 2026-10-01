@@ -1,10 +1,11 @@
 "use client";
+import { useHydratedReducedMotion } from "@/components/motion/use-hydrated-reduced-motion";
 
-import { motion, useScroll, useSpring, useReducedMotion } from "motion/react";
+import { motion, useScroll, useSpring } from "motion/react";
 
 /** A thin gold progress line at the very top, tracking scroll through the page. */
 export function ScrollProgress() {
-  const reduce = useReducedMotion();
+  const reduce = useHydratedReducedMotion();
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
     stiffness: 120,
