@@ -78,6 +78,13 @@
       "when": 1790867963074,
       "tag": "0010_colorful_wild_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790880756109,
+      "tag": "0011_membership_service_months",
+      "breakpoints": true
     }
   ]
 }

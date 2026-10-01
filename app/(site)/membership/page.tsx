@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { getCurrentAccount } from "@/lib/auth";
+import { accountHasOngoingMembership } from "@/lib/membership-access";
+export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { Crown, Sparkles, Users, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/site/page-header";
@@ -18,7 +21,7 @@ export const metadata: Metadata = {
 const membershipHighlights = [
   {
     title: "Priority reservations",
-    description: "Choose a membership lasting 1 to 12 months, starting after final approval.",
+    description: "Choose 1 to 12 eligible service months; they do not have to be consecutive.",
     icon: Crown,
   },
   {
@@ -38,7 +41,8 @@ const membershipHighlights = [
   },
 ];
 
-export default function MembershipPage() {
+export default async function MembershipPage() {
+  const activeMembership = await accountHasOngoingMembership(await getCurrentAccount());
   return (
     <div className="pb-28">
       <PageHeader
@@ -67,9 +71,9 @@ export default function MembershipPage() {
         </div>
 
         <Reveal variant="up" className="mt-20">
-          <p className="text-eyebrow text-gold">Choose your duration</p>
+          <p className="text-eyebrow text-gold">Choose your service months</p>
           <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {membershipPlans.map((plan) => <PlanCard key={plan.slug} plan={plan} />)}
+            {membershipPlans.map((plan) => <PlanCard key={plan.slug} plan={plan} activeMembership={activeMembership} />)}
           </div>
         </Reveal>
 

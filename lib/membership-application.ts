@@ -1,6 +1,6 @@
 import "server-only";
 import Stripe from "stripe";
-import { and, desc, eq, or, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
 import { customerAccounts, membershipRequests, type CustomerAccount, type MembershipRequest } from "@/lib/db/schema";
@@ -9,13 +9,13 @@ import { validateMembershipConfiguration, type MembershipPurchaseSnapshot } from
 import { hashPurchaseSnapshot } from "@/lib/membership-snapshot-hash";
 import { checkDeliveryEligibility } from "@/lib/delivery";
 import { geocodeGoogleAddress } from "@/lib/google-geocoding";
-import { membershipHasExpired } from "@/lib/membership-term";
+import { lockMembershipAccount, lockMembershipApplication, assertMembershipPurchaseAllowed, membershipsForAccount } from "@/lib/membership-access";
+import { validateServiceMonths } from "@/lib/membership-service-months";
+import { ApplicationError } from "@/lib/membership-errors";
+export { ApplicationError } from "@/lib/membership-errors";
 import { activateMembershipRequest } from "@/lib/membership-activation";
 import { validSavedQuote } from "@/lib/membership-quote-integrity";
 
-export class ApplicationError extends Error {
-  constructor(message: string, public status = 400) { super(message); }
-}
 function services() {
   if (!db || !stripe) throw new ApplicationError("Membership application services are unavailable.", 503);
   return { database: db, payments: stripe };
@@ -45,16 +45,10 @@ export async function prepareApplication(account: CustomerAccount, configuration
   if (!quote.ok) throw new ApplicationError(quote.error);
   const eligibility = await deliveryEligibility(details.deliveryAddress);
   return database.transaction(async tx => {
-    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${account.id}, 0))`);
-    const [profile] = await tx.select().from(customerAccounts).where(eq(customerAccounts.id, account.id)).limit(1).for("update");
-    if (!profile) throw new ApplicationError("Please sign in again.", 401);
-    let [application] = await tx.select().from(membershipRequests).where(or(eq(membershipRequests.customerAccountId, account.id), eq(membershipRequests.email, account.email))).orderBy(desc(membershipRequests.createdAt)).limit(1).for("update");
-    if (application?.status === "active" && membershipHasExpired(application)) {
-      await tx.update(membershipRequests).set({ status: "expired" }).where(eq(membershipRequests.id, application.id));
-      application = { ...application, status: "expired" };
-    }
-    const newTerm = !application || ["expired", "cancelled", "declined", "rejected"].includes(application.status);
-    if (!newTerm && application.status !== "application_draft") throw new ApplicationError("You already have a submitted application or membership. Check your dashboard.", 409);
+    const profile = await lockMembershipAccount(tx, account.id);
+    await assertMembershipPurchaseAllowed(tx, profile);
+    let application = (await membershipsForAccount(profile, tx)).find(row => row.status === "application_draft");
+    const newTerm = !application;
     let stripeCustomerId = profile.stripeCustomerId;
     const billing = details.billingAddress;
     const customerData = { name: details.customer.fullName, email: profile.email, phone: details.customer.phone, address: { line1: billing.line1, line2: billing.line2, city: billing.city, state: billing.state, postal_code: billing.postalCode, country: billing.country } };
@@ -74,13 +68,15 @@ export async function prepareApplication(account: CustomerAccount, configuration
       annualFee: quote.membershipFee, addOnTotal: quote.packageSubtotal, estimatedTotal: quote.total, durationMonths: quote.plan.durationMonths,
       deliveryDays: 0, annualDeliveryDays: 0, fullName: details.customer.fullName, email: profile.email, phone: details.customer.phone,
       address: { billing: billing, delivery: details.deliveryAddress, eligibility }, contactPreferences: { email: true },
-      configuration, purchaseSnapshot: quote.purchaseSnapshot, stripeCustomerId, status: "application_draft" as const,
+      configuration: quote.configuration, selectedServiceMonths: quote.configuration.selectedServiceMonths,
+      purchaseSnapshot: quote.purchaseSnapshot, stripeCustomerId, status: "application_draft" as const,
     };
     if (newTerm) {
       [application] = await tx.insert(membershipRequests).values({ ...values, requestNumber: `M-${crypto.randomUUID().slice(0, 24)}` }).returning();
     } else {
-      [application] = await tx.update(membershipRequests).set(values).where(eq(membershipRequests.id, application.id)).returning();
+      [application] = await tx.update(membershipRequests).set(values).where(eq(membershipRequests.id, application!.id)).returning();
     }
+    if (!application) throw new ApplicationError("Unable to prepare your application.", 409);
     let setup = application.stripeSetupIntentId ? await payments.setupIntents.retrieve(application.stripeSetupIntentId) : null;
     if (!setup || setup.status === "canceled") {
       setup = await payments.setupIntents.create({ customer: stripeCustomerId, usage: "off_session", payment_method_types: ["card"], metadata: { application_id: application.id, account_id: account.id, purpose: "membership_application" } }, { idempotencyKey: `sbf-setup-${application.id}-${application.stripeSetupIntentId ?? "initial"}` });
@@ -120,7 +116,8 @@ export async function checkApplicationSetup(id: string, accountId: string) {
 export async function changeApplicationPaymentMethod(id: string, accountId: string) {
   const { database, payments } = services();
   return database.transaction(async tx => {
-    const [row] = await tx.select().from(membershipRequests).where(and(eq(membershipRequests.id, id), eq(membershipRequests.customerAccountId, accountId))).limit(1).for("update");
+    const { row, account } = await lockMembershipApplication(tx, id, accountId);
+    if (account) await assertMembershipPurchaseAllowed(tx, account, row.id);
     if (!row || !row.stripeCustomerId || !["application_draft", "approved_payment_failed", "approved_payment_action_required"].includes(row.status)) throw new ApplicationError("Payment method cannot be changed in this state.", 409);
     // A succeeded/processing payment must not be replaced just because the webhook is delayed.
     if (row.stripePaymentIntentId) {
@@ -140,11 +137,14 @@ export async function submitApplication(account: CustomerAccount, raw: unknown) 
   const input = submitApplicationSchema.safeParse(raw);
   if (!input.success) throw new ApplicationError("Accept the displayed charge authorization, terms and privacy policy.");
   return database.transaction(async tx => {
-    const [row] = await tx.select().from(membershipRequests).where(and(eq(membershipRequests.id, input.data.applicationId), eq(membershipRequests.customerAccountId, account.id))).limit(1).for("update");
-    if (!row) throw new ApplicationError("Application not found.", 404);
+    const { row, account: profile } = await lockMembershipApplication(tx, input.data.applicationId, account.id);
     if (row.applicationSnapshot && row.status !== "application_draft") return { applicationId: row.id, requestNumber: row.requestNumber };
+    await assertMembershipPurchaseAllowed(tx, profile!, row.id);
     if (row.status !== "application_draft" || row.stripePaymentIntentId) throw new ApplicationError("This application cannot be submitted.", 409);
     const purchase = row.purchaseSnapshot as MembershipPurchaseSnapshot;
+    if (!validSavedQuote(purchase) || purchase.version !== 4 || JSON.stringify(row.selectedServiceMonths) !== JSON.stringify(purchase.selectedServiceMonths)) throw new ApplicationError("Review your membership and selected months again.", 409);
+    const monthError = validateServiceMonths(row.selectedServiceMonths, row.durationMonths, new Date());
+    if (monthError) throw new ApplicationError(monthError, 409);
     if (input.data.quoteHash !== hashPurchaseSnapshot(purchase)) throw new ApplicationError("Your quote changed. Review the latest summary and accept the agreements again.", 409);
     const address = row.address as { billing: ApplicationDetails["billingAddress"]; delivery: ApplicationDetails["deliveryAddress"] };
     const eligibility = await deliveryEligibility(address.delivery);
@@ -164,6 +164,7 @@ export async function submitApplication(account: CustomerAccount, raw: unknown) 
 
 function approvedSnapshot(row: MembershipRequest): ApplicationSnapshot {
   const snapshot = row.applicationSnapshot as ApplicationSnapshot | null;
+  if (snapshot?.purchase.version === 4 && JSON.stringify(row.selectedServiceMonths) !== JSON.stringify(snapshot.purchase.selectedServiceMonths)) throw new ApplicationError("Saved service months do not match the authorized application.", 409);
   if (!snapshot || !validSavedQuote(snapshot.purchase)) throw new ApplicationError("The saved price calculation is invalid. New customer confirmation is required.", 409);
   if (!snapshot || snapshot.version !== 1 || snapshot.accountId !== row.customerAccountId || snapshot.stripeCustomerId !== row.stripeCustomerId || snapshot.consent.version !== applicationConsentVersion || !snapshot.consent.terms || !snapshot.consent.privacy || snapshot.consent.authorization !== chargeAuthorization || snapshot.consent.amount !== snapshot.expectedAmount || snapshot.currency !== "thb" || snapshot.expectedAmount !== row.estimatedTotal || snapshot.purchase.total !== row.estimatedTotal || snapshot.purchase.plan.durationMonths !== row.durationMonths || hashPurchaseSnapshot(snapshot.purchase) !== hashPurchaseSnapshot(row.purchaseSnapshot) || !Number.isSafeInteger(snapshot.expectedAmount) || snapshot.expectedAmount <= 0 || !snapshot.consent.acceptedAt) throw new ApplicationError("The saved application or authorization is invalid. New customer confirmation is required.", 409);
   return snapshot;
@@ -173,11 +174,15 @@ function approvedSnapshot(row: MembershipRequest): ApplicationSnapshot {
 export async function approveApplication(id: string, actor: string) {
   const { database, payments } = services();
   const shouldCharge = await database.transaction(async tx => {
-    const [row] = await tx.select().from(membershipRequests).where(eq(membershipRequests.id, id)).limit(1).for("update");
-    if (!row) throw new ApplicationError("Application not found.", 404);
+    const { row, account } = await lockMembershipApplication(tx, id);
     if (row.status !== "pending_review") return row.status === "approved_payment_pending";
+    if (account) await assertMembershipPurchaseAllowed(tx, account, row.id);
     if (row.invoiceStatus === "paid" || row.stripePaymentIntentId) throw new ApplicationError("This application already has a payment.", 409);
     const snapshot = approvedSnapshot(row);
+    if (snapshot.purchase.version === 4) {
+      const monthError = validateServiceMonths(row.selectedServiceMonths, row.durationMonths, new Date());
+      if (monthError) throw new ApplicationError(`${monthError} Ask the customer to submit a new selection; no charge has been made.`, 409);
+    }
     await deliveryEligibility(snapshot.deliveryAddress);
     const customer = await payments.customers.retrieve(snapshot.stripeCustomerId);
     const method = await payments.paymentMethods.retrieve(row.stripePaymentMethodId!);
@@ -200,12 +205,16 @@ export async function declineApplication(id: string, actor: string) {
 export async function chargeApprovedApplication(id: string, retry: boolean, accountId?: string) {
   const { database, payments } = services();
   await database.transaction(async tx => {
-    const [row] = await tx.select().from(membershipRequests).where(eq(membershipRequests.id, id)).limit(1).for("update");
-    if (!row || (accountId && row.customerAccountId !== accountId)) throw new ApplicationError("Application not found.", 404);
+    const { row, account } = await lockMembershipApplication(tx, id, accountId);
     if (!approvedStatuses.has(row.status) || !row.approvedAt || !row.stripePaymentIntentId) return;
+    if (account) await assertMembershipPurchaseAllowed(tx, account, row.id);
     approvedSnapshot(row);
     let intent = await payments.paymentIntents.retrieve(row.stripePaymentIntentId);
     if (["succeeded", "processing", "canceled"].includes(intent.status) || (intent.status === "requires_action" && !retry)) return;
+    if (row.selectedServiceMonths) {
+      const monthError = validateServiceMonths(row.selectedServiceMonths, row.durationMonths, new Date());
+      if (monthError) throw new ApplicationError(monthError, 409);
+    }
     if (row.status !== "approved_payment_pending" && !retry) return;
     let methodId = row.stripePaymentMethodId!;
     let summary = row.paymentMethodSummary;
@@ -231,8 +240,7 @@ export async function chargeApprovedApplication(id: string, retry: boolean, acco
 export async function reconcileApplicationPayment(id: string) {
   const { database, payments } = services();
   const row = await database.transaction(async tx => {
-    const [application] = await tx.select().from(membershipRequests).where(eq(membershipRequests.id, id)).limit(1).for("update");
-    if (!application) throw new ApplicationError("Application not found.", 404);
+    const { row: application } = await lockMembershipApplication(tx, id);
     if (!application.applicationSnapshot || !application.approvedAt || !application.stripePaymentIntentId || !approvedStatuses.has(application.status)) return application;
     const snapshot = approvedSnapshot(application);
     const intent = await payments.paymentIntents.retrieve(application.stripePaymentIntentId);

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 const keyRules = [
-  ["1 to 12 month membership", "Your selected duration begins on final activation after admin approval."],
+  ["1 to 12 month membership", "Choose exactly 1 to 12 eligible calendar service months, not necessarily consecutive."],
   ["Apply before payment", "Submit without a membership charge. Approval triggers the exact authorized charge; successful payment activates membership."],
   ["Non-refundable fee", "Membership fees are non-refundable after payment and activation except where required by law."],
   ["3-day delivery notice", "Eligible delivery requests normally require at least 3 days' advance notice."],
@@ -56,11 +56,10 @@ export default function TermsPage() {
 
       <LegalSection title="2. Term, fee, and authorized charge">
         <p>
-          Each new membership lasts for the selected 1 to 12 calendar months from final
-          activation after admin approval. The start and exclusive expiry dates appear in the dashboard. The membership
-          fee provides access to the finalized plan benefits and entitlements; it does
-          not necessarily include future delivery, food, beverage, or additional order
-          charges.
+          Each new membership covers exactly the selected 1 to 12 service months in one explicit calendar year, subject to approval and successful payment. Months need not be consecutive; service entitlement exists only in the selected months. The dashboard distinguishes upcoming, current and completed months. Selected months become fixed on final submission. Existing agreements retain their saved terms.
+        </p>
+        <p>
+          One complimentary member meal is included per selected service month, up to the menu value shown for your plan. This is separate from prepaid packages and extra orders. Complimentary benefit has no cash value and applies only to eligible included menu selections. Unused benefits do not accumulate, carry forward, or convert into refunds or credit. Redemption requires a request during the selected month, at least three days of advance scheduling, and team confirmation of eligible menu and availability. You cannot purchase another membership while your existing membership is active or has service months remaining.
         </p>
         <p>
           Your submitted application records the exact membership and package amount

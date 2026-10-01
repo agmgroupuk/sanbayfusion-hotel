@@ -1,11 +1,11 @@
-import { resolveMembershipStatus } from "@/lib/membership-status";
+import { activeMembershipForAccount } from "@/lib/membership-access";
 import { hasActiveMembership } from "@/lib/membership-term";
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { desc, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { getCurrentAccount } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { customerOrderItems, customerOrders, membershipRequests } from "@/lib/db/schema";
+import { customerOrderItems, customerOrders } from "@/lib/db/schema";
 import { priceCart } from "@/lib/order";
 import { stripe } from "@/lib/stripe";
 
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   if (!account) return NextResponse.json({ error: "Please sign in to order." }, { status: 401 });
   if (!db || !stripe) return NextResponse.json({ error: "Payment services are not configured." }, { status: 503 });
   const body = await request.json().catch(() => null) as { cart?: unknown; notes?: string } | null;
-  const membership = await resolveMembershipStatus((await db.select().from(membershipRequests).where(eq(membershipRequests.email, account.email)).orderBy(desc(membershipRequests.createdAt)).limit(1))[0]);
+  const membership = await activeMembershipForAccount(account);
   if (!membership || !hasActiveMembership(membership)) return NextResponse.json({ error: "An active membership is required to place an order." }, { status: 403 });
   const priced = priceCart(body?.cart, membership.planId);
   if (!priced.ok) return NextResponse.json({ error: priced.error }, { status: 400 });

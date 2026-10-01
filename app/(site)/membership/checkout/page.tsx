@@ -11,6 +11,7 @@ import { validateMembershipConfiguration } from "@/lib/membership-request";
 import { getApplicationForAccount } from "@/lib/membership-application";
 import type { ApplicationDetails } from "@/lib/membership-application-types";
 import type { MembershipPurchaseSnapshot } from "@/lib/membership-request";
+import { accountHasOngoingMembership } from "@/lib/membership-access";
 
 export const metadata: Metadata = {
   title: "Membership Application",
@@ -22,6 +23,7 @@ export default async function MembershipCheckoutPage({ searchParams }: { searchP
   const { application } = await searchParams;
   const account = await getCurrentAccount();
   if (!account) redirect(`/signin?next=${encodeURIComponent(`/membership/checkout${application ? `?application=${application}` : ""}`)}`);
+  if (await accountHasOngoingMembership(account)) redirect("/dashboard/membership");
 
   const draft = application && /^[0-9a-f-]{36}$/i.test(application) ? await getApplicationForAccount(application, account.id).catch(() => null) : null;
   if (draft && draft.status !== "application_draft") redirect(`/membership/request-received?id=${draft.id}`);

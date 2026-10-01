@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { calendarMonths, serviceYears } from "@/lib/membership-service-months";
+const eligibleMonths = calendarMonths(serviceYears()[1]);
 import { beverageAddOns, membershipPlans } from "@/lib/membership-plans";
 import { catalogueCategories } from "@/lib/catalogue";
 import { buildMembershipDeliverySchedule } from "@/lib/membership-delivery";
@@ -6,7 +8,7 @@ import { pricePackageItem } from "@/lib/package-pricing";
 import { calculateMembershipQuote, validateMembershipConfiguration, type MembershipConfiguration, type MembershipPurchaseSnapshot } from "@/lib/membership-request";
 
 const base: MembershipConfiguration = {
-  planSlug: "3-month-membership", purchaseMode: "membership_only", foodPreferences: [],
+  planSlug: "3-month-membership", selectedServiceMonths: eligibleMonths.slice(0, 3), purchaseMode: "membership_only", foodPreferences: [],
   deliveryArea: "Bangkok", preferredDay: "Monday", preferredTime: "09:00–12:00",
   alcoholEnabled: false, selectedAddOns: [], selectedProducts: [],
 };
@@ -14,11 +16,11 @@ const soup = { category: "Thai soups", name: "Tom Yum Goong", quantity: 4 };
 
 describe("membership package pricing", () => {
   it.each(membershipPlans)("charges only $price for $name without a prepaid package", plan => {
-    const result = validateMembershipConfiguration({ ...base, planSlug: plan.slug });
-    expect(result).toMatchObject({ ok: true, total: plan.price, packageSubtotal: 0, purchaseSnapshot: { version: 3, products: [], addOns: [] } });
+    const result = validateMembershipConfiguration({ ...base, planSlug: plan.slug, selectedServiceMonths: eligibleMonths.slice(0, plan.durationMonths) });
+    expect(result).toMatchObject({ ok: true, total: plan.price, packageSubtotal: 0, purchaseSnapshot: { version: 4, products: [], addOns: [] } });
   });
   it.each(membershipPlans)("prices monthly products for the actual $durationMonths month term", plan => {
-    const result = validateMembershipConfiguration({ ...base, planSlug: plan.slug, purchaseMode: "membership_with_package", selectedProducts: [soup] });
+    const result = validateMembershipConfiguration({ ...base, planSlug: plan.slug, selectedServiceMonths: eligibleMonths.slice(0, plan.durationMonths), purchaseMode: "membership_with_package", selectedProducts: [soup] });
     expect(result).toMatchObject({ ok: true, total: plan.price + 320 * 4 * plan.durationMonths });
     if (!result.ok) return;
     expect(result.purchaseSnapshot.products[0]).toMatchObject({ unitPrice: 320, monthlyQuantity: 4, durationMonths: plan.durationMonths, totalTermQuantity: 4 * plan.durationMonths, lineTotal: 320 * 4 * plan.durationMonths, pricingType: "MONTHLY" });

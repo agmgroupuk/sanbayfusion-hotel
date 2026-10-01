@@ -8,6 +8,11 @@ import { db } from "@/lib/db";
 import { membershipDeliveryEntitlements, membershipRequests, type MembershipRequest } from "@/lib/db/schema";
 import { sendMembershipPaymentReviewEmail } from "@/lib/email/membership-request";
 import { buildMembershipDeliverySchedule } from "@/lib/membership-delivery";
+import { lockMembershipApplication, assertMembershipPurchaseAllowed } from "@/lib/membership-access";
+import { serviceMonthBounds, validateServiceMonths } from "@/lib/membership-service-months";
+import { ApplicationError } from "@/lib/membership-errors";
+import type { MembershipPurchaseSnapshot } from "@/lib/membership-request";
+import { validSavedQuote } from "@/lib/membership-quote-integrity";
 
 export type MembershipLifecycleStatus =
   | "pending_review"
@@ -73,7 +78,7 @@ export async function recordMembershipPayment({
     const snapshot = membership.purchaseSnapshot as { version?: number; purchaseMode?: string } | null;
     const expectedMode = snapshot?.purchaseMode === "membership_with_package" ? "MEMBERSHIP_WITH_PACKAGE" : "MEMBERSHIP_ONLY";
     if (purchaseMode !== expectedMode) return null;
-    if (snapshot?.version === 3 && (membership.stripePaymentIntentId !== paymentIntentId || snapshotHash !== hashPurchaseSnapshot(snapshot))) return null;
+    if (snapshot?.version && snapshot.version >= 3 && (membership.stripePaymentIntentId !== paymentIntentId || snapshotHash !== hashPurchaseSnapshot(snapshot))) return null;
     if (membership.invoiceStatus === "paid") return membership.stripePaymentIntentId === paymentIntentId ? membership : null;
     if (membership.status !== "payment_pending") return null;
     const [paid] = await tx.update(membershipRequests)
@@ -109,12 +114,14 @@ export async function recordMembershipPayment({
 export async function activateMembershipRequest({ id, actor }: { id: string; actor: string }) {
   if (!db) return null;
   return db.transaction(async (tx) => {
+    const { row: membership, account } = await lockMembershipApplication(tx, id);
     await tx.execute(sql`select pg_advisory_xact_lock(731946201)`);
-    const [membership] = await tx.select().from(membershipRequests).where(eq(membershipRequests.id, id)).limit(1);
-    if (!membership) return null;
     if (membership.status === "active") return membership;
     if (membership.status !== "payment_received" || membership.invoiceStatus !== "paid") return null;
     if (membership.applicationSnapshot && !membership.approvedAt) return null;
+    if (account) await assertMembershipPurchaseAllowed(tx, account, id);
+    const purchase = membership.purchaseSnapshot as MembershipPurchaseSnapshot | null;
+    if (purchase?.version === 4 && (!validSavedQuote(purchase) || validateServiceMonths(membership.selectedServiceMonths, membership.durationMonths) || JSON.stringify(purchase.selectedServiceMonths) !== JSON.stringify(membership.selectedServiceMonths))) throw new ApplicationError("The saved service months or benefit are invalid.", 409);
 
     const [latest] = await tx.select({ memberId: membershipRequests.memberId })
       .from(membershipRequests)
@@ -123,7 +130,9 @@ export async function activateMembershipRequest({ id, actor }: { id: string; act
       .limit(1);
     const memberId = membership.memberId ?? nextMemberNumber(latest?.memberId);
     const activatedAt = new Date();
-    const { startDate: membershipStartDate, expiryDate: membershipExpiryDate } = membershipTerm(activatedAt, membership.durationMonths);
+    const { startDate: membershipStartDate, expiryDate: membershipExpiryDate } = purchase?.version === 4
+      ? serviceMonthBounds(membership.selectedServiceMonths!)
+      : membershipTerm(activatedAt, membership.durationMonths);
     const [row] = await tx.update(membershipRequests)
       .set({
         status: "active",

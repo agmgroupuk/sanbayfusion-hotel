@@ -11,6 +11,7 @@ import {
   index,
   uniqueIndex,
   boolean,
+  check,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -196,6 +197,8 @@ export const membershipRequests = pgTable(
     estimatedTotal: integer("estimated_total").notNull(),
     // Existing SQL column is retained to preserve all historical durations.
     durationMonths: integer("validity_months").notNull(),
+    // Null preserves historical consecutive-term agreements without inventing months.
+    selectedServiceMonths: jsonb("selected_service_months").$type<string[]>(),
     // Historical delivery entitlements only; new duration plans store zero.
     deliveryDays: integer("delivery_days").notNull(),
     annualDeliveryDays: integer("annual_delivery_days").notNull(),
@@ -298,6 +301,26 @@ export const customerOrderItems = pgTable(
   (t) => [index("customer_order_items_order_idx").on(t.orderId)],
 );
 
+/** Included benefit reservations never create a paid order or Stripe charge. */
+export const membershipBenefitRedemptions = pgTable("membership_benefit_redemptions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  membershipRequestId: uuid("membership_request_id").notNull().references(() => membershipRequests.id, { onDelete: "restrict" }),
+  serviceMonth: varchar("service_month", { length: 7 }).notNull(),
+  mealName: varchar("meal_name", { length: 120 }).notNull(),
+  menuValue: integer("menu_value").notNull(),
+  scheduledDate: date("scheduled_date").notNull(),
+  status: varchar("status", { length: 16 }).notNull().default("requested"),
+  redeemedAt: timestamp("redeemed_at", { withTimezone: true }).notNull().defaultNow(),
+  fulfilledAt: timestamp("fulfilled_at", { withTimezone: true }),
+  fulfilledBy: varchar("fulfilled_by", { length: 200 }),
+}, t => [
+  uniqueIndex("membership_benefit_month_idx").on(t.membershipRequestId, t.serviceMonth),
+  check("membership_benefit_valid_month", sql`${t.serviceMonth} ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'`),
+  check("membership_benefit_in_month", sql`to_char(${t.scheduledDate}, 'YYYY-MM') = ${t.serviceMonth}`),
+  check("membership_benefit_valid_status", sql`${t.status} in ('requested', 'fulfilled')`),
+  check("membership_benefit_positive_value", sql`${t.menuValue} > 0`),
+]);
+
 export type Reservation = typeof reservations.$inferSelect;
 export type NewReservation = typeof reservations.$inferInsert;
 export type CustomerAccount = typeof customerAccounts.$inferSelect;
@@ -306,3 +329,4 @@ export type NewMembershipRequest = typeof membershipRequests.$inferInsert;
 export type CustomerOrder = typeof customerOrders.$inferSelect;
 export type CustomerOrderItem = typeof customerOrderItems.$inferSelect;
 export type MembershipDeliveryEntitlement = typeof membershipDeliveryEntitlements.$inferSelect;
+export type MembershipBenefitRedemption = typeof membershipBenefitRedemptions.$inferSelect;

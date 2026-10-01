@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { validateServiceMonths, serviceMonthPattern, type IncludedMemberBenefit } from "@/lib/membership-service-months";
 import { pricePackageItem } from "@/lib/package-pricing";
 import { catalogueCategories, type CatalogueGroup } from "@/lib/catalogue";
 import { alcoholSalesEnabled, beverageAddOns, membershipDeliveryAreas, membershipPlanAllowsCatalogueCategory, membershipPlans, membershipPreferredDays, membershipPreferredTimes } from "@/lib/membership-plans";
@@ -26,6 +27,7 @@ export type MembershipPurchaseMode = (typeof membershipPurchaseModes)[number];
 const phoneNumberSchema = z.string().trim().regex(/^\+?[0-9][0-9\s().-]{5,38}$/, "Enter a valid phone number");
 export const membershipConfigurationSchema = z.object({
   planSlug: z.string().min(1),
+  selectedServiceMonths: z.array(z.string().regex(serviceMonthPattern)).min(1).max(12),
   purchaseMode: z.enum(membershipPurchaseModes).default("membership_only"),
   foodPreferences: z.array(z.string().min(1)).max(8),
   deliveryArea: z.enum(membershipDeliveryAreas),
@@ -104,7 +106,9 @@ export type ValidatedMembershipApplication = MembershipApplicationInput & {
 };
 
 export type MembershipPurchaseSnapshot = {
-  version: 1 | 2 | 3;
+  version: 1 | 2 | 3 | 4;
+  selectedServiceMonths?: string[];
+  includedBenefit?: IncludedMemberBenefit;
   currency?: "thb";
   pricingVersion?: number;
   purchaseMode: MembershipPurchaseMode;
@@ -144,7 +148,9 @@ export function calculateMembershipQuote(configuration: MembershipConfiguration,
     ? selectedProducts.reduce((total, item) => total + item.lineTotal, 0) + selectedAddOns.reduce((total, item) => total + item.lineTotal, 0)
     : 0;
   const purchaseSnapshot: MembershipPurchaseSnapshot = {
-    version: 3,
+    version: 4,
+    selectedServiceMonths: [...configuration.selectedServiceMonths].sort(),
+    includedBenefit: { ...plan.includedBenefit },
     purchaseMode: configuration.purchaseMode,
     plan: { id: plan.id, slug: plan.slug, name: plan.name, durationMonths: plan.durationMonths, membershipFee },
     delivery: {
@@ -165,12 +171,14 @@ export function calculateMembershipQuote(configuration: MembershipConfiguration,
   return { membershipFee, selectedProducts, selectedAddOns, packageSubtotal, total: membershipFee + packageSubtotal, purchaseSnapshot };
 }
 
-export function validateMembershipConfiguration(raw: unknown) {
+export function validateMembershipConfiguration(raw: unknown, now = new Date()) {
   const parsed = membershipConfigurationSchema.safeParse(raw);
   if (!parsed.success) return { ok: false as const, error: "Invalid membership configuration or quantities." };
   const configuration = parsed.data;
   const plan = membershipPlans.find((item) => item.slug === configuration.planSlug);
   if (!plan) return { ok: false as const, error: "That membership plan is not available." };
+  const monthError = validateServiceMonths(configuration.selectedServiceMonths, plan.durationMonths, now);
+  if (monthError) return { ok: false as const, error: monthError };
   if (configuration.alcoholEnabled && !alcoholSalesEnabled) {
     return { ok: false as const, error: "Alcohol options are not currently available." };
   }
@@ -222,6 +230,7 @@ export function validateMembershipConfiguration(raw: unknown) {
   const quote = calculateMembershipQuote(configuration, plan);
   return {
     ok: true as const,
+    configuration: { ...configuration, selectedServiceMonths: [...configuration.selectedServiceMonths].sort() },
     plan,
     addOnTotal: quote.packageSubtotal,
     packageSubtotal: quote.packageSubtotal,

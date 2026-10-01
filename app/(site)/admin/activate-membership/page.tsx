@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { PackageSummary } from "@/components/membership/package-summary";
 import { AdminApprovalForm } from "@/components/membership/admin-approval-form";
+import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { desc, inArray } from "drizzle-orm";
@@ -18,7 +19,7 @@ export default async function ReviewMembershipPage() {
   if (!account) redirect("/signin?next=%2Fadmin%2Factivate-membership");
   if (!isMembershipAdmin(account.email)) redirect("/dashboard");
   const pending = db ? await db.select().from(membershipRequests).where(inArray(membershipRequests.status, ["pending_review", "approved_payment_pending", "approved_payment_action_required", "approved_payment_failed", "payment_received"])).orderBy(desc(membershipRequests.createdAt)).limit(100) : [];
-  return <div className="mx-auto max-w-6xl px-5 py-28"><p className="text-eyebrow text-gold">Staff review</p><h1 className="mt-3 font-display text-5xl">Membership applications</h1><p className="mt-4 text-muted-foreground">Review the saved agreement. Approval attempts the exact authorized charge; activation follows verified payment success.</p><div className="mt-8 space-y-6">{!pending.length && <p>No applications awaiting review.</p>}{pending.map(item => {
+  return <div className="mx-auto max-w-6xl px-5 py-28"><p className="text-eyebrow text-gold">Staff review</p><h1 className="mt-3 font-display text-5xl">Membership applications</h1><p className="mt-4 text-muted-foreground">Review the saved agreement. Approval attempts the exact authorized charge; activation follows verified payment success.</p><Link href="/admin/membership-benefits" className="mt-5 inline-block text-sm text-gold underline">Manage complimentary meal requests</Link><div className="mt-8 space-y-6">{!pending.length && <p>No applications awaiting review.</p>}{pending.map(item => {
     const application = item.applicationSnapshot as ApplicationSnapshot | null;
     const purchase = item.purchaseSnapshot as MembershipPurchaseSnapshot;
     const legacy = !application && item.status === "payment_received";

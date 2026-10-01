@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { validSavedQuote } from "@/lib/membership-quote-integrity";
 import { validateMembershipConfiguration } from "@/lib/membership-request";
+import { calendarMonths, serviceYears } from "@/lib/membership-service-months";
 import { membershipPreferredTimes } from "@/lib/membership-plans";
-const configuration = { planSlug: "3-month-membership", purchaseMode: "membership_with_package", foodPreferences: [], deliveryArea: "Bangkok", preferredDay: "Monday", preferredTime: membershipPreferredTimes[0], alcoholEnabled: false, selectedProducts: [{ category: "Thai soups", name: "Tom Yum Goong", quantity: 4 }], selectedAddOns: [] };
+const configuration = { planSlug: "3-month-membership", selectedServiceMonths: calendarMonths(serviceYears()[1]).slice(0, 3), purchaseMode: "membership_with_package", foodPreferences: [], deliveryArea: "Bangkok", preferredDay: "Monday", preferredTime: membershipPreferredTimes[0], alcoholEnabled: false, selectedProducts: [{ category: "Thai soups", name: "Tom Yum Goong", quantity: 4 }], selectedAddOns: [] };
 function quote() { const result = validateMembershipConfiguration(configuration); if (!result.ok) throw new Error(result.error); return result.purchaseSnapshot; }
 describe("immutable quote arithmetic", () => {
  it("accepts the saved quote without reading new catalog prices", () => { expect(validSavedQuote(quote())).toBe(true); });

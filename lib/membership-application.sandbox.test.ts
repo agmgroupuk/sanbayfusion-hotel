@@ -16,6 +16,7 @@ import { POST as stripeWebhook } from "@/app/api/stripe/webhook/route";
 import { POST as applicationApi } from "@/app/api/membership/application/route";
 import { build } from "esbuild";
 import { globSync, readFileSync } from "node:fs";
+import { calendarMonths, serviceYears } from "@/lib/membership-service-months";
 import { membershipPreferredTimes, membershipPlans } from "@/lib/membership-plans";
 const enabled = process.env.RUN_MEMBERSHIP_SANDBOX_E2E === "true";
 const suite = enabled ? describe : describe.skip;
@@ -24,7 +25,7 @@ let database: NonNullable<typeof state.db>;
 let stripe: Stripe;
 const rollback = new Error("SANDBOX_FIXTURE_ROLLBACK");
 const details = { customer: { fullName: "Sandbox Application Verification", phone: "+66812345678" }, billingAddress: { country: "GB", line1: "10 Test Street", line2: "", city: "London", state: "", postalCode: "SW1A 1AA" }, deliveryAddress: { country: "Thailand", line1: "999 Rama I Road", line2: "", subdistrict: "Pathum Wan", district: "Pathum Wan", province: "Bangkok", postalCode: "10330" } };
-const configuration = { planSlug: "3-month-membership", purchaseMode: "membership_with_package", foodPreferences: [], deliveryArea: "Bangkok", preferredDay: "Monday", preferredTime: membershipPreferredTimes[0], alcoholEnabled: false, selectedProducts: [{ category: "Thai soups", name: "Tom Yum Goong", quantity: 4 }], selectedAddOns: [] };
+const configuration = { planSlug: "3-month-membership", selectedServiceMonths: calendarMonths(serviceYears()[1]).slice(0, 3), purchaseMode: "membership_with_package", foodPreferences: [], deliveryArea: "Bangkok", preferredDay: "Monday", preferredTime: membershipPreferredTimes[0], alcoholEnabled: false, selectedProducts: [{ category: "Thai soups", name: "Tom Yum Goong", quantity: 4 }], selectedAddOns: [] };
 async function fixture(work: (account: CustomerAccount) => Promise<void>) {
   try {
     await database.transaction(async tx => {
@@ -68,7 +69,7 @@ suite("real Stripe Sandbox application lifecycle with rolled-back database fixtu
    expect(pending.estimatedTotal).toBe(18840);
    const immutable = pending.applicationSnapshot;
    await submitApplication(account, consent);
-   await expect(prepareApplication(account, { ...configuration, planSlug: "1-month-membership" }, details)).rejects.toThrow("already have");
+   await expect(prepareApplication(account, { ...configuration, planSlug: "1-month-membership", selectedServiceMonths: configuration.selectedServiceMonths.slice(0, 1) }, details)).rejects.toThrow("already have");
    const active = await approveApplication(pending.id, "sandbox-test-admin");
    expect(active.status).toBe("active"); expect(active.invoiceStatus).toBe("paid"); expect(active.memberId).toMatch(/^SBF-M-/); expect(active.membershipStartDate).toBeTruthy(); expect(active.membershipExpiryDate).toBeTruthy();
    const again = await approveApplication(pending.id, "sandbox-test-admin");

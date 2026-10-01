@@ -1,9 +1,11 @@
 import type { MembershipPurchaseSnapshot } from "@/lib/membership-request";
+import { validateServiceMonths } from "@/lib/membership-service-months";
 
 /** Validate the saved arithmetic without substituting today's catalog prices. */
 export function validSavedQuote(quote: MembershipPurchaseSnapshot): boolean {
   const months = quote.plan?.durationMonths;
-  if (quote.version !== 3 || quote.currency !== "thb" || !Number.isInteger(months) || !months || months < 1 || months > 12 || !Number.isSafeInteger(quote.membershipFee) || quote.membershipFee <= 0 || quote.plan.membershipFee !== quote.membershipFee) return false;
+  if (![3, 4].includes(quote.version) || quote.currency !== "thb" || !Number.isInteger(months) || !months || months < 1 || months > 12 || !Number.isSafeInteger(quote.membershipFee) || quote.membershipFee <= 0 || quote.plan.membershipFee !== quote.membershipFee) return false;
+  if (quote.version === 4 && (validateServiceMonths(quote.selectedServiceMonths, months) || !quote.includedBenefit?.name || !Number.isSafeInteger(quote.includedBenefit.menuValue) || quote.includedBenefit.menuValue <= 0 || quote.includedBenefit.quantityPerServiceMonth !== 1 || quote.includedBenefit.cashValue !== 0)) return false;
   let subtotal = 0;
   for (const item of [...quote.products, ...quote.addOns]) {
     const quantity = "quantity" in item ? item.quantity : item.monthlyQuantity;

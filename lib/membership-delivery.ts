@@ -21,7 +21,7 @@ export function buildMembershipDeliverySchedule({
   deliveriesPerMonth: number;
   purchaseSnapshot: MembershipPurchaseSnapshot | null;
 }) {
-  if (purchaseSnapshot?.version === 3) return [];
+  if (purchaseSnapshot && purchaseSnapshot.version >= 3) return [];
   const schedule = [];
   const annualDeliveryCount = durationMonths * deliveriesPerMonth;
 

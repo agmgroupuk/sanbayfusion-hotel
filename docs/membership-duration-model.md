@@ -1,5 +1,9 @@
 # Duration-based memberships
 
+This document describes historical v1-v3 consecutive-term agreements. New purchases
+use the [selected service-month model](membership-service-months.md); historical
+agreements keep the terms recorded at purchase.
+
 The authoritative catalog is `lib/membership-plans.ts`: twelve one-time plans
 lasting 1–12 calendar months, with fees of THB 6,000, 11,000, 15,000, 19,000,
 23,000, 27,000, 31,000, 35,000, 39,000, 43,000, 47,000, and 50,000.
