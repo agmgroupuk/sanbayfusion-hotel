@@ -23,7 +23,7 @@ function services() {
 function customerId(value: string | { id: string } | null) { return typeof value === "string" ? value : value?.id; }
 const approvedStatuses = new Set(["approved_payment_pending", "approved_payment_action_required", "approved_payment_failed"]);
 
-async function deliveryEligibility(address: ApplicationDetails["deliveryAddress"]) {
+export async function deliveryEligibility(address: ApplicationDetails["deliveryAddress"]) {
   let place: import("@/lib/delivery").DeliveryEligibilityRequest = { placeId: "application-address", formattedAddress: Object.values(address).join(", "), province: address.province, district: address.district, subdistrict: address.subdistrict, postalCode: address.postalCode };
   if (process.env.GOOGLE_MAPS_SERVER_API_KEY) {
     const result = await geocodeGoogleAddress({ address: place.formattedAddress });

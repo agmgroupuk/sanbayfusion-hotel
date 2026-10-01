@@ -21,8 +21,8 @@ export async function POST(request: Request) {
       case "address-save": await saveAddress(account.id, body.address); message = "Address saved."; break;
       case "address-default": await changeAddress(account.id, body.id, false); message = "Default address updated."; break;
       case "address-delete": await changeAddress(account.id, body.id, true); message = "Address deleted."; break;
-      case "card-add": data = await addCardSetup(account.id, body.requestId); message = "Secure card setup ready. No charge will be made."; break;
-      case "card-complete": data = { cards: await completeCardSetup(account.id, body.setupId) }; message = "Payment method saved securely."; break;
+      case "card-add": data = await addCardSetup(account.id, body.requestId); message = "Secure USD $2 card verification ready. Successful verification is automatically refunded."; break;
+      case "card-complete": data = { cards: await completeCardSetup(account.id, body.paymentIntentId) }; message = "Card verified. Your USD $2 refund has been initiated; your issuer may take additional time to display it."; break;
       case "card-default": await changeCard(account.id, body.id, "default"); data = { cards: await listCards(account.id) }; message = "Default payment method updated."; break;
       case "card-remove": await changeCard(account.id, body.id, "remove"); data = { cards: await listCards(account.id) }; message = "Payment method removed."; break;
       case "email-request": await requestEmailChange(account.id, body.email, password, code); message = "Check your new email for a verification link. Your current email has not changed."; break;

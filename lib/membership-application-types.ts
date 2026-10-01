@@ -22,7 +22,7 @@ export const applicationDetailsSchema = z.object({
 export type ApplicationDetails = z.infer<typeof applicationDetailsSchema>;
 export type PaymentMethodSummary = { brand: string; last4: string; expMonth: number; expYear: number };
 export type ApplicationSnapshot = {
-  version: 1; reference: string; accountId: string; accountCreatedAt: string;
+  version: 1 | 2; reference: string; accountId: string; accountCreatedAt: string;
   customer: { fullName: string; email: string; phone: string };
   purchase: MembershipPurchaseSnapshot; expectedAmount: number; currency: "thb";
   billingAddress: ApplicationDetails["billingAddress"]; deliveryAddress: ApplicationDetails["deliveryAddress"];

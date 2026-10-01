@@ -11,5 +11,5 @@ export const addressSchema = z.object({
 });
 export type AddressInput = z.infer<typeof addressSchema>;
 export type SavedAddress = AddressInput & { id: string };
-export type SafeCard = { id: string; brand: string; last4: string; expMonth: number; expYear: number; isDefault: boolean };
+export type SafeCard = { id: string; brand: string; last4: string; expMonth: number; expYear: number; isDefault: boolean; verificationStatus?: string; refundStatus?: string | null; verificationPaymentId?: string | null };
 export class AccountError extends Error { constructor(message: string, public status = 400) { super(message); } }

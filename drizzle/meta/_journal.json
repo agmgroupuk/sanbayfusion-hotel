@@ -85,6 +85,13 @@
       "when": 1790880756109,
       "tag": "0011_membership_service_months",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790970000000,
+      "tag": "0012_dashboard_invoice_flow",
+      "breakpoints": true
     }
   ]
 }

@@ -84,19 +84,19 @@ suite("Account Center with Railway DB rollback and real Stripe Sandbox", () => {
   await disableTwoFactor(a.id,"NewFixturePassword123",enabled.recoveryCodes[2]);expect((await securityStatus(a.id)).enabled).toBe(false);
  }),60000);
  it("enforces durable attempt limits", async()=>fixture(async(a)=>{ for(let i=0;i<3;i++) await rateLimit("fixture",a.id,3); await expect(rateLimit("fixture",a.id,3)).rejects.toThrow("Too many"); }),30000);
- it("adds multiple cards without charges, reuses one customer, changes defaults and removes safely", async()=>fixture(async(a,b)=>{
+ it("verifies and refunds multiple cards, reuses one customer, changes defaults and removes safely", async()=>fixture(async(a,b)=>{
   let customerId: string|null=null; const ids:string[]=[];
   for(const pm of ["pm_card_visa","pm_card_mastercard","pm_card_visa_debit"]) {
-   const setup=await addCardSetup(a.id,crypto.randomUUID()); const intent=await stripe.setupIntents.confirm(setup.setupId,{payment_method:pm}); expect(intent.status).toBe("succeeded");
+   const setup=await addCardSetup(a.id,crypto.randomUUID()); const intent=await stripe.paymentIntents.confirm(setup.paymentIntentId,{payment_method:pm}); expect(intent.status).toBe("succeeded");
    if(customerId)expect(intent.customer).toBe(customerId);else customerId=intent.customer as string;
-   const cards=await completeCardSetup(a.id,setup.setupId); ids.push((intent.payment_method as string)); expect(cards.filter(card=>card.isDefault)).toHaveLength(1);
+   const cards=await completeCardSetup(a.id,setup.paymentIntentId); ids.push((intent.payment_method as string)); expect(cards.filter(card=>card.isDefault)).toHaveLength(1); expect((await stripe.refunds.list({payment_intent:intent.id})).data[0].amount).toBe(200);
   }
   const cards=await listCards(a.id);expect(cards).toHaveLength(3); expect(JSON.stringify(cards)).not.toContain("client_secret");expect(JSON.stringify(cards)).not.toContain("4242424242424242");
   await expect(changeCard(b.id,ids[0],"remove")).rejects.toThrow();
   await changeCard(a.id,ids[1],"default");expect((await listCards(a.id)).find(card=>card.isDefault)?.id).toBe(ids[1]);
   await changeCard(a.id,ids[1],"remove"); expect((await listCards(a.id)).filter(card=>card.isDefault)).toHaveLength(1);
   await changeCard(a.id,ids[0],"remove");await changeCard(a.id,ids[2],"remove"); expect(await listCards(a.id)).toHaveLength(0);
-  expect((await stripe.paymentIntents.list({customer:customerId!,limit:10})).data).toHaveLength(0);
+  expect((await stripe.paymentIntents.list({customer:customerId!,limit:10})).data).toHaveLength(3);
   expect((await accountDefaults(a.id)).paymentMethod).toBeNull();
  }),120000);
  it("browser: responsive account forms and secure Stripe card saving",async()=>fixture(async(a)=>{
@@ -146,10 +146,10 @@ suite("Account Center with Railway DB rollback and real Stripe Sandbox", () => {
    for(let i=0;i<60;i++){let found=false;for(const child of page.frames())if(await child.locator('input[name="number"]').count()){frame=child;found=true;break;}if(found)break;await new Promise(resolve=>setTimeout(resolve,500));}
    await frame.locator('input[name="number"]').fill("4242424242424242");await frame.locator('input[name="expiry"]').fill("1234");await frame.locator('input[name="cvc"]').fill("123");
    const postal=frame.locator('input[name="postalCode"]');if(await postal.count())await postal.fill("10330");
-   await page.getByRole("button",{name:"Save payment method",exact:true}).click();await page.getByText("Payment method saved securely.",{exact:true}).waitFor({timeout:45000});
+   await page.getByRole("button",{name:"Verify card · USD $2.00",exact:true}).click();await page.getByText("Card verified. Your USD $2 refund has been initiated; your issuer may take additional time to display it.",{exact:true}).waitFor({timeout:45000});
    expect(await listCards(a.id)).toHaveLength(1);
    for(const width of [1440,820,390]){await page.setViewportSize({width,height:1000});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:`.next/verification/account/cards-${width}.png`,fullPage:true});}
-   const [current]=await state.db!.select().from(schema.customerAccounts).where(eq(schema.customerAccounts.id,a.id));expect((await stripe.paymentIntents.list({customer:current.stripeCustomerId!,limit:10})).data).toHaveLength(0);
+   const [current]=await state.db!.select().from(schema.customerAccounts).where(eq(schema.customerAccounts.id,a.id));expect((await stripe.paymentIntents.list({customer:current.stripeCustomerId!,limit:10})).data).toMatchObject([{amount:200,currency:"usd",status:"succeeded"}]);
   }finally{await browser.close();}
  }),180000);
 

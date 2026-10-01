@@ -40,6 +40,21 @@ export const accountAddresses = pgTable("account_addresses", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [index("account_addresses_owner_idx").on(t.accountId), uniqueIndex("account_addresses_default_idx").on(t.accountId, t.kind).where(sql`${t.isDefault} = true`)]);
 
+export const cardVerifications = pgTable("card_verifications", {
+  id: uuid("id").primaryKey(),
+  accountId: uuid("account_id").notNull().references(() => customerAccounts.id, { onDelete: "restrict" }),
+  stripeCustomerId: varchar("stripe_customer_id", { length: 120 }).notNull(),
+  paymentIntentId: varchar("payment_intent_id", { length: 120 }).unique(),
+  paymentMethodId: varchar("payment_method_id", { length: 120 }),
+  amount: integer("amount").notNull().default(200),
+  currency: varchar("currency", { length: 3 }).notNull().default("usd"),
+  status: varchar("status", { length: 30 }).notNull().default("pending"),
+  refundId: varchar("refund_id", { length: 120 }),
+  refundStatus: varchar("refund_status", { length: 30 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("card_verification_owner_idx").on(t.accountId), check("card_verification_amount", sql`${t.amount} = 200 AND ${t.currency} = 'usd'`)]);
+
 export const accountSecurity = pgTable("account_security", {
   accountId: uuid("account_id").primaryKey().references(() => customerAccounts.id, { onDelete: "cascade" }),
   totpSecret: text("totp_secret"),
@@ -225,6 +240,11 @@ export const membershipRequests = pgTable(
     invoiceStatus: membershipInvoiceStatus("invoice_status"),
     stripeCustomerId: varchar("stripe_customer_id", { length: 120 }),
     stripeInvoiceId: varchar("stripe_invoice_id", { length: 120 }),
+    stripeInvoiceStatus: varchar("stripe_invoice_status", { length: 30 }),
+    applicationState: varchar("application_state", { length: 30 }),
+    hostedInvoiceUrl: text("hosted_invoice_url"),
+    invoicePdf: text("invoice_pdf"),
+    notificationSentAt: timestamp("notification_sent_at", { withTimezone: true }),
     stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 120 }),
     memberId: varchar("member_id", { length: 40 }),
     membershipNumber: varchar("membership_number", { length: 40 }),
@@ -242,7 +262,7 @@ export const membershipRequests = pgTable(
     status: membershipRequestStatus("status").notNull().default("pending_review"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("membership_requests_status_idx").on(t.status), index("membership_requests_email_idx").on(t.email)],
+  (t) => [index("membership_requests_status_idx").on(t.status), index("membership_requests_email_idx").on(t.email), uniqueIndex("membership_invoice_unique_idx").on(t.stripeInvoiceId).where(sql`${t.applicationState} IS NOT NULL`)],
 );
 
 export const customerOrders = pgTable(

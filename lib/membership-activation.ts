@@ -136,6 +136,7 @@ export async function activateMembershipRequest({ id, actor }: { id: string; act
     const [row] = await tx.update(membershipRequests)
       .set({
         status: "active",
+        ...(membership.applicationState ? { applicationState: "completed" } : {}),
         memberId,
         membershipNumber: memberId,
         membershipStartDate,

@@ -5,6 +5,8 @@ import { db } from "@/lib/db";
 import { recordMembershipPayment } from "@/lib/membership-activation";
 import { recordOrderPayment } from "@/lib/order-payment";
 import { reconcileApplicationPayment } from "@/lib/membership-application";
+import { reconcileMembershipInvoice } from "@/lib/membership-invoice";
+import { reconcileCardVerification, stripeObjectId } from "@/lib/account/card-verification";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -25,8 +27,21 @@ export async function POST(request: Request) {
   }
 
   if (event.livemode) return NextResponse.json({ error: "Sandbox events only." }, { status: 400 });
+  if (event.type.startsWith("invoice.")) {
+    await reconcileMembershipInvoice((event.data.object as Stripe.Invoice).id);
+    return NextResponse.json({ ok: true });
+  }
+  if (event.type.startsWith("refund.")) {
+    const refund = event.data.object as Stripe.Refund;
+    if (refund.metadata?.purpose === "CARD_VERIFICATION_REFUND" && refund.payment_intent) await reconcileCardVerification(stripeObjectId(refund.payment_intent)!);
+    return NextResponse.json({ ok: true });
+  }
   if (event.type.startsWith("payment_intent.")) {
     const intent = event.data.object as Stripe.PaymentIntent;
+    if (intent.metadata.purpose === "CARD_VERIFICATION") {
+      await reconcileCardVerification(intent.id);
+      return NextResponse.json({ ok: true });
+    }
     if (intent.metadata.payment_type === "APPROVED_MEMBERSHIP" && intent.metadata.application_id) {
       await reconcileApplicationPayment(intent.metadata.application_id);
       return NextResponse.json({ ok: true });

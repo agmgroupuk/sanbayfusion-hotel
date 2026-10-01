@@ -3,7 +3,8 @@ const state = vi.hoisted(() => ({ account: { id: "account-a" } as { id: string }
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/auth", () => ({ getCurrentAccount: async () => state.account }));
 vi.mock("@/lib/membership-checkout", () => ({ readMembershipCheckoutSelection: async () => ({ configuration: { planSlug: "3-month-membership" } }) }));
-vi.mock("@/lib/membership-application", () => ({ ApplicationError: class extends Error { status = 400; }, prepareApplication: state.setup, submitApplication: state.submit, checkApplicationSetup: vi.fn(), changeApplicationPaymentMethod: vi.fn(), chargeApprovedApplication: state.retry, getRecoveryPayment: state.recover }));
+vi.mock("@/lib/membership-application", () => ({ ApplicationError: class extends Error { status = 400; }, getApplicationForAccount: async () => ({ applicationState: null }), chargeApprovedApplication: state.retry, getRecoveryPayment: state.recover }));
+vi.mock("@/lib/membership-invoice", () => ({ prepareInvoiceApplication: state.setup, submitInvoiceApplication: state.submit, invoiceRecovery: state.recover }));
 import { POST } from "@/app/api/membership/application/route";
 import { POST as retired } from "@/app/api/membership/payment-intent/route";
 import { hashPurchaseSnapshot } from "@/lib/membership-snapshot-hash";
@@ -14,7 +15,7 @@ describe("application API boundary", () => {
  it("retires immediate membership payments", async () => { expect((await retired()).status).toBe(410); });
  it("requires server authentication before saving details", async () => { state.account = null; expect((await POST(request({ action: "prepare" }))).status).toBe(401); expect(state.setup).not.toHaveBeenCalled(); });
  it("rejects cross-origin mutations", async () => { expect((await POST(request({ action: "prepare" }, "https://attacker.invalid"))).status).toBe(403); expect(state.setup).not.toHaveBeenCalled(); });
- it("uses the session account and server cart instead of browser prices or identity", async () => { await POST(request({ action: "prepare", details: {}, accountId: "other", amount: 1 })); expect(state.setup).toHaveBeenCalledWith({ id: "account-a" }, { planSlug: "3-month-membership" }, {}); });
+ it("uses the session account and server cart instead of browser prices or identity", async () => { await POST(request({ action: "prepare", details: {}, accountId: "other", amount: 1 })); expect(state.setup).toHaveBeenCalledWith({ id: "account-a" }, { planSlug: "3-month-membership" }); });
  it("submission cannot invoke charging", async () => { await POST(request({ action: "submit", applicationId: id })); expect(state.submit).toHaveBeenCalledOnce(); expect(state.retry).not.toHaveBeenCalled(); });
  it("binds payment retries to the authenticated account", async () => { await POST(request({ action: "retry", applicationId: id, accountId: "other" })); expect(state.retry).toHaveBeenCalledWith(id, true, "account-a"); });
  it("rejects invalid application identifiers", async () => { expect((await POST(request({ action: "retry", applicationId: "other" }))).status).toBe(400); expect(state.retry).not.toHaveBeenCalled(); });

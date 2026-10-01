@@ -6,11 +6,8 @@ import { MembershipCheckoutForm } from "@/components/membership/membership-check
 import { getCurrentAccount } from "@/lib/auth";
 import { membershipPlans } from "@/lib/membership-plans";
 import { readMembershipCheckoutSelection } from "@/lib/membership-checkout";
-import { stripePublishableKey } from "@/lib/stripe";
 import { validateMembershipConfiguration } from "@/lib/membership-request";
 import { getApplicationForAccount } from "@/lib/membership-application";
-import type { ApplicationDetails } from "@/lib/membership-application-types";
-import type { MembershipPurchaseSnapshot } from "@/lib/membership-request";
 import { accountHasOngoingMembership } from "@/lib/membership-access";
 
 export const metadata: Metadata = {
@@ -33,21 +30,18 @@ export default async function MembershipCheckoutPage({ searchParams }: { searchP
   const checked = validateMembershipConfiguration(configuration);
   if (!checked.ok) redirect("/plans");
   const plan = membershipPlans.find(item => item.id === checked.plan.id)!;
-  const address = draft?.address as { billing: ApplicationDetails["billingAddress"]; delivery: ApplicationDetails["deliveryAddress"] } | undefined;
 
   return (
     <>
       <PageHeader
         eyebrow="Membership application"
         title="Apply for your membership"
-        lead="Save your payment method securely and submit for review. No membership charge is made until your application is approved."
+        lead="Review your saved Dashboard details and membership selection. Submitting sends your request for review; your membership amount is not charged."
       />
       <MembershipCheckoutForm
         plan={plan}
-        account={{ fullName: account.fullName ?? "", email: account.email, phone: account.phone ?? "" }}
         purchaseSnapshot={checked.purchaseSnapshot}
-        publishableKey={stripePublishableKey}
-        resume={draft && address ? { applicationId: draft.id, details: { customer: { fullName: draft.fullName, phone: draft.phone }, billingAddress: address.billing, deliveryAddress: address.delivery }, purchaseSnapshot: draft.purchaseSnapshot as MembershipPurchaseSnapshot } : undefined}
+        applicationId={draft?.id}
       />
     </>
   );

@@ -10,14 +10,11 @@ vi.mock("@/lib/auth", () => ({ getCurrentAccount: async () => state.account }));
 vi.mock("@/lib/membership-checkout", () => ({ readMembershipCheckoutSelection: async () => ({ configuration }) }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/db", () => ({ get db() { return state.db; } }));
-import { prepareApplication, submitApplication, approveApplication, declineApplication, getApplicationForAccount, checkApplicationSetup, changeApplicationPaymentMethod, chargeApprovedApplication, reconcileApplicationPayment, getRecoveryPayment } from "@/lib/membership-application";
+import { prepareApplication, submitApplication, approveApplication, declineApplication, getApplicationForAccount, checkApplicationSetup, changeApplicationPaymentMethod, chargeApprovedApplication, reconcileApplicationPayment } from "@/lib/membership-application";
 import { applicationConsentVersion } from "@/lib/membership-application-types";
 import { POST as stripeWebhook } from "@/app/api/stripe/webhook/route";
-import { POST as applicationApi } from "@/app/api/membership/application/route";
-import { build } from "esbuild";
-import { globSync, readFileSync } from "node:fs";
 import { calendarMonths, serviceYears } from "@/lib/membership-service-months";
-import { membershipPreferredTimes, membershipPlans } from "@/lib/membership-plans";
+import { membershipPreferredTimes } from "@/lib/membership-plans";
 const enabled = process.env.RUN_MEMBERSHIP_SANDBOX_E2E === "true";
 const suite = enabled ? describe : describe.skip;
 let client: ReturnType<typeof postgres>;
@@ -55,7 +52,7 @@ async function prepared(account: CustomerAccount, pm = "pm_card_visa") {
   expect((await stripe.paymentIntents.list({ customer: pending.stripeCustomerId!, limit: 10 })).data).toHaveLength(0);
   return { draft, pending, consent };
 }
-suite("real Stripe Sandbox application lifecycle with rolled-back database fixtures", () => {
+suite("historical Stripe Sandbox application lifecycle with rolled-back database fixtures", () => {
  beforeAll(() => {
    if (!process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_") || !process.env.DATABASE_URL || process.env.RAILWAY_PROJECT_ID !== "ea31f46e-5f06-4394-8580-22f343c28132") throw new Error("Authorized Railway Sandbox environment required");
    // Use the existing administrative delivery-zone rules for deterministic fixture validation.
@@ -114,84 +111,6 @@ suite("real Stripe Sandbox application lifecycle with rolled-back database fixtu
    expect(active.status).toBe("active"); expect(active.stripePaymentIntentId).toBe(failed.stripePaymentIntentId); expect(active.applicationSnapshot).toEqual(pending.applicationSnapshot);
    expect((await stripe.paymentIntents.list({ customer: pending.stripeCustomerId!, limit: 10 })).data).toHaveLength(1);
  }), 120000);
- it("browser: secure Elements setup, uncharged submission, bank authentication and activation", async () => fixture(async account => {
-   const { chromium } = await import("playwright");
-   const bundle = await build({ entryPoints: ["scripts/application-browser-harness.tsx"], bundle: true, write: false, platform: "browser", jsx: "automatic", define: { "process.env.NODE_ENV": '"production"' } });
-   const css = globSync(".next/static/chunks/*.css").map(path => readFileSync(path, "utf8")).join("\n");
-   const browser = await chromium.launch({ executablePath: "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe", headless: true });
-   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-   page.setDefaultTimeout(15000);
-   const origin = "http://localhost:3100";
-   try {
-     await page.route(`${origin}/**`, async (route: { request: () => { url: () => string; postData: () => string | null }; fulfill: (options: object) => Promise<void> }) => {
-       const request = route.request();
-       if (request.url().includes("/api/membership/application")) {
-         const response = await applicationApi(new Request(`${origin}/api/membership/application`, { method: "POST", headers: { origin }, body: request.postData() }));
-         return route.fulfill({ status: response.status, contentType: "application/json", body: await response.text() });
-       }
-       return route.fulfill({ contentType: "text/html", body: `<html class="dark"><head><style>${css}</style></head><body><div id="root" style="padding-top:40px"></div><script>${bundle.outputFiles[0].text}</script></body></html>` });
-     });
-     await page.goto(`${origin}/membership/checkout`);
-     const quote = (await import("@/lib/membership-request")).validateMembershipConfiguration(configuration);
-     if (!quote.ok) throw new Error("Invalid test quote");
-     await page.evaluate((props: unknown) => (window as unknown as { mountApplication: (value: unknown) => void }).mountApplication(props), { plan: membershipPlans[2], account: { fullName: details.customer.fullName, email: account.email, phone: details.customer.phone }, purchaseSnapshot: quote.purchaseSnapshot, publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY });
-     const billing = page.locator("fieldset").nth(1); const delivery = page.locator("fieldset").nth(2);
-     await billing.getByLabel("Country").selectOption("GB");
-     await billing.getByLabel("Address line 1").fill(details.billingAddress.line1);
-     await billing.getByRole("textbox", { name: /^City/ }).fill("London"); await billing.getByLabel("Postal / ZIP code").fill("SW1A 1AA");
-     await delivery.getByLabel("Address", { exact: false }).first().fill(details.deliveryAddress.line1);
-     await delivery.getByLabel("Subdistrict").fill("Pathum Wan"); await delivery.getByLabel("District /", { exact: false }).last().fill("Pathum Wan"); await delivery.getByLabel("Postal code").fill("10330");
-     expect(await page.getByRole("button", { name: "SUBMIT MEMBERSHIP REQUEST" }).isDisabled()).toBe(true);
-     await page.getByRole("button", { name: "Validate details & continue" }).click();
-     let frame = page.mainFrame();
-     for (let i = 0; i < 60; i++) {
-       let found = false;
-       for (const child of page.frames()) if (await child.getByLabel("Card number", { exact: true }).count()) { frame = child; found = true; break; }
-       if (found) break;
-       await new Promise(resolve => setTimeout(resolve, 500));
-     }
-     console.log("Browser verification: secure card fields located");
-     await frame.getByLabel("Card number").fill("4000002760003184");
-     await frame.getByLabel(/Expiry date|Expiration/).fill("1234"); await frame.getByLabel("Security code").fill("123");
-     const country = frame.getByLabel("Country"); if (await country.count()) await country.selectOption("GB");
-     const postal = frame.getByLabel(/Postal code|ZIP/); if (await postal.count()) await postal.fill("SW1A 1AA");
-     async function completeChallenge() {
-       for (let i = 0; i < 120; i++) {
-         for (const child of page.frames()) {
-           const button = child.getByRole("button", { name: /Complete authentication/i });
-           if (await button.count()) { await button.click(); return; }
-         }
-         await new Promise(resolve => setTimeout(resolve, 500));
-       }
-       throw new Error("Stripe test authentication challenge did not appear");
-     }
-     await page.getByRole("button", { name: "Save payment method securely" }).click();
-     await completeChallenge();
-     console.log("Browser verification: Stripe authentication completed");
-     await page.getByText("PAYMENT METHOD ADDED", { exact: true }).waitFor({ timeout: 30000 });
-     console.log("Browser verification: payment method ready without membership charge");
-     await page.getByRole("checkbox").nth(0).check(); await page.getByRole("checkbox").nth(1).check(); await page.getByRole("checkbox").nth(2).check();
-     await page.getByRole("button", { name: "SUBMIT MEMBERSHIP REQUEST" }).click();
-     await page.waitForURL(/request-received/);
-     const id = new URL(page.url()).searchParams.get("id")!;
-     const pending = await getApplicationForAccount(id, account.id);
-     expect(pending.status).toBe("pending_review"); expect(pending.stripePaymentIntentId).toBeNull();
-     const action = await approveApplication(id, "sandbox-browser-admin");
-     expect(action.status).toBe("approved_payment_action_required"); expect(action.memberId).toBeNull();
-     const initial = await getRecoveryPayment(id, account.id);
-     await page.evaluate((props: unknown) => (window as unknown as { mountRecovery: (value: unknown) => void }).mountRecovery(props), { applicationId: id, publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, initial });
-     await page.getByRole("button", { name: "Complete bank authentication" }).click();
-     await completeChallenge();
-     console.log("Browser verification: Stripe authentication completed");
-     await page.getByText("Payment succeeded. View your active membership.").waitFor({ timeout: 30000 });
-     const active = await getApplicationForAccount(id, account.id);
-     expect(active.status).toBe("active"); expect(active.stripePaymentIntentId).toBe(action.stripePaymentIntentId);
-     expect((await stripe.paymentIntents.list({ customer: active.stripeCustomerId!, limit: 10 })).data).toHaveLength(1);
-   } catch (error) {
-     await page.screenshot({ path: ".next/verification/application-browser-debug.png", fullPage: true });
-     for (const child of page.frames()) console.log("Browser fields:", await child.locator("input").evaluateAll((inputs: HTMLInputElement[]) => inputs.map(input => ({ name: input.name, placeholder: input.placeholder, ariaLabel: input.getAttribute("aria-label") }))));
-     throw error;
-   } finally { await browser.close(); }
- }), 180000);
 
+ // Current Dashboard, invoice and SCA browser coverage lives in membership-invoice.sandbox.test.ts.
 });

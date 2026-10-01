@@ -2,9 +2,10 @@ import "server-only";
 import { and, desc, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
-import { customerAccounts, accountAddresses, accountEmailChanges, customerSessions, membershipRequests, customerOrders } from "@/lib/db/schema";
+import { customerAccounts, accountAddresses, accountEmailChanges, customerSessions, membershipRequests, customerOrders, cardVerifications } from "@/lib/db/schema";
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
+import { startCardVerification, reconcileCardVerification, verificationRecords } from "./card-verification";
 import { resend, FROM_EMAIL } from "@/lib/email/client";
 import { AccountError, addressSchema, profileSchema, type SavedAddress, type SafeCard } from "./types";
 import { audit, digest, rateLimit, reauthenticate } from "./security";
@@ -43,29 +44,28 @@ export async function stripeCustomer(accountId: string, create = false) {
 }
 export async function listCards(accountId: string): Promise<SafeCard[]> {
   const customer = await stripeCustomer(accountId); if (!customer) return [];
-  const defaultId = ownerId(customer.invoice_settings.default_payment_method);
+  const records = await verificationRecords(accountId);
+  // Reconcile interrupted browser completions and refunds on the next Dashboard visit.
+  for (const record of records.filter(item => item.paymentIntentId && (["pending", "processing", "requires_action"].includes(item.status) || item.refundStatus === "pending")).slice(0, 5)) await reconcileCardVerification(record.paymentIntentId!, accountId);
+  const current = await verificationRecords(accountId);
+  const freshCustomer = await payments().customers.retrieve(customer.id);
+  const defaultId = freshCustomer.deleted ? null : ownerId(freshCustomer.invoice_settings.default_payment_method);
   const cards: SafeCard[] = [];
   for await (const method of payments().paymentMethods.list({ customer: customer.id, type: "card", limit: 100 })) {
     if (method.livemode || ownerId(method.customer) !== customer.id || !method.card) continue;
-    cards.push({ id: method.id, brand: method.card.brand, last4: method.card.last4, expMonth: method.card.exp_month, expYear: method.card.exp_year, isDefault: defaultId === method.id });
+    const verification = current.find(item => item.paymentMethodId === method.id && item.status === "verified");
+    cards.push({ verificationStatus: verification ? "verified" : "unverified", refundStatus: verification?.refundStatus, verificationPaymentId: verification?.paymentIntentId, id: method.id, brand: method.card.brand, last4: method.card.last4, expMonth: method.card.exp_month, expYear: method.card.exp_year, isDefault: defaultId === method.id });
   }
   return cards;
 }
 export async function addCardSetup(accountId: string, requestId: string) {
-  if (!z.string().uuid().safeParse(requestId).success) throw new AccountError("Invalid setup request.");
-  await rateLimit("card-setup", accountId, 20);
   const customer = await stripeCustomer(accountId, true);
-  const setup = await payments().setupIntents.create({ customer: customer!.id, usage: "off_session", payment_method_types: ["card"], metadata: { purpose: "account_payment_method", account_id: accountId } }, { idempotencyKey: `account-card-${accountId}-${requestId}` });
-  return { clientSecret: setup.client_secret, setupId: setup.id };
+  return startCardVerification(accountId, requestId, customer!.id);
 }
-export async function completeCardSetup(accountId: string, setupId: string) {
-  if (!/^seti_[a-zA-Z0-9]+$/.test(setupId)) throw new AccountError("Invalid setup reference.");
-  const customer = await stripeCustomer(accountId); if (!customer) throw new AccountError("Payment account not found.");
-  const setup = await payments().setupIntents.retrieve(setupId);
-  if (setup.livemode || setup.status !== "succeeded" || setup.metadata?.account_id !== accountId || setup.metadata?.purpose !== "account_payment_method" || ownerId(setup.customer) !== customer.id || !setup.payment_method) throw new AccountError("Complete secure payment method setup first.");
-  const methodId = ownerId(setup.payment_method)!;
-  await changeCard(accountId, methodId, "ensure-default");
-  await audit(accountId, "payment_method_added");
+export async function completeCardSetup(accountId: string, paymentIntentId: string) {
+  const result = await reconcileCardVerification(paymentIntentId, accountId);
+  if (!result.verified) throw new AccountError("The USD $2 card verification has not succeeded. Complete authentication or try another card.");
+  await audit(accountId, "payment_method_verified");
   return listCards(accountId);
 }
 export async function changeCard(accountId: string, methodId: string, action: "default" | "remove" | "ensure-default") {
@@ -80,12 +80,14 @@ export async function changeCard(accountId: string, methodId: string, action: "d
     const method = await provider.paymentMethods.retrieve(methodId);
     if (customer.deleted || customer.livemode || method.livemode || ownerId(method.customer) !== customer.id || !method.card) throw new AccountError("Payment method not found.", 404);
     const currentDefault = ownerId(customer.invoice_settings.default_payment_method);
+    const verified = await tx.select().from(cardVerifications).where(and(eq(cardVerifications.accountId, accountId), eq(cardVerifications.status, "verified")));
+    if (action !== "remove" && !verified.some(item => item.paymentMethodId === methodId)) throw new AccountError("Verify this card with the USD $2 Dashboard transaction first.", 409);
     if (action === "remove") {
-      const pending = await tx.select({ id: membershipRequests.id }).from(membershipRequests).where(and(eq(membershipRequests.customerAccountId, accountId), eq(membershipRequests.stripePaymentMethodId, methodId), inArray(membershipRequests.status, ["pending_review", "approved_payment_pending", "approved_payment_action_required", "approved_payment_failed"]))).limit(1);
+      const pending = await tx.select({ id: membershipRequests.id }).from(membershipRequests).where(and(eq(membershipRequests.customerAccountId, accountId), eq(membershipRequests.stripePaymentMethodId, methodId), or(eq(membershipRequests.applicationState, "submitting"), inArray(membershipRequests.status, ["pending_review", "approved_payment_pending", "approved_payment_action_required", "approved_payment_failed"])))).limit(1);
       if (pending.length) throw new AccountError("This card is linked to an unfinished membership application. Resolve that application before removing it.", 409);
       if (currentDefault === methodId) {
-        const alternatives = await provider.paymentMethods.list({ customer: customer.id, type: "card", limit: 2 });
-        await provider.customers.update(customer.id, { invoice_settings: { default_payment_method: alternatives.data.find(card => card.id !== methodId)?.id ?? "" } });
+        const alternatives = await provider.paymentMethods.list({ customer: customer.id, type: "card", limit: 100 });
+        await provider.customers.update(customer.id, { invoice_settings: { default_payment_method: alternatives.data.find(card => card.id !== methodId && verified.some(item => item.paymentMethodId === card.id))?.id ?? "" } });
       }
       await provider.paymentMethods.detach(methodId);
     } else if (action === "default" || !currentDefault) await provider.customers.update(customer.id, { invoice_settings: { default_payment_method: methodId } });
@@ -185,7 +187,8 @@ export async function accountMemberships(accountId: string) {
 }
 export async function accountPayments(accountId: string) {
   const [memberships, orders] = await Promise.all([accountMemberships(accountId), db!.select().from(customerOrders).where(eq(customerOrders.accountId, accountId)).orderBy(desc(customerOrders.createdAt)).limit(100)]);
-  return [...memberships.filter(row => row.stripePaymentIntentId || row.stripeInvoiceId || row.invoiceNumber).map(row => ({ date: row.createdAt.toISOString(), reference: row.invoiceNumber ?? row.requestNumber, description: `Membership: ${row.planName}`, amount: row.estimatedTotal, currency: "THB", status: row.invoiceStatus ?? "unpaid" })), ...orders.map(row => ({ date: row.createdAt.toISOString(), reference: row.orderNumber, description: "Food / beverage order", amount: row.total, currency: "THB", status: row.paymentStatus }))].sort((a, b) => b.date.localeCompare(a.date));
+  const verifications = await db!.select().from(cardVerifications).where(eq(cardVerifications.accountId, accountId)).orderBy(desc(cardVerifications.createdAt)).limit(100);
+  return [...verifications.filter(row => row.paymentIntentId).map(row => ({ date: row.createdAt.toISOString(), reference: row.paymentIntentId!, description: "Card verification (separate from membership)", amount: row.amount / 100, currency: "USD", status: `${row.status} · refund ${row.refundStatus === "succeeded" ? "refunded" : row.refundStatus ?? "not initiated"}` })), ...memberships.filter(row => row.stripePaymentIntentId || row.stripeInvoiceId || row.invoiceNumber).map(row => ({ date: row.createdAt.toISOString(), reference: row.invoiceNumber ?? row.requestNumber, description: `Membership: ${row.planName}`, amount: row.estimatedTotal, currency: "THB", status: row.invoiceStatus ?? "unpaid" })), ...orders.map(row => ({ date: row.createdAt.toISOString(), reference: row.orderNumber, description: "Food / beverage order", amount: row.total, currency: "THB", status: row.paymentStatus }))].sort((a, b) => b.date.localeCompare(a.date));
 }
 
 /** Future checkout can call this with its authenticated session account ID. */
@@ -193,5 +196,5 @@ export async function accountDefaults(accountId: string) {
   const [account] = await db!.select({ fullName: customerAccounts.fullName, email: customerAccounts.email, phone: customerAccounts.phone }).from(customerAccounts).where(eq(customerAccounts.id, accountId)).limit(1);
   if (!account) throw new AccountError("Account not found.", 404);
   const [saved, cards] = await Promise.all([addresses(accountId), listCards(accountId)]);
-  return { ...account, billingAddress: saved.find(row => row.kind === "billing" && row.isDefault) ?? null, deliveryAddress: saved.find(row => row.kind === "delivery" && row.isDefault) ?? null, paymentMethod: cards.find(card => card.isDefault) ?? null };
+  return { ...account, billingAddress: saved.find(row => row.kind === "billing" && row.isDefault) ?? null, deliveryAddress: saved.find(row => row.kind === "delivery" && row.isDefault) ?? null, paymentMethod: cards.find(card => card.isDefault && card.verificationStatus === "verified") ?? null };
 }
