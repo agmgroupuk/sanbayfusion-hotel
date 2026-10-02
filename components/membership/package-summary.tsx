@@ -1,3 +1,4 @@
+import { StandardMealScheduleSummary } from "./standard-meal-schedule";
 import type { MembershipPurchaseSnapshot } from "@/lib/membership-request";
 import { serviceMonthLabel, complimentaryBenefitConditions } from "@/lib/membership-service-months";
 
@@ -25,9 +26,10 @@ function PrepaidPackageSummary({ snapshot }: { snapshot: MembershipPurchaseSnaps
   </section>;
 }
 
-export function PackageSummary({ snapshot }: { snapshot: MembershipPurchaseSnapshot }) {
+export function PackageSummary({ snapshot, showSchedule = true }: { snapshot: MembershipPurchaseSnapshot; showSchedule?: boolean }) {
   return <div className="space-y-6">{snapshot.version === 4 && <>
     <section className="space-y-3 text-sm"><h3 className="text-eyebrow leading-relaxed text-gold">Selected service months</h3><ul className="flex flex-wrap gap-2">{snapshot.selectedServiceMonths?.map(month => <li key={month} className="rounded-full border border-gold/30 px-3 py-2">{serviceMonthLabel(month)}</li>)}</ul><p className="text-xs text-muted-foreground">Service applies only in these months after approval and payment. Months become fixed on final submission.</p></section>
     {snapshot.includedBenefit && <section className="space-y-3 border border-gold/40 bg-gold/5 p-4 text-sm"><h3 className="text-eyebrow leading-relaxed text-gold">Included member benefit</h3><p>One {snapshot.includedBenefit.name} per selected service month · Eligible menu value up to {money(snapshot.includedBenefit.menuValue)} per month</p><p className="text-gold">Included in your membership fee · No separate charge</p><p className="text-xs text-muted-foreground">{complimentaryBenefitConditions}</p></section>}
+    {showSchedule && !!snapshot.standardMealSlots?.length && <StandardMealScheduleSummary slots={snapshot.standardMealSlots} />}
   </>}<PrepaidPackageSummary snapshot={snapshot} /></div>;
 }

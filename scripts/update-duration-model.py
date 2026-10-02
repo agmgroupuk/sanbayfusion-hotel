@@ -14,6 +14,8 @@ for folder in ['app', 'components', 'lib', 'scripts']:
 
 p = 'lib/membership-plans.ts'
 s = read(p)
+# This historical generator must preserve the authoritative fees, never seed its own prices.
+membership_fees = s.split('export const membershipPlans: MembershipPlan[] = ', 1)[1].split('.map(', 1)[0]
 tail = s[s.index('// Keep alcohol disabled'):]
 tail = tail[:tail.index('export const membershipValueProps')]+'''export const membershipValueProps = [
   ["Choose", "Select a membership lasting 1 to 12 months."],
@@ -42,7 +44,7 @@ export function membershipPlanAllowsCatalogueCategory(plan: MembershipPlan, cate
 }
 
 // Distinct IDs preserve the meaning of historical 01–20 plan references.
-export const membershipPlans: MembershipPlan[] = [6000, 11000, 15000, 19000, 23000, 27000, 31000, 35000, 39000, 43000, 47000, 50000].map((price, index) => {
+export const membershipPlans: MembershipPlan[] = ''' + membership_fees + '''.map((price, index) => {
   const durationMonths = index + 1;
   return {
     id: `duration-${durationMonths}`,

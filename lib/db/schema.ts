@@ -321,23 +321,27 @@ export const customerOrderItems = pgTable(
   (t) => [index("customer_order_items_order_idx").on(t.orderId)],
 );
 
-/** Included benefit reservations never create a paid order or Stripe charge. */
+/** One included Standard Meal entitlement per selected month; only food above its allowance is payable. */
 export const membershipBenefitRedemptions = pgTable("membership_benefit_redemptions", {
   id: uuid("id").defaultRandom().primaryKey(),
   membershipRequestId: uuid("membership_request_id").notNull().references(() => membershipRequests.id, { onDelete: "restrict" }),
   serviceMonth: varchar("service_month", { length: 7 }).notNull(),
   mealName: varchar("meal_name", { length: 120 }).notNull(),
   menuValue: integer("menu_value").notNull(),
-  scheduledDate: date("scheduled_date").notNull(),
-  status: varchar("status", { length: 16 }).notNull().default("requested"),
-  redeemedAt: timestamp("redeemed_at", { withTimezone: true }).notNull().defaultNow(),
+  scheduledDate: date("scheduled_date"),
+  scheduledTime: varchar("scheduled_time", { length: 5 }),
+  orderId: uuid("order_id").references(() => customerOrders.id, { onDelete: "restrict" }),
+  status: varchar("status", { length: 16 }).notNull().default("available"),
+  redeemedAt: timestamp("redeemed_at", { withTimezone: true }),
   fulfilledAt: timestamp("fulfilled_at", { withTimezone: true }),
   fulfilledBy: varchar("fulfilled_by", { length: 200 }),
 }, t => [
   uniqueIndex("membership_benefit_month_idx").on(t.membershipRequestId, t.serviceMonth),
   check("membership_benefit_valid_month", sql`${t.serviceMonth} ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'`),
   check("membership_benefit_in_month", sql`to_char(${t.scheduledDate}, 'YYYY-MM') = ${t.serviceMonth}`),
-  check("membership_benefit_valid_status", sql`${t.status} in ('requested', 'fulfilled')`),
+  check("membership_benefit_valid_status", sql`${t.status} in ('available', 'scheduled', 'reserved', 'redeemed', 'expired')`),
+  check("membership_benefit_valid_time", sql`${t.scheduledTime} IS NULL OR (${t.scheduledDate} IS NOT NULL AND ${t.scheduledTime} ~ '^((1[1-9]|2[0-3]):(00|30)|24:00)$')`),
+  uniqueIndex("membership_benefit_order_idx").on(t.orderId),
   check("membership_benefit_positive_value", sql`${t.menuValue} > 0`),
 ]);
 

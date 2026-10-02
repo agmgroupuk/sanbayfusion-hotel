@@ -12,7 +12,7 @@ export default async function MembershipBenefitsPage() {
   if (!account) redirect("/signin?next=%2Fadmin%2Fmembership-benefits");
   if (!isMembershipAdmin(account.email)) redirect("/dashboard");
   const pending = await pendingMemberBenefits(account);
-  return <div className="mx-auto max-w-5xl space-y-6 px-5 py-32"><h1 className="font-display text-4xl">Complimentary meal requests</h1><p className="text-sm text-muted-foreground">Coordinate the eligible included menu and service date with the member. Mark fulfilled only after service. These benefits are included in membership fees and never create an extra charge.</p>{!pending.length && <p>No complimentary meals awaiting fulfillment.</p>}{pending.map(({ redemption, name, reference }) => {
+  return <div className="mx-auto max-w-5xl space-y-6 px-5 py-32"><h1 className="font-display text-4xl">Complimentary meal requests</h1><p className="text-sm text-muted-foreground">Coordinate the eligible included menu and service date with the member. Mark fulfilled only after service. The allowance is included in the membership fee. Eligible food above it is payable; fulfill only after the order and any excess payment are confirmed.</p>{!pending.length && <p>No complimentary meals awaiting fulfillment.</p>}{pending.map(({ redemption, name, reference }) => {
     async function fulfill() {
       "use server";
       const current = await getCurrentAccount();
@@ -20,6 +20,6 @@ export default async function MembershipBenefitsPage() {
       try { await fulfillMemberBenefit(current, redemption.id); revalidatePath("/admin/membership-benefits"); revalidatePath("/dashboard/membership"); return "Benefit marked fulfilled. No charge was made."; }
       catch (error) { return error instanceof ApplicationError ? error.message : "Unable to fulfill this benefit."; }
     }
-    return <article key={redemption.id} className="space-y-4 border border-gold/40 p-6"><h2 className="text-2xl">{name} · {reference}</h2><p>{redemption.mealName} · Menu value up to ฿{redemption.menuValue.toLocaleString("en-US")}</p><p className="text-sm">Service month: {redemption.serviceMonth} · Requested date: {redemption.scheduledDate}</p><AdminApprovalForm approve={fulfill} legacy approveLabel="Mark benefit fulfilled" /></article>;
+    return <article key={redemption.id} className="space-y-4 border border-gold/40 p-6"><h2 className="text-2xl">{name} · {reference}</h2><p>{redemption.mealName} · Menu value up to ฿{redemption.menuValue.toLocaleString("en-US")}</p><p className="text-sm">Service month: {redemption.serviceMonth} · Requested date: {redemption.scheduledDate} {redemption.scheduledTime} ? {redemption.status.toUpperCase()} ? Order: {redemption.orderId ?? "Not placed"}</p><AdminApprovalForm approve={fulfill} legacy approveLabel="Mark benefit fulfilled" /></article>;
   })}</div>;
 }

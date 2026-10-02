@@ -5,8 +5,9 @@ use the [selected service-month model](membership-service-months.md); historical
 agreements keep the terms recorded at purchase.
 
 The authoritative catalog is `lib/membership-plans.ts`: twelve one-time plans
-lasting 1–12 calendar months, with fees of THB 6,000, 11,000, 15,000, 19,000,
-23,000, 27,000, 31,000, 35,000, 39,000, 43,000, 47,000, and 50,000.
+lasting 1–12 service months. The authoritative one-time THB fees are defined in
+`lib/membership-plans.ts`: totals increase from THB 6,000 to THB 30,000 while
+the effective monthly cost decreases from THB 6,000 to THB 2,500.
 
 SetupIntent saves a reusable card without a membership charge. Explicit consent
 and the exact quote are frozen on submission to **pending_review**. Admin approval

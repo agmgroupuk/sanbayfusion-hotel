@@ -18,6 +18,7 @@ import { ApplicationError } from "@/lib/membership-errors";
 import { activateMembershipRequest } from "@/lib/membership-activation";
 import { deliveryEligibility, declineApplication as declineLegacy } from "@/lib/membership-application";
 import { sendApplicationNotifications } from "@/lib/email/membership-application";
+import { containsMembershipAlcohol, membershipAlcoholMessage } from "@/lib/membership-food";
 
 function services() { if (!db || !stripe) throw new ApplicationError("Membership services are currently unavailable.", 503); return { database: db, payments: stripe }; }
 type Reader = Pick<NonNullable<typeof db>, "select">;
@@ -112,6 +113,7 @@ export function invoiceApplicationSnapshot(row: MembershipRequest) {
   return s;
 }
 function invoiceLines(s: ApplicationSnapshot) {
+  if (containsMembershipAlcohol([...s.purchase.products, ...s.purchase.addOns])) throw new ApplicationError(membershipAlcoholMessage, 409);
   const lines = [{ description: `${s.purchase.plan.name} — ${s.purchase.selectedServiceMonths!.join(", ")}`, amount: s.purchase.membershipFee * 100 }];
   const products = [...s.purchase.products, ...s.purchase.addOns];
   if (products.length <= 35) for (const item of products) lines.push({ description: `${item.name} — ${item.totalTermQuantity ?? ("quantity" in item ? item.quantity : item.monthlyQuantity) ?? 1} total units${item.pricingType === "MONTHLY" ? ` across ${s.purchase.plan.durationMonths} selected service months` : " (one-time)"}`, amount: item.lineTotal * 100 });
@@ -133,6 +135,7 @@ export async function ensureDraftInvoice(id: string, accountId: string) {
     const { row } = await lockMembershipApplication(tx, id, accountId);
     if (row.applicationState !== "submitting") return row;
     const s = invoiceApplicationSnapshot(row);
+    if (containsMembershipAlcohol([...s.purchase.products, ...s.purchase.addOns])) throw new ApplicationError(membershipAlcoholMessage, 409);
     let invoice: Stripe.Invoice | null = row.stripeInvoiceId ? await payments.invoices.retrieve(row.stripeInvoiceId) : null;
     if (!invoice) for await (const candidate of payments.invoices.list({ customer: s.stripeCustomerId, limit: 100 })) {
       if (candidate.metadata?.application_id === row.id) { invoice = candidate; break; }
@@ -169,6 +172,7 @@ export async function approveInvoiceApplication(id: string, actor: string) {
     if (row.status !== "pending_review" || !row.stripeInvoiceId) throw new ApplicationError("Only pending draft invoices can be approved.", 409);
     await assertMembershipPurchaseAllowed(tx, account!, row.id);
     const s = invoiceApplicationSnapshot(row);
+    if (containsMembershipAlcohol([...s.purchase.products, ...s.purchase.addOns])) throw new ApplicationError(membershipAlcoholMessage, 409);
     const monthError = validateServiceMonths(row.selectedServiceMonths, row.durationMonths, new Date());
     if (monthError) throw new ApplicationError(monthError, 409);
     await deliveryEligibility(s.deliveryAddress);

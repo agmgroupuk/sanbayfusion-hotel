@@ -2,7 +2,9 @@ import { z } from "zod";
 import { validateServiceMonths, serviceMonthPattern, type IncludedMemberBenefit } from "@/lib/membership-service-months";
 import { pricePackageItem } from "@/lib/package-pricing";
 import { catalogueCategories, type CatalogueGroup } from "@/lib/catalogue";
-import { alcoholSalesEnabled, beverageAddOns, membershipDeliveryAreas, membershipPlanAllowsCatalogueCategory, membershipPlans, membershipPreferredDays, membershipPreferredTimes } from "@/lib/membership-plans";
+import { beverageAddOns, membershipDeliveryAreas, membershipPlans, membershipPreferredDays, membershipPreferredTimes } from "@/lib/membership-plans";
+import { validateStandardMealSlots, type StandardMealSlot } from "@/lib/standard-meal";
+import { containsMembershipAlcohol, membershipAlcoholMessage } from "@/lib/membership-food";
 
 export const membershipRequestStatuses = [
   "pending_review",
@@ -28,6 +30,7 @@ const phoneNumberSchema = z.string().trim().regex(/^\+?[0-9][0-9\s().-]{5,38}$/,
 export const membershipConfigurationSchema = z.object({
   planSlug: z.string().min(1),
   selectedServiceMonths: z.array(z.string().regex(serviceMonthPattern)).min(1).max(12),
+  standardMealSlots: z.array(z.object({ serviceMonth: z.string().regex(serviceMonthPattern), deliveryDate: z.string().nullable(), deliveryTime: z.string().nullable() })).max(12).optional(),
   purchaseMode: z.enum(membershipPurchaseModes).default("membership_only"),
   foodPreferences: z.array(z.string().min(1)).max(8),
   deliveryArea: z.enum(membershipDeliveryAreas),
@@ -109,6 +112,7 @@ export type MembershipPurchaseSnapshot = {
   version: 1 | 2 | 3 | 4;
   selectedServiceMonths?: string[];
   includedBenefit?: IncludedMemberBenefit;
+  standardMealSlots?: StandardMealSlot[];
   currency?: "thb";
   pricingVersion?: number;
   purchaseMode: MembershipPurchaseMode;
@@ -151,6 +155,7 @@ export function calculateMembershipQuote(configuration: MembershipConfiguration,
     version: 4,
     selectedServiceMonths: [...configuration.selectedServiceMonths].sort(),
     includedBenefit: { ...plan.includedBenefit },
+    standardMealSlots: [...configuration.selectedServiceMonths].sort().map(serviceMonth => configuration.standardMealSlots?.find(slot => slot.serviceMonth === serviceMonth) ?? { serviceMonth, deliveryDate: null, deliveryTime: null }),
     purchaseMode: configuration.purchaseMode,
     plan: { id: plan.id, slug: plan.slug, name: plan.name, durationMonths: plan.durationMonths, membershipFee },
     delivery: {
@@ -179,9 +184,9 @@ export function validateMembershipConfiguration(raw: unknown, now = new Date()) 
   if (!plan) return { ok: false as const, error: "That membership plan is not available." };
   const monthError = validateServiceMonths(configuration.selectedServiceMonths, plan.durationMonths, now);
   if (monthError) return { ok: false as const, error: monthError };
-  if (configuration.alcoholEnabled && !alcoholSalesEnabled) {
-    return { ok: false as const, error: "Alcohol options are not currently available." };
-  }
+  const schedulingError = validateStandardMealSlots(configuration.standardMealSlots, configuration.selectedServiceMonths, now);
+  if (schedulingError) return { ok: false as const, error: schedulingError };
+  if (configuration.alcoholEnabled || configuration.selectedAddOns.length || containsMembershipAlcohol(configuration.selectedProducts)) return { ok: false as const, error: membershipAlcoholMessage };
 
   if (!configuration.foodPreferences.every((preference) => ["Thai Food", "Seafood", "Chicken", "Beef", "Pork", "Vegetarian", "Western Food", "Asian Food"].includes(preference))) {
     return { ok: false as const, error: "One or more food preferences are invalid." };
@@ -212,15 +217,6 @@ export function validateMembershipConfiguration(raw: unknown, now = new Date()) 
     const key = `${selected.category}:${selected.name}`;
     if (selectedProductKeys.has(key)) return { ok: false as const, error: "A catalogue product was selected more than once." };
     selectedProductKeys.add(key);
-    if (category.group === "alcohol" && !configuration.alcoholEnabled) {
-      return { ok: false as const, error: "Enable alcohol options before selecting alcoholic products." };
-    }
-    if (category.group === "alcohol" && !alcoholSalesEnabled) {
-      return { ok: false as const, error: "Alcohol options are not currently available." };
-    }
-    if (!membershipPlanAllowsCatalogueCategory(plan, category.name, category.group)) {
-      return { ok: false as const, error: "One or more beverage selections are not included in this membership plan." };
-    }
   }
 
   if (configuration.purchaseMode === "membership_with_package" && !configuration.selectedProducts.length && !configuration.selectedAddOns.length) {

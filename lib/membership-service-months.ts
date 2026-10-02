@@ -50,10 +50,11 @@ export function serviceMonthBounds(months: string[]) {
 }
 
 export type IncludedMemberBenefit = {
+  kind?: "standard_meal";
   name: string;
   menuValue: number;
   quantityPerServiceMonth: 1;
   cashValue: 0;
 };
 
-export const complimentaryBenefitConditions = "Complimentary benefit has no cash value and applies only to eligible included menu selections. One benefit per selected service month; unused benefits do not roll over. Menu and scheduling are subject to confirmation.";
+export const complimentaryBenefitConditions = "One Standard Meal redemption per selected service month. Eligible food above the allowance is payable; additional orders are charged separately. Unused allowance has no cash value, cannot be transferred or withdrawn, and does not roll over. Menu and scheduling are subject to confirmation.";

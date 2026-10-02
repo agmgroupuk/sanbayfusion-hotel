@@ -1,4 +1,5 @@
 import type { IncludedMemberBenefit } from "@/lib/membership-service-months";
+import { standardMealAllowances } from "@/lib/standard-meal";
 
 export type MembershipPlan = {
   id: string;
@@ -22,7 +23,9 @@ export function membershipPlanAllowsCatalogueCategory(plan: Pick<MembershipPlan,
 }
 
 // Distinct IDs preserve the meaning of historical 01–20 plan references.
-export const membershipPlans: MembershipPlan[] = [6000, 11000, 15000, 19000, 23000, 27000, 31000, 35000, 39000, 43000, 47000, 50000].map((price, index) => {
+// Authoritative one-time THB fees: increasing totals, decreasing effective monthly rates.
+// Quotes, saved applications, invoice lines and catalog synchronization derive from this table.
+export const membershipPlans: MembershipPlan[] = [6000, 11000, 15000, 18000, 20500, 22500, 24000, 25500, 27000, 28000, 29000, 30000].map((price, index) => {
   const durationMonths = index + 1;
   return {
     id: `duration-${durationMonths}`,
@@ -32,8 +35,9 @@ export const membershipPlans: MembershipPlan[] = [6000, 11000, 15000, 19000, 230
     price,
     durationMonths,
     includedBenefit: {
-      name: durationMonths === 1 ? "Member Welcome Meal" : durationMonths === 2 ? "Member Meal" : durationMonths <= 5 ? "Premium Member Meal" : durationMonths <= 8 ? "Signature Member Meal" : durationMonths <= 10 ? "Executive Member Meal" : "VIP Member Meal",
-      menuValue: 2000 + index * 500,
+      name: "Standard Meal",
+      kind: "standard_meal",
+      menuValue: standardMealAllowances[index],
       quantityPerServiceMonth: 1,
       cashValue: 0,
     },

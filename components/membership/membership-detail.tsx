@@ -3,10 +3,12 @@
 import { startTransition, useEffect, useState } from "react";
 import { ActiveMembershipNotice } from "./active-membership-notice";
 import { ServiceMonthPicker } from "./service-month-picker";
+import { StandardMealSchedule, StandardMealScheduleSummary } from "./standard-meal-schedule";
+import { validateStandardMealSlots, type StandardMealSlot } from "@/lib/standard-meal";
 import { calendarMonths, complimentaryBenefitConditions, isEligibleServiceMonth, serviceMonthLabel, serviceYears, validateServiceMonths } from "@/lib/membership-service-months";
 import { toast } from "sonner";
 import { catalogueCategories, type CatalogueCategory, type CatalogueProduct } from "@/lib/catalogue";
-import { alcoholSalesEnabled, beverageAddOns, membershipDeliveryAreas, membershipPreferredDays, membershipPreferredTimes, type MembershipPlan } from "@/lib/membership-plans";
+import { membershipDeliveryAreas, membershipPreferredDays, membershipPreferredTimes, type MembershipPlan } from "@/lib/membership-plans";
 import { calculateMembershipQuote, type MembershipConfiguration, type MembershipPurchaseMode } from "@/lib/membership-request";
 import { membershipApplicationPath, membershipSignInPath } from "@/lib/auth-redirect";
 
@@ -32,10 +34,10 @@ export function MembershipDetail({ plan, activeMembership = false, today }: { pl
   const [time, setTime] = useState<(typeof membershipPreferredTimes)[number]>(membershipPreferredTimes[0]);
   const [preferences, setPreferences] = useState<string[]>([]);
   const [purchaseMode, setPurchaseMode] = useState<MembershipPurchaseMode>("membership_only");
-  const [alcoholOpen, setAlcoholOpen] = useState(false);
+  const [standardMealSlots, setStandardMealSlots] = useState<StandardMealSlot[]>([]);
   const [openCategories, setOpenCategories] = useState<string[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
-  const [selectedAddOns, setSelectedAddOns] = useState<SelectedProduct[]>([]);
+  const selectedAddOns: SelectedProduct[] = [];
 
   useEffect(() => {
     try {
@@ -44,7 +46,7 @@ export function MembershipDetail({ plan, activeMembership = false, today }: { pl
       const configuration = JSON.parse(stored) as MembershipConfiguration;
       if (configuration.planSlug !== plan.slug) return;
       startTransition(() => {
-        const alcoholAvailable = alcoholSalesEnabled && configuration.alcoholEnabled;
+        setStandardMealSlots(configuration.standardMealSlots ?? []);
         if (Array.isArray(configuration.selectedServiceMonths) && !validateServiceMonths(configuration.selectedServiceMonths, plan.durationMonths, new Date(today))) {
           setServiceMonths(configuration.selectedServiceMonths);
           setYear(Number(configuration.selectedServiceMonths[0].slice(0, 4)));
@@ -55,13 +57,11 @@ export function MembershipDetail({ plan, activeMembership = false, today }: { pl
         setPreferences(configuration.foodPreferences);
         const savedMode = configuration.purchaseMode ?? "membership_only";
         setPurchaseMode(savedMode);
-        setSelectedAddOns(savedMode === "membership_with_package" && alcoholAvailable ? configuration.selectedAddOns ?? [] : []);
-        setAlcoholOpen(alcoholAvailable);
         setSelectedProducts(savedMode === "membership_with_package"
-          ? (configuration.selectedProducts ?? []).filter((product) => alcoholAvailable || !alcoholCategories.some((category) => category.name === product.category))
+          ? (configuration.selectedProducts ?? []).filter((product) => !alcoholCategories.some((category) => category.name === product.category))
           : []);
         setOpenCategories(savedMode === "membership_with_package"
-          ? [...foodCategories, ...drinkCategories, ...(alcoholAvailable ? alcoholCategories : [])].map((category) => category.name)
+          ? [...foodCategories, ...drinkCategories].map((category) => category.name)
           : []);
       });
     } catch {
@@ -77,7 +77,8 @@ export function MembershipDetail({ plan, activeMembership = false, today }: { pl
     deliveryArea: area,
     preferredDay: day,
     preferredTime: time,
-    alcoholEnabled: alcoholOpen,
+    alcoholEnabled: false,
+    standardMealSlots: standardMealSlots.filter(slot => selectedServiceMonths.includes(slot.serviceMonth)),
     selectedAddOns,
     selectedProducts,
   };
@@ -87,14 +88,10 @@ export function MembershipDetail({ plan, activeMembership = false, today }: { pl
     setPurchaseMode(mode);
     if (mode === "membership_only") {
       setSelectedProducts([]);
-      setSelectedAddOns([]);
-      setAlcoholOpen(false);
       setOpenCategories([]);
       return;
     }
-    const alcoholAvailable = alcoholSalesEnabled;
-    setAlcoholOpen(alcoholAvailable);
-    setOpenCategories([...foodCategories, ...drinkCategories, ...(alcoholAvailable ? alcoholCategories : [])].map((category) => category.name));
+    setOpenCategories([...foodCategories, ...drinkCategories].map((category) => category.name));
   }
 
   function togglePreference(preference: string) {
@@ -128,6 +125,8 @@ export function MembershipDetail({ plan, activeMembership = false, today }: { pl
     if (blocked || saving) return;
     const monthError = validateServiceMonths(selectedServiceMonths, plan.durationMonths, new Date());
     if (monthError) { toast.error(monthError); return; }
+    const slotError = validateStandardMealSlots(standardMealSlots.filter(slot => selectedServiceMonths.includes(slot.serviceMonth)), selectedServiceMonths, new Date());
+    if (slotError) { toast.error(slotError); return; }
     setSaving(true);
     const configuration: MembershipConfiguration = {
       planSlug: plan.slug,
@@ -137,7 +136,8 @@ export function MembershipDetail({ plan, activeMembership = false, today }: { pl
       deliveryArea: area,
       preferredDay: day,
       preferredTime: time,
-      alcoholEnabled: alcoholOpen,
+      alcoholEnabled: false,
+    standardMealSlots: standardMealSlots.filter(slot => selectedServiceMonths.includes(slot.serviceMonth)),
       selectedAddOns,
       selectedProducts,
     };
@@ -168,7 +168,7 @@ export function MembershipDetail({ plan, activeMembership = false, today }: { pl
       toast.error("Unable to continue. Please reload the page and try again.");
       return;
     }
-    window.location.href = payload.next;
+    window.location.assign(payload.next);
   }
 
   function renderCategory(category: CatalogueCategory) {
@@ -188,29 +188,16 @@ export function MembershipDetail({ plan, activeMembership = false, today }: { pl
     <main className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="space-y-20">
         <section><p className="text-eyebrow text-gold">Your membership</p><div className="mt-6 grid gap-4 sm:grid-cols-2">{[["Membership fee", `฿${plan.price.toLocaleString("en-US")}`], ["Service months", `Choose exactly ${plan.durationMonths} eligible months`]].map(([label, value]) => <div key={label} className="border-t border-border/60 pt-4"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-2 text-lg text-foreground/90">{value}</p></div>)}</div></section>
-        <ServiceMonthPicker count={plan.durationMonths} year={year} selected={selectedServiceMonths} onYear={value => { setYear(value); setServiceMonths([]); }} onChange={setServiceMonths} today={today} />
+        <ServiceMonthPicker count={plan.durationMonths} year={year} selected={selectedServiceMonths} onYear={value => { setYear(value); setServiceMonths([]); setStandardMealSlots([]); }} onChange={months => { setServiceMonths(months); setStandardMealSlots(slots => slots.filter(slot => months.includes(slot.serviceMonth))); }} today={today} />
+        <StandardMealSchedule months={selectedServiceMonths} slots={standardMealSlots} allowance={plan.includedBenefit.menuValue} today={today} onChange={setStandardMealSlots} />
         <section className="border-l-2 border-gold pl-5"><h2 className="text-eyebrow leading-relaxed text-gold">Included member benefit</h2><p className="mt-4">{plan.includedBenefit.name} · Up to ฿{plan.includedBenefit.menuValue.toLocaleString("en-US")} per selected service month</p><p className="mt-3 text-sm text-muted-foreground">One complimentary meal per selected month is already included in your membership fee. It is separate from prepaid packages and extra orders.</p><p className="mt-3 text-xs text-muted-foreground">{complimentaryBenefitConditions}</p></section>
         <section><p className="text-eyebrow text-gold">Purchase option</p><fieldset className="mt-5 grid gap-3 sm:grid-cols-2"><legend className="sr-only">Choose a membership purchase mode</legend><label className={`flex cursor-pointer gap-3 rounded-sm border p-4 ${purchaseMode === "membership_only" ? "border-gold bg-gold/5" : "border-border/60"}`}><input type="radio" name="purchaseMode" value="membership_only" checked={purchaseMode === "membership_only"} onChange={() => choosePurchaseMode("membership_only")} className="mt-1 size-4 accent-[var(--gold)]" /><span><span className="block text-sm">Membership only</span><span className="mt-1 block text-xs leading-relaxed text-muted-foreground">Membership fee includes your monthly member benefit. Other orders are paid separately.</span></span></label><label className={`flex cursor-pointer gap-3 rounded-sm border p-4 ${purchaseMode === "membership_with_package" ? "border-gold bg-gold/5" : "border-border/60"}`}><input type="radio" name="purchaseMode" value="membership_with_package" checked={purchaseMode === "membership_with_package"} onChange={() => choosePurchaseMode("membership_with_package")} className="mt-1 size-4 accent-[var(--gold)]" /><span><span className="block text-sm">Membership + prepaid package</span><span className="mt-1 block text-xs leading-relaxed text-muted-foreground">Prepay monthly product quantities for your selected membership duration.</span></span></label></fieldset></section>
         {purchaseMode === "membership_with_package" && <section><p className="text-eyebrow text-gold">Build your package</p><p className="mt-4 max-w-2xl text-sm text-muted-foreground">Choose any eligible food and beverage items for your prepaid package.</p><div className="mt-8 space-y-3">{foodCategories.map(renderCategory)}{drinkCategories.map(renderCategory)}</div></section>}
         <section><p className="text-eyebrow text-gold">Delivery details</p><div className="mt-6 grid gap-4 sm:grid-cols-3">{[["Delivery area", area, setArea, membershipDeliveryAreas], ["Preferred day", day, setDay, membershipPreferredDays], ["Preferred time", time, setTime, membershipPreferredTimes]].map(([label, value, setter, options]) => <label key={label as string} className="text-sm"><span className="mb-2 block text-xs text-muted-foreground">{label as string}</span><select value={value as string} onChange={(event) => (setter as (nextValue: string) => void)(event.target.value)} className="h-11 w-full rounded-sm border border-input bg-background px-3">{(options as readonly string[]).map((option) => <option key={option}>{option}</option>)}</select></label>)}</div></section>
         <section><p className="text-eyebrow text-gold">Food preferences</p><p className="mt-4 text-sm text-muted-foreground">Preferences help us plan your menu alongside the products you select.</p><div className="mt-6 grid gap-3 sm:grid-cols-2">{preferenceOptions.map((preference) => <label key={preference} className="flex items-center gap-3 rounded-sm border border-border/60 px-4 py-3 text-sm"><input type="checkbox" checked={preferences.includes(preference)} onChange={() => togglePreference(preference)} className="size-4 accent-[var(--gold)]" />{preference}</label>)}</div></section>
-        {purchaseMode === "membership_with_package" && <section><div className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-eyebrow text-gold">Beverage options</p><p className="mt-3 text-sm text-muted-foreground">Open the full alcohol catalogue and select individual bottles.</p></div><button type="button" disabled={!alcoholSalesEnabled} aria-pressed={alcoholOpen} onClick={() => {
-          const enabled = !alcoholOpen;
-          setAlcoholOpen(enabled);
-          if (!enabled) {
-            setSelectedAddOns([]);
-            setSelectedProducts((current) => current.filter((product) => !alcoholCategories.some((category) => category.name === product.category)));
-          }
-          setOpenCategories((current) => enabled
-            ? [...new Set([...current, ...alcoholCategories.map((category) => category.name)])]
-            : current.filter((category) => !alcoholCategories.some((item) => item.name === category)));
-        }} className={`rounded-full px-5 py-3 text-eyebrow disabled:cursor-not-allowed disabled:opacity-50 ${alcoholOpen ? "bg-gold text-gold-foreground" : "border border-foreground/30"}`}>{alcoholSalesEnabled ? `Add Alcohol · ${alcoholOpen ? "On" : "Off"}` : "Alcohol · unavailable"}</button></div>{alcoholOpen && <div className="mt-6 space-y-3"><div className="rounded-sm border border-gold/40 bg-gold/5 p-5 text-sm leading-relaxed text-foreground/75">Alcohol products are age-restricted and subject to Thai licensing, identity, permitted-hours, and delivery requirements. Availability is enabled for configuration.</div>{alcoholCategories.map(renderCategory)}</div>}</section>}
-        {purchaseMode === "membership_with_package" && alcoholOpen && <section><p className="text-eyebrow text-gold">Eligible add-ons</p><div className="mt-5 space-y-4">{beverageAddOns.filter(addon => plan.allowedBeverageCategories.includes(addon.category)).map(addon => {
-          const selected = selectedAddOns.find(item => item.category === addon.category);
-          return <div key={addon.category} className="grid gap-3 rounded-sm border border-border/60 p-4 sm:grid-cols-2"><label className="text-sm">{addon.label} · {addon.pricingType === "MONTHLY" ? "Monthly" : "One time"} · ฿{addon.price.toLocaleString("en-US")}<select className="mt-2 w-full rounded-sm border border-input bg-background p-2" value={selected?.name ?? ""} onChange={event => { const name = event.target.value; setSelectedAddOns(current => [...current.filter(item => item.category !== addon.category), ...(name ? [{ category: addon.category, name, quantity: selected?.quantity ?? 1 }] : [])]); }}><option value="">Not selected</option>{addon.options.map(name => <option key={name}>{name}</option>)}</select></label>{selected && <label className="text-sm">{addon.pricingType === "MONTHLY" ? "Monthly Quantity" : "One-time Quantity"}<input type="number" min={1} max={100} value={selected.quantity} onChange={event => { const quantity = Number(event.target.value); if (Number.isInteger(quantity) && quantity >= 1 && quantity <= 100) setSelectedAddOns(current => current.map(item => item.category === addon.category ? { ...item, quantity } : item)); }} className="mt-2 w-full rounded-sm border border-input bg-background p-2" /></label>}</div>;
-        })}</div></section>}
+
       </div>
-      <aside className="h-fit lg:sticky lg:top-28"><div className="rounded-sm border border-gold/50 bg-card/50 p-6 sm:p-8"><p className="text-eyebrow text-gold">Membership summary</p><h2 className="mt-4 font-display text-3xl font-light italic">{plan.name}</h2><p className="mt-4 text-sm text-gold">Selected service months</p><p className="mt-2 text-sm">{selectedServiceMonths.length ? selectedServiceMonths.map(month => serviceMonthLabel(month)).join(" · ") : "Choose your months to continue."}</p><p className="mt-3 text-xs text-muted-foreground">Included: {plan.includedBenefit.name} per selected month. No additional benefit charge.</p><p className="mt-5 text-sm text-muted-foreground">{purchaseMode === "membership_with_package" ? `Membership Duration: ${plan.durationMonths} Months` : "Membership only · future orders paid separately"}</p><div className="mt-6 space-y-3 border-y border-border/50 py-5 text-sm"><div className="flex justify-between gap-4"><span className="text-muted-foreground">Membership fee</span><span>฿{quote.membershipFee.toLocaleString("en-US")}</span></div>{selectedProducts.length === 0 ? <p className="text-muted-foreground">{purchaseMode === "membership_only" ? "No product preferences selected." : "Select at least one product for the prepaid package."}</p> : <><p className="pt-2 text-xs text-eyebrow text-gold">{purchaseMode === "membership_with_package" ? "Prepaid package" : "Selected preferences · not prepaid"}</p>{quote.selectedProducts.map((item) => <div key={`${item.category}:${item.name}`} className="flex items-start justify-between gap-3"><span className="min-w-0"><span className="block text-foreground/85">{item.name}</span><span className="mt-1 block text-xs text-muted-foreground">{item.category} · Monthly Quantity: {item.monthlyQuantity}{purchaseMode === "membership_with_package" ? ` · Total Included Quantity: ${item.totalTermQuantity}` : ""}</span><span className="mt-2 flex items-center gap-2"><button type="button" aria-label={`Decrease ${item.name} quantity`} onClick={() => changeProductQuantity({ category: item.category, name: item.name, quantity: item.monthlyQuantity }, item.monthlyQuantity - 1)} className="size-7 rounded-sm border border-border/60">−</button><span className="min-w-5 text-center">{item.monthlyQuantity}</span><button type="button" aria-label={`Increase ${item.name} quantity`} onClick={() => changeProductQuantity({ category: item.category, name: item.name, quantity: item.monthlyQuantity }, item.monthlyQuantity + 1)} className="size-7 rounded-sm border border-border/60">+</button><button type="button" onClick={() => removeProduct({ category: item.category, name: item.name, quantity: item.monthlyQuantity })} className="ml-1 text-xs text-muted-foreground underline">Remove</button></span></span><span className="shrink-0 text-right text-gold"><span className="block text-xs text-muted-foreground">Unit ฿{item.unitPrice.toLocaleString("en-US")}</span>{purchaseMode === "membership_with_package" ? `฿${item.lineTotal.toLocaleString("en-US")}` : "Not prepaid"}</span></div>)}</>}{purchaseMode === "membership_with_package" && quote.selectedAddOns.map(item => <div key={`${item.category}:${item.name}`} className="border-t border-border/50 pt-3"><p className="flex justify-between gap-3"><span>{item.name}</span><span>฿{item.lineTotal.toLocaleString("en-US")}</span></p><p className="mt-1 text-xs text-muted-foreground">Unit Price: ฿{item.unitPrice.toLocaleString("en-US")} · {item.pricingType === "MONTHLY" ? "Monthly Quantity" : "One-time Quantity"}: {item.quantity} · Total Included Quantity: {item.totalTermQuantity}</p></div>)}{purchaseMode === "membership_with_package" && <div className="flex justify-between gap-4 border-t border-border/50 pt-3"><span className="text-muted-foreground">Package subtotal</span><span>฿{quote.packageSubtotal.toLocaleString("en-US")}</span></div>}<div className="flex justify-between gap-4"><span className="text-muted-foreground">Delivery area</span><span>{area}</span></div><div className="flex justify-between gap-4"><span className="text-muted-foreground">Preferred day</span><span>{day}</span></div><div className="flex justify-between gap-4"><span className="text-muted-foreground">Preferred time</span><span>{time}</span></div>{alcoholOpen && <p className="text-gold">Alcohol selection enabled</p>}</div><div className="flex justify-between gap-4 pt-5 text-lg"><span>Expected charge upon approval</span><span className="text-gold">฿{quote.total.toLocaleString("en-US")}</span></div>{purchaseMode === "membership_with_package" && <p className="mt-4 text-xs leading-relaxed text-muted-foreground">Product total = unit price × monthly quantity × selected service months. Delivery scheduling is arranged separately. Included items are not charged again.</p>}<div className="mt-7">{blocked ? <ActiveMembershipNotice /> : <button type="button" disabled={saving || !!validateServiceMonths(selectedServiceMonths, plan.durationMonths, new Date(today)) || (purchaseMode === "membership_with_package" && !selectedProducts.length && !selectedAddOns.length)} onClick={continueToApplication} className="mt-7 inline-flex w-full items-center justify-center rounded-full bg-gold px-6 py-3 text-eyebrow text-gold-foreground disabled:opacity-50">{saving ? "Saving…" : "Continue to Application"}</button>}</div></div></aside>
+      <aside className="h-fit lg:sticky lg:top-28"><div className="rounded-sm border border-gold/50 bg-card/50 p-6 sm:p-8"><p className="text-eyebrow text-gold">Membership summary</p><h2 className="mt-4 font-display text-3xl font-light italic">{plan.name}</h2><p className="mt-4 text-sm text-gold">Selected service months</p><p className="mt-2 text-sm">{selectedServiceMonths.length ? selectedServiceMonths.map(month => serviceMonthLabel(month)).join(" · ") : "Choose your months to continue."}</p><p className="mt-3 text-xs text-muted-foreground">Included: one {plan.includedBenefit.name} per selected month, up to ฿{plan.includedBenefit.menuValue.toLocaleString("en-US")} eligible food value. No additional benefit charge.</p><StandardMealScheduleSummary slots={quote.purchaseSnapshot.standardMealSlots ?? []} /><p className="mt-5 text-sm text-muted-foreground">{purchaseMode === "membership_with_package" ? `Membership Duration: ${plan.durationMonths} Months` : "Membership only · future orders paid separately"}</p><div className="mt-6 space-y-3 border-y border-border/50 py-5 text-sm"><div className="flex justify-between gap-4"><span className="text-muted-foreground">Membership fee</span><span>฿{quote.membershipFee.toLocaleString("en-US")}</span></div>{selectedProducts.length === 0 ? <p className="text-muted-foreground">{purchaseMode === "membership_only" ? "No product preferences selected." : "Select at least one product for the prepaid package."}</p> : <><p className="pt-2 text-xs text-eyebrow text-gold">{purchaseMode === "membership_with_package" ? "Prepaid package" : "Selected preferences · not prepaid"}</p>{quote.selectedProducts.map((item) => <div key={`${item.category}:${item.name}`} className="flex items-start justify-between gap-3"><span className="min-w-0"><span className="block text-foreground/85">{item.name}</span><span className="mt-1 block text-xs text-muted-foreground">{item.category} · Monthly Quantity: {item.monthlyQuantity}{purchaseMode === "membership_with_package" ? ` · Total Included Quantity: ${item.totalTermQuantity}` : ""}</span><span className="mt-2 flex items-center gap-2"><button type="button" aria-label={`Decrease ${item.name} quantity`} onClick={() => changeProductQuantity({ category: item.category, name: item.name, quantity: item.monthlyQuantity }, item.monthlyQuantity - 1)} className="size-7 rounded-sm border border-border/60">−</button><span className="min-w-5 text-center">{item.monthlyQuantity}</span><button type="button" aria-label={`Increase ${item.name} quantity`} onClick={() => changeProductQuantity({ category: item.category, name: item.name, quantity: item.monthlyQuantity }, item.monthlyQuantity + 1)} className="size-7 rounded-sm border border-border/60">+</button><button type="button" onClick={() => removeProduct({ category: item.category, name: item.name, quantity: item.monthlyQuantity })} className="ml-1 text-xs text-muted-foreground underline">Remove</button></span></span><span className="shrink-0 text-right text-gold"><span className="block text-xs text-muted-foreground">Unit ฿{item.unitPrice.toLocaleString("en-US")}</span>{purchaseMode === "membership_with_package" ? `฿${item.lineTotal.toLocaleString("en-US")}` : "Not prepaid"}</span></div>)}</>}{purchaseMode === "membership_with_package" && quote.selectedAddOns.map(item => <div key={`${item.category}:${item.name}`} className="border-t border-border/50 pt-3"><p className="flex justify-between gap-3"><span>{item.name}</span><span>฿{item.lineTotal.toLocaleString("en-US")}</span></p><p className="mt-1 text-xs text-muted-foreground">Unit Price: ฿{item.unitPrice.toLocaleString("en-US")} · {item.pricingType === "MONTHLY" ? "Monthly Quantity" : "One-time Quantity"}: {item.quantity} · Total Included Quantity: {item.totalTermQuantity}</p></div>)}{purchaseMode === "membership_with_package" && <div className="flex justify-between gap-4 border-t border-border/50 pt-3"><span className="text-muted-foreground">Package subtotal</span><span>฿{quote.packageSubtotal.toLocaleString("en-US")}</span></div>}<div className="flex justify-between gap-4"><span className="text-muted-foreground">Delivery area</span><span>{area}</span></div><div className="flex justify-between gap-4"><span className="text-muted-foreground">Preferred day</span><span>{day}</span></div><div className="flex justify-between gap-4"><span className="text-muted-foreground">Preferred time</span><span>{time}</span></div></div><div className="flex justify-between gap-4 pt-5 text-lg"><span>Expected charge upon approval</span><span className="text-gold">฿{quote.total.toLocaleString("en-US")}</span></div>{purchaseMode === "membership_with_package" && <p className="mt-4 text-xs leading-relaxed text-muted-foreground">Product total = unit price × monthly quantity × selected service months. Delivery scheduling is arranged separately. Included items are not charged again.</p>}<div className="mt-7">{blocked ? <ActiveMembershipNotice /> : <button type="button" disabled={saving || !!validateServiceMonths(selectedServiceMonths, plan.durationMonths, new Date(today)) || (purchaseMode === "membership_with_package" && !selectedProducts.length && !selectedAddOns.length)} onClick={continueToApplication} className="mt-7 inline-flex w-full items-center justify-center rounded-full bg-gold px-6 py-3 text-eyebrow text-gold-foreground disabled:opacity-50">{saving ? "Saving…" : "Continue to Application"}</button>}</div></div></aside>
     </main>
   </div>;
 }

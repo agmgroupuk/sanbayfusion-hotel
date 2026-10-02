@@ -11,7 +11,7 @@ try {
   await page.getByRole("link", { name: "SELECT PLAN", exact: true }).first().waitFor();
   assert.equal(await page.getByRole("link", { name: "SELECT PLAN", exact: true }).count(), 12);
   assert.match(await page.locator("body").innerText(), /฿6,000/);
-  assert.match(await page.locator("body").innerText(), /฿50,000/);
+  assert.match(await page.locator("body").innerText(), /฿30,000/);
   await mkdir(".next/verification", { recursive: true });
   await page.screenshot({ path: ".next/verification/plans-desktop.png", fullPage: true });
   await page.goto("http://localhost:3101/plans/3-month-membership");

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({ membership: { id: "term-1", status: "active", membershipExpiryDate: "2026-11-10" } as { id: string; status: string; membershipExpiryDate: string; invoiceStatus?: string; selectedServiceMonths?: string[]; durationMonths?: number }, createIntent: vi.fn(), expire: vi.fn(), insert: vi.fn() }));
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/auth", () => ({ getCurrentAccount: async () => ({ id: "account-1", email: "test@example.invalid" }) }));
+vi.mock("@/lib/auth", () => ({ getCurrentAccount: async () => ({ id: "account-1", email: "test@example.invalid" }), normalizeEmail: (value: string) => value.trim().toLowerCase() }));
 vi.mock("@/lib/stripe", () => ({ stripe: { paymentIntents: { create: state.createIntent } } }));
 vi.mock("@/lib/db", () => ({ db: {
   select: () => { const query = { from: () => query, where: () => query, orderBy: async () => [state.membership] }; return query; },

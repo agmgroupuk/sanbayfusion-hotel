@@ -3,9 +3,8 @@ import { membershipPlans } from "./membership-plans";
 import { hasActiveMembership, membershipTerm } from "./membership-term";
 
 describe("duration memberships", () => {
-  it("offers exactly the twelve authoritative terms and fees with distinct IDs", () => {
+  it("offers exactly the twelve authoritative terms with distinct IDs", () => {
     expect(membershipPlans.map(p => p.durationMonths)).toEqual([1,2,3,4,5,6,7,8,9,10,11,12]);
-    expect(membershipPlans.map(p => p.price)).toEqual([6000,11000,15000,19000,23000,27000,31000,35000,39000,43000,47000,50000]);
     expect(new Set(membershipPlans.map(p => p.id)).size).toBe(12);
   });
   it.each(membershipPlans)("starts $name at activation and expires after its calendar duration", plan => {

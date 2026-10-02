@@ -3,6 +3,8 @@ import { build } from "esbuild";
 import { mkdir, readFile } from "node:fs/promises";
 import { existsSync, globSync } from "node:fs";
 import assert from "node:assert/strict";
+import { tsImport } from "tsx/esm/api";
+const { membershipPlans } = await tsImport("../lib/membership-plans.ts", import.meta.url);
 
 const origin = process.env.VERIFY_ORIGIN ?? "http://localhost:3102";
 const edge = "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe";
@@ -20,11 +22,14 @@ try {
   assert.equal(await buttons.count(), 12);
   assert.equal(await page.getByRole("link", { name: "Select plan", exact: true }).count(), 12);
   for (let index = 0; index < 12; index++) {
+    const fee = `฿${membershipPlans[index].price.toLocaleString("en-US")}`;
+    assert.ok((await page.locator("article").nth(index).innerText()).includes(fee));
     await buttons.nth(index).click();
     const dialog = page.getByRole("dialog");
     assert.match(await dialog.innerText(), new RegExp(`${index + 1}-Month Membership`));
     assert.match(await dialog.innerText(), /no cash value/);
-    assert.match(await dialog.innerText(), new RegExp((2000 + index * 500).toLocaleString("en-US")));
+    assert.ok((await dialog.innerText()).includes(fee));
+    assert.match(await dialog.innerText(), new RegExp((membershipPlans[index].includedBenefit.menuValue).toLocaleString("en-US")));
     assert.equal(await dialog.getByRole("link", { name: "Select this plan" }).count(), 1);
     await page.keyboard.press("Escape");
     assert.equal(await page.getByRole("dialog").count(), 0);
@@ -77,6 +82,8 @@ try {
   }
   await page.goto(`${origin}/plans/12-month-membership`);
   await page.waitForLoadState("networkidle");
+  const annualFee = `฿${membershipPlans[11].price.toLocaleString("en-US")}`;
+  assert.ok((await page.locator("aside").innerText()).includes(annualFee));
   const year = await page.getByLabel("Service year").inputValue();
   for (const month of ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]) await page.getByRole("button", { name: `${month} ${year}`, exact: true }).click();
   assert.equal(await page.getByRole("button", { name: "Continue to Application" }).isEnabled(), true);

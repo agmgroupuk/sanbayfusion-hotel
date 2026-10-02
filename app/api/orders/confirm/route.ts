@@ -5,10 +5,12 @@ import { db } from "@/lib/db";
 import { customerOrders } from "@/lib/db/schema";
 import { stripe } from "@/lib/stripe";
 import { recordOrderPayment } from "@/lib/order-payment";
+import { hasValidRequestOrigin, originRejection } from "@/lib/request-origin";
 
 export async function POST(request: Request) {
   const account = await getCurrentAccount();
   if (!account || !db || !stripe) return NextResponse.json({ error: "Unable to confirm this order." }, { status: 401 });
+  if (!hasValidRequestOrigin(request)) return NextResponse.json(originRejection, { status: 403 });
   const body = await request.json().catch(() => null) as { orderNumber?: string } | null;
   if (!body?.orderNumber) return NextResponse.json({ error: "Order reference is required." }, { status: 400 });
   const order = (await db.select().from(customerOrders).where(and(eq(customerOrders.orderNumber, body.orderNumber), eq(customerOrders.accountId, account.id))).limit(1))[0];

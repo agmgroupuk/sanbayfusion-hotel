@@ -8,14 +8,22 @@ import { db } from "@/lib/db";
 import { customerOrderItems, customerOrders } from "@/lib/db/schema";
 import { priceCart } from "@/lib/order";
 import { stripe } from "@/lib/stripe";
+import { createStandardMealOrder } from "@/lib/standard-meal-order";
+import { ApplicationError } from "@/lib/membership-errors";
+import { hasValidRequestOrigin, originRejection } from "@/lib/request-origin";
 
 function orderNumber() { return `SBF-O-${randomUUID().slice(0, 18)}`; }
 
 export async function POST(request: Request) {
   const account = await getCurrentAccount();
   if (!account) return NextResponse.json({ error: "Please sign in to order." }, { status: 401 });
+  if (!hasValidRequestOrigin(request)) return NextResponse.json(originRejection, { status: 403 });
   if (!db || !stripe) return NextResponse.json({ error: "Payment services are not configured." }, { status: 503 });
-  const body = await request.json().catch(() => null) as { cart?: unknown; notes?: string } | null;
+  const body = await request.json().catch(() => null) as { cart?: unknown; notes?: string; standardMeal?: unknown; expectedTotal?: number } | null;
+  if (body?.standardMeal) {
+    try { return NextResponse.json(await createStandardMealOrder(account, body.standardMeal, body.cart, typeof body.notes === "string" ? body.notes : undefined, body.expectedTotal)); }
+    catch (error) { return NextResponse.json({ error: error instanceof ApplicationError ? error.message : "Unable to prepare your meal order. Your saved order can be retried." }, { status: error instanceof ApplicationError ? error.status : 500 }); }
+  }
   const membership = await activeMembershipForAccount(account);
   if (!membership || !hasActiveMembership(membership)) return NextResponse.json({ error: "An active membership is required to place an order." }, { status: 403 });
   const priced = priceCart(body?.cart, membership.planId);

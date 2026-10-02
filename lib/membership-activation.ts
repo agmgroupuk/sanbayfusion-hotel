@@ -13,6 +13,7 @@ import { serviceMonthBounds, validateServiceMonths } from "@/lib/membership-serv
 import { ApplicationError } from "@/lib/membership-errors";
 import type { MembershipPurchaseSnapshot } from "@/lib/membership-request";
 import { validSavedQuote } from "@/lib/membership-quote-integrity";
+import { ensureStandardMealEntitlements } from "@/lib/standard-meal-entitlements";
 
 export type MembershipLifecycleStatus =
   | "pending_review"
@@ -116,7 +117,7 @@ export async function activateMembershipRequest({ id, actor }: { id: string; act
   return db.transaction(async (tx) => {
     const { row: membership, account } = await lockMembershipApplication(tx, id);
     await tx.execute(sql`select pg_advisory_xact_lock(731946201)`);
-    if (membership.status === "active") return membership;
+    if (membership.status === "active") { await ensureStandardMealEntitlements(tx, membership); return membership; }
     if (membership.status !== "payment_received" || membership.invoiceStatus !== "paid") return null;
     if (membership.applicationSnapshot && !membership.approvedAt) return null;
     if (account) await assertMembershipPurchaseAllowed(tx, account, id);
@@ -157,6 +158,7 @@ export async function activateMembershipRequest({ id, actor }: { id: string; act
       .where(and(eq(membershipRequests.id, id), eq(membershipRequests.status, "payment_received")))
       .returning();
     if (!row) return null;
+    await ensureStandardMealEntitlements(tx, row);
 
     const schedule = buildMembershipDeliverySchedule({
       membershipRequestId: membership.id,

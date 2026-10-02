@@ -133,31 +133,32 @@ describe("membership calendar database enforcement (isolated Postgres engine, si
     await expect(approveApplication(prepared.applicationId, "test-admin")).rejects.toThrow("no longer eligible");
     expect(state.payments.paymentIntents.create).not.toHaveBeenCalled();
   });
-  it("redeems once for the current selected month, at zero charge, including concurrent requests", async () => {
+  it("schedules idempotently without redeeming the allowance, including concurrent requests", async () => {
     const row = await member();
     vi.setSystemTime(new Date("2027-02-05T12:00:00+07:00"));
-    const request = { membershipId: row.id, serviceMonth: "2027-02", scheduledDate: "2027-02-10" };
+    const request = { membershipId: row.id, serviceMonth: "2027-02", scheduledDate: "2027-02-10", scheduledTime: "19:30" };
     const result = await Promise.allSettled([redeemMemberBenefit(account, request), redeemMemberBenefit(account, request)]);
-    expect(result.filter(value => value.status === "fulfilled")).toHaveLength(1);
+    expect(result.filter(value => value.status === "fulfilled")).toHaveLength(2);
     expect(result.find(value => value.status === "fulfilled")).toMatchObject({ value: { chargedAmount: 0 } });
     const rows = await database.select().from(schema.membershipBenefitRedemptions);
-    expect(rows).toHaveLength(1); expect(rows[0]).toMatchObject({ mealName: "Premium Member Meal", menuValue: 3000 });
+    expect(rows).toHaveLength(3); expect(rows.find(row => row.serviceMonth === "2027-02")).toMatchObject({ mealName: "Standard Meal", menuValue: 5000, status: "scheduled", redeemedAt: null });
     expect(await database.select().from(schema.customerOrders)).toHaveLength(0);
     expect(state.payments.paymentIntents.create).not.toHaveBeenCalled();
     await expect(database.insert(schema.membershipBenefitRedemptions).values({ membershipRequestId: row.id, serviceMonth: "2027-02", scheduledDate: "2027-02-15", mealName: "Forged duplicate", menuValue: 3000 })).rejects.toThrow();
   });
-  it("denies redemption for another owner, gaps, future months, expired months and insufficient notice", async () => {
+  it("denies invalid scheduling while allowing upcoming selected months", async () => {
     const row = await member();
-    const input = { membershipId: row.id, serviceMonth: "2027-02", scheduledDate: "2027-02-10" };
+    const input = { membershipId: row.id, serviceMonth: "2027-02", scheduledDate: "2027-02-10", scheduledTime: "19:30" };
     vi.setSystemTime(new Date("2027-02-05T12:00:00+07:00"));
     await expect(redeemMemberBenefit({ ...account, id: crypto.randomUUID() }, input)).rejects.toThrow("not found");
-    await expect(redeemMemberBenefit(account, { ...input, serviceMonth: "2027-07", scheduledDate: "2027-07-10" })).rejects.toThrow("only available");
+    await expect(redeemMemberBenefit(account, { ...input, serviceMonth: "2027-07", scheduledDate: "2027-07-10" })).resolves.toMatchObject({ status: "scheduled" });
+    await expect(redeemMemberBenefit(account, { ...input, serviceMonth: "2027-05", scheduledDate: "2027-05-10" })).rejects.toThrow("only available");
     await expect(redeemMemberBenefit(account, { ...input, scheduledDate: "2027-02-06" })).rejects.toThrow("three days");
     await expect(redeemMemberBenefit(account, { ...input, amount: 0, menuValue: 100000 })).rejects.toThrow("valid benefit");
     vi.setSystemTime(new Date("2027-03-05T12:00:00+07:00"));
-    await expect(redeemMemberBenefit(account, input)).rejects.toThrow("approved, paid");
+    await expect(redeemMemberBenefit(account, input)).rejects.toThrow("only available");
     vi.setSystemTime(new Date("2027-12-05T12:00:00+07:00"));
-    await expect(redeemMemberBenefit(account, input)).rejects.toThrow("approved, paid");
+    await expect(redeemMemberBenefit(account, input)).rejects.toThrow("only available");
   });
   it("enforces authentication and origin on the benefit API", async () => {
     state.account = null;

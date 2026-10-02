@@ -1,5 +1,6 @@
 import type { MembershipPurchaseSnapshot } from "@/lib/membership-request";
 import { validateServiceMonths } from "@/lib/membership-service-months";
+import { validateStandardMealSlots } from "@/lib/standard-meal";
 
 /** Validate the saved arithmetic without substituting today's catalog prices. */
 export function validSavedQuote(quote: MembershipPurchaseSnapshot): boolean {
@@ -7,6 +8,7 @@ export function validSavedQuote(quote: MembershipPurchaseSnapshot): boolean {
   if (![3, 4].includes(quote.version) || quote.currency !== "thb" || !Number.isInteger(months) || !months || months < 1 || months > 12 || !Number.isSafeInteger(quote.membershipFee) || quote.membershipFee <= 0 || quote.plan.membershipFee !== quote.membershipFee) return false;
   if (quote.version === 4 && (validateServiceMonths(quote.selectedServiceMonths, months) || !quote.includedBenefit?.name || !Number.isSafeInteger(quote.includedBenefit.menuValue) || quote.includedBenefit.menuValue <= 0 || quote.includedBenefit.quantityPerServiceMonth !== 1 || quote.includedBenefit.cashValue !== 0)) return false;
   let subtotal = 0;
+  if (quote.standardMealSlots && (quote.standardMealSlots.length !== months || validateStandardMealSlots(quote.standardMealSlots, quote.selectedServiceMonths ?? []))) return false;
   for (const item of [...quote.products, ...quote.addOns]) {
     const quantity = "quantity" in item ? item.quantity : item.monthlyQuantity;
     if (!Number.isInteger(quantity) || !quantity || quantity < 1 || quantity > 100 || !Number.isSafeInteger(item.unitPrice) || item.unitPrice < 0 || item.durationMonths !== months || !["MONTHLY", "ONE_TIME"].includes(item.pricingType ?? "")) return false;
