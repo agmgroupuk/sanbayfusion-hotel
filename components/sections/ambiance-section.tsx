@@ -9,23 +9,23 @@ export function AmbianceSection() {
       <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 sm:px-8 lg:grid-cols-2 lg:gap-16">
         <div className="order-2 lg:order-1 lg:pr-8">
           <Reveal variant="fade" className="text-eyebrow text-gold">
-            The Room
+            Your occasion
           </Reveal>
           <Reveal variant="up" delay={0.05}>
             <h2 className="mt-5 font-display text-h2 font-light leading-[1.05]">
-              Candlelight, low murmurs, and time that slows down.
+              Good food, thoughtful planning, and time together.
             </h2>
           </Reveal>
           <Reveal variant="up" delay={0.1}>
             <p className="lead measure mt-6">
-              Forty seats. One seating. The room is dressed in shadow and warm
-              brass, designed so the food — and the company — take centre stage.
+              Planning a gathering? Share your preferred date, venue and guest count
+              with the team so we can review the possibilities together.
             </p>
           </Reveal>
           <Reveal variant="up" delay={0.15}>
             <p className="measure mt-4 text-foreground/85">
-              An optional wine pairing traces the menu course by course, drawn
-              from a cellar of small, characterful growers.
+              Private-event requests guide a tailored proposal. Menus, service,
+              availability and pricing are confirmed with you before arrangements are agreed.
             </p>
           </Reveal>
         </div>

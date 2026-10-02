@@ -4,7 +4,7 @@ import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Accessibility",
-  description: `Accessibility statement for the ${site.name} website and restaurant experience.`,
+  description: `Accessibility statement for the ${site.name} website and service enquiries.`,
   alternates: { canonical: "/accessibility" },
 };
 
@@ -13,8 +13,8 @@ export default function AccessibilityPage() {
     <LegalPage
       eyebrow="Accessibility"
       title="A welcoming table for everyone"
-      lead="We are working to make both our digital experience and our restaurant experience more accessible."
-      updated="20 September 2026"
+      lead="We are working to make our website, customer support and meeting arrangements more accessible."
+      updated="2 October 2026"
     >
       <LegalSection title="Our approach">
         <p>
@@ -24,7 +24,7 @@ export default function AccessibilityPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="At the restaurant">
+      <LegalSection title="Meetings and events">
         <p>
           If you have an access requirement, dietary need, or seating request, please
           tell our team when booking. We will do our best to explain the space and make

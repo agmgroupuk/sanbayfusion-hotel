@@ -43,15 +43,8 @@ export default function ReservationsPage() {
           </Reveal>
 
           <Reveal variant="fade" delay={0.15} className="mt-8">
-            <h2 className="text-eyebrow text-muted-foreground">Hours</h2>
-            <ul className="mt-4 divide-y divide-border/50 text-sm">
-              {site.hours.map((h) => (
-                <li key={h.days} className="flex items-baseline justify-between py-2.5">
-                  <span className="text-foreground/85">{h.days}</span>
-                  <span className="text-muted-foreground">{h.time}</span>
-                </li>
-              ))}
-            </ul>
+            <h2 className="text-eyebrow text-muted-foreground">Meeting requests</h2>
+            <p className="mt-4 text-sm leading-7 text-foreground/75">Choose from the dates and times in the form. Your request is subject to team confirmation; it is not an instant table reservation.</p>
             <p className="mt-6 text-sm text-muted-foreground">
               Need help choosing a meeting time?{" "}
               <a href={`tel:${site.phone.replace(/\s/g, "")}`} className="text-gold hover:text-gold/80">

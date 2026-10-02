@@ -8,7 +8,7 @@ export function DishSection() {
     <section className="bg-background py-24 sm:py-36">
       <div className="mx-auto max-w-4xl px-5 text-center sm:px-8">
         <Reveal variant="fade" className="text-eyebrow text-gold">
-          Signature · No. 04
+          From the kitchen
         </Reveal>
 
         <MaskWipe
@@ -17,7 +17,7 @@ export function DishSection() {
         >
           <Image
             src="/images/scallop.jpg"
-            alt="A seared scallop, plated as the signature course"
+            alt="A seared scallop presented on a plate"
             fill
             sizes="(min-width: 768px) 36rem, 100vw"
             className="object-cover"
@@ -26,11 +26,11 @@ export function DishSection() {
 
         <Reveal variant="up" delay={0.1}>
           <h2 className="mt-10 font-display text-h2 font-light italic">
-            Hand-dived scallop
+            Food worth planning for
           </h2>
           <p className="lead mx-auto mt-4 max-w-xl">
-            Brown butter, sea herbs, a whisper of yuzu. A single, perfect bite
-            that holds the entire philosophy of the kitchen.
+            Explore the current catalogue and choose eligible food around
+            your preferences. Ingredients and availability are confirmed with the team.
           </p>
         </Reveal>
       </div>

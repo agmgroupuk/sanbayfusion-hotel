@@ -15,8 +15,10 @@ export function SiteFooter() {
           <div>
             <p className="text-eyebrow text-muted-foreground">Visit</p>
             <address className="mt-4 space-y-1 text-sm not-italic text-foreground/80">
+              <p>{site.legalName}</p>
               <p>{site.address.line1}</p>
               <p>{site.address.line2}</p>
+              <p>{site.address.city} {site.address.postalCode}, {site.address.country}</p>
               <p className="pt-2">
                 <a href={`tel:${site.phone.replace(/\s/g, "")}`} className="transition-colors hover:text-gold">
                   {site.phone}

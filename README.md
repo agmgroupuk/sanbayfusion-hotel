@@ -15,12 +15,9 @@
   <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg">
 </p>
 
-> [!NOTE]
-> **This is a portfolio demo.** *Sanbay Fusion Bar & Restaurant* is a fictional restaurant concept; all
-> content, imagery, and contact details are placeholders. The project exists to
-> showcase a production-grade Next.js build, not to represent a real business.
+> Operated by Sanbay Fusion Foods Company Limited. Current business information is maintained in `lib/site.ts`. See [the content review](docs/website-content-review.md) for the current service flow and outstanding policy decisions.
 
-**Live demo:** [sanbayfusion.vercel.app](https://sanbayfusion.vercel.app/)
+**Website:** [sanbayfusion.com](https://sanbayfusion.com/)
 
 ![Sanbay Fusion Bar & Restaurant — cinematic home page](docs/screenshot.jpg)
 

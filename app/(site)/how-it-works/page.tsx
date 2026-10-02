@@ -1,21 +1,46 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CalendarDays, ClipboardCheck, CreditCard, FileCheck2, MapPin, ShoppingBag, UserRound, UtensilsCrossed } from "lucide-react";
 import { PageHeader } from "@/components/site/page-header";
 
-export const metadata: Metadata = { title: "How It Works", description: "Membership duration, prepaid packages, payment, approval, and renewal.", alternates: { canonical: "/how-it-works" } };
+export const metadata: Metadata = { title: "How It Works", description: "From your account and selected service months to application review, payment, Standard Meals and member orders.", alternates: { canonical: "/how-it-works" } };
+
 const steps = [
-  ["Choose your duration", "Select one of 12 plans, then choose exactly that many eligible service months in the current or next calendar year. Months do not have to be consecutive."],
-  ["Choose your purchase", "Buy membership only, or add a prepaid food and beverage package with eligible add-ons."],
-  ["Save your payment method", "Review your exact quote and save a card securely. Submit your authorization without a membership charge."],
-  ["Team review", "Submit your application for review. If approved, we attempt the exact authorized charge. Declined applications are not charged."],
-  ["Final activation", "After admin approval and successful payment, your Member ID is issued. Service and monthly benefits are available only during your selected months. The dashboard shows each month as upcoming, current or completed."],
-  ["Order and renew", "Active members may buy additional products separately from the dashboard. Ordering access ends at expiry. Renewal requires a new authorized purchase."],
+  { title: "Create your account", text: "Sign up or sign in. Your Account Center keeps personal details, addresses, payment methods, applications and orders together.", icon: UserRound, href: "/signup", action: "Create an account" },
+  { title: "Complete Account Center", text: "Save your personal information, billing address and delivery address. Check delivery eligibility, verify a saved card and choose a default payment method before applying.", icon: MapPin, href: "/dashboard", action: "Open Account Center" },
+  { title: "Choose your service months", text: "Choose a 1–12 month plan, then select exactly that many eligible months within one calendar year. Choose the current or next year; months may be non-consecutive. Past months are unavailable.", icon: CalendarDays, href: "/plans", action: "Compare plans" },
+  { title: "Make it yours", text: "Choose membership only or add an eligible prepaid food and non-alcoholic beverage package. Review quantities, preferences and your plan's included Standard Meal allowance.", icon: ShoppingBag },
+  { title: "Schedule your Standard Meals", text: "Choose a date and time in each selected month now, or select Schedule later and return through Account Center. Allow at least three calendar days. Times run from 11:00 AM to midnight in Bangkok time, in half-hour steps. Scheduling alone does not place a meal order.", icon: UtensilsCrossed },
+  { title: "Review and submit", text: "Check the final amount, selected months, addresses and saved card. Accept the terms and payment authorization. Submission creates an application and draft invoice for review, without collecting the membership fee.", icon: ClipboardCheck },
+  { title: "Team review and payment", text: "The team reviews your account, delivery information and selections and may contact you for clarification. Approval makes the agreed invoice ready for staff collection. Further bank authentication may be needed; approval alone does not activate membership.", icon: CreditCard },
+  { title: "Use your membership", text: "After approval and verified successful payment, your membership activates and your Member ID is issued. During each selected service month, place your eligible Standard Meal order or separately paid additional orders. Track status in Account Center.", icon: FileCheck2, href: "/dashboard", action: "View your membership" },
 ];
+
 export default function HowItWorksPage() {
-  return <div className="pb-28"><PageHeader eyebrow="The membership process" title="Choose your term. Make it yours." lead="One payment for 1 to 12 selected service months, with a complimentary meal in each month after approval and payment." /><main className="mx-auto max-w-7xl px-5 sm:px-8">
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">{steps.map(([title, description], index) => <article key={title} className="rounded-sm border border-border/60 p-7"><p className="text-eyebrow text-gold">0{index + 1}</p><h2 className="mt-5 font-display text-2xl">{title}</h2><p className="mt-4 text-sm leading-relaxed text-muted-foreground">{description}</p></article>)}</div>
-    <section className="mt-16 grid gap-6 md:grid-cols-2"><article className="border border-gold/40 bg-gold/5 p-7"><h2 className="font-display text-3xl">Membership only</h2><p className="mt-5">Expected charge upon approval = membership fee.</p><p className="mt-4 text-sm text-muted-foreground">For example, a 3-Month Membership costs ฿15,000. Additional food and beverage orders are paid separately after activation.</p></article><article className="border border-gold/40 bg-gold/5 p-7"><h2 className="font-display text-3xl">Membership + prepaid package</h2><p className="mt-5">Product total = unit price × monthly quantity × selected service months.</p><p className="mt-4 text-sm text-muted-foreground">Monthly add-ons use the same duration multiplier. One-time add-ons are charged once. All selected products and add-ons are paid together with the membership fee.</p></article></section>
-    <section className="mt-12 border-y border-border/60 py-8"><h2 className="font-display text-3xl">Package quantities and delivery scheduling</h2><p className="mt-5 max-w-3xl text-sm leading-relaxed text-muted-foreground">Four units per month means four units in each membership month, not four separate deliveries. Delivery dates and distribution are arranged separately. Your paid package prices and quantities are saved for your selected term and do not change when catalog prices change.</p><p className="mt-4 text-sm text-muted-foreground">For example, a 3-Month Membership can cover February, July and November 2027. There is no service entitlement in the intervening months. Selected months become fixed on final submission. One included member meal applies per selected month, separately from prepaid quantities and extra orders; unused benefits do not roll over or convert to cash.</p></section>
-    <Link href="/plans" className="mt-10 inline-flex rounded-full bg-gold px-7 py-3 text-eyebrow text-gold-foreground">VIEW MEMBERSHIP PLANS</Link>
-  </main></div>;
+  return <div className="pb-28">
+    <PageHeader eyebrow="The membership process" title="Your months. Your table. Your plan." lead="Prepare your account, choose your service months and let us review the details before your membership payment is collected." />
+    <div className="mx-auto max-w-7xl px-5 sm:px-8">
+      <ol className="grid gap-5 md:grid-cols-2 xl:grid-cols-4" aria-label="Membership journey">
+        {steps.map(({ title, text, icon: Icon, href, action }, index) => <li key={title} className="flex flex-col border border-border/60 bg-card/20 p-6 sm:p-7">
+          <div className="flex items-center justify-between text-gold"><span className="text-eyebrow">Step {String(index + 1).padStart(2, "0")}</span><Icon className="size-6" aria-hidden="true" /></div>
+          <h2 className="mt-6 font-display text-2xl">{title}</h2><p className="mt-4 flex-1 text-sm leading-7 text-foreground/75">{text}</p>
+          {href && <Link href={href} className="mt-6 text-sm text-gold underline underline-offset-4">{action}</Link>}
+        </li>)}
+      </ol>
+      <section aria-labelledby="payment-notice" className="mt-12 border border-gold/40 bg-gold/5 p-6 sm:p-8">
+        <h2 id="payment-notice" className="font-display text-3xl">Two separate payment steps</h2>
+        <div className="mt-5 grid gap-6 text-sm leading-7 text-foreground/80 md:grid-cols-2">
+          <p><strong>Card verification:</strong> Account Center uses a USD $2 verification payment. A refund is initiated after successful verification; your issuer may take additional time to show it. This is separate from your membership fee.</p>
+          <p><strong>Membership payment:</strong> Your submitted amount is authorized for collection only after approval. If payment needs action or fails, follow the status shown in Account Center or contact the team. A declined application does not collect the membership fee.</p>
+        </div>
+        <p className="mt-5 border-t border-gold/20 pt-4 text-sm leading-7"><strong>Payment availability:</strong> Online payments currently operate in test mode. Live card payments are not available.</p>
+      </section>
+      <section className="mt-12 grid gap-6 md:grid-cols-2" aria-label="Membership options">
+        <article className="border border-border/60 p-7"><h2 className="font-display text-3xl">Membership only</h2><p className="mt-4 text-sm leading-7 text-foreground/75">Your membership fee includes one Standard Meal allowance per selected service month. Additional purchases are separate. View the current fee and allowance on your plan before applying.</p></article>
+        <article className="border border-border/60 p-7"><h2 className="font-display text-3xl">Membership + prepaid package</h2><p className="mt-4 text-sm leading-7 text-foreground/75">Monthly product cost = unit price × monthly quantity × selected service months. Monthly add-ons use the same multiplier; one-time add-ons are charged once. Quantities describe products, not a number of deliveries.</p></article>
+      </section>
+      <section className="mt-12 border-y border-border/60 py-8"><h2 className="font-display text-3xl">One Standard Meal in each selected month</h2><p className="mt-5 max-w-3xl text-sm leading-7 text-foreground/75">You may schedule future selected months in advance, but place each included meal order during its own selected month. The allowance applies to eligible food in one meal order; pay any excess at checkout. Order drinks and other products separately. Unused allowance has no cash value and does not roll over.</p><p className="mt-4 max-w-3xl text-sm leading-7 text-foreground/75">Benefits are unavailable in gaps between selected months. Membership expires after the last selected month; it does not automatically renew. You cannot purchase another membership while an existing membership is ongoing or has service months remaining.</p></section>
+      <div className="mt-10 flex flex-wrap gap-5"><Link href="/plans" className="inline-flex rounded-full bg-gold px-7 py-3 text-eyebrow text-gold-foreground">View membership plans</Link><Link href="/faq" className="inline-flex items-center text-sm text-gold underline underline-offset-4">Read the FAQ</Link></div>
+    </div>
+  </div>;
 }

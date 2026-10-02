@@ -4,23 +4,23 @@ import { Reveal } from "@/components/motion/reveal";
 
 const membershipBenefits = [
   {
-    title: "Private access",
-    description: "Priority reservations, preferred seating windows, and first access to new tasting nights.",
+    title: "Your selected months",
+    description: "Choose 1 to 12 eligible service months in one calendar year. Your months can be non-consecutive.",
     icon: Crown,
   },
   {
-    title: "Members’ tables",
-    description: "Reserved tables and curated dining moments for recurring guests, celebrations, and intimate gatherings.",
+    title: "Included Standard Meal",
+    description: "One eligible food order per selected month, up to your plan allowance. Schedule now or later; pay any excess separately.",
     icon: Users,
   },
   {
-    title: "VIP rooms",
-    description: "Invitation-only access to room bookings, private dining windows, and elevated hospitality experiences.",
+    title: "Optional prepaid packages",
+    description: "Choose membership only or add eligible monthly product quantities before submitting your application.",
     icon: Sparkles,
   },
   {
-    title: "Quiet luxury",
-    description: "A discreet, members-first service model built around trust, consistency, and a tailored evening.",
+    title: "One Account Center",
+    description: "Manage your details, addresses, verified cards, applications, meal schedules and orders together.",
     icon: ShieldCheck,
   },
 ];

@@ -1,24 +1,19 @@
 export const site = {
   name: "Sanbay Fusion",
+  legalName: "Sanbay Fusion Foods Company Limited",
   tagline: "Seasonal food memberships & delivery",
   description:
     "Sanbay Fusion is a membership-based food and beverage service in Thailand, offering member ordering, scheduled deliveries, membership plans, and a wide selection of food and beverages.",
   url: (process.env.NEXT_PUBLIC_SITE_URL || "https://sanbayfusion.com").replace(/\/+$/, ""),
   address: {
-    line1: "Sanbay Fusion Bar & Restaurant",
-    line2: "sanbayfusion.com",
+    line1: "395/2 Sathu Pradit Rd",
+    line2: "Chong Nonsi, Yan Nawa",
+    city: "Bangkok",
+    postalCode: "10120",
+    country: "Thailand",
   },
   phone: "+66 80 897 2129",
   email: "info@sanbayfusion.com",
-  hours: [
-    { days: "Tuesday — Thursday", time: "18:00 — 22:00" },
-    { days: "Friday — Saturday", time: "18:00 — 23:00" },
-    { days: "Sunday — Monday", time: "Closed" },
-  ],
-  social: {
-    instagram: "https://instagram.com",
-    // add others as needed
-  },
 } as const;
 
 export const navLinks = [

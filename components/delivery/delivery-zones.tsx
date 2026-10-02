@@ -7,7 +7,7 @@ import { deliveryZones } from "@/lib/delivery";
 export function DeliveryZones() {
   const [openZone, setOpenZone] = useState<string | null>(null);
 
-  return <div className="grid gap-4 lg:grid-cols-3">{deliveryZones.map((zone) => {
+  return <div className="grid gap-4 lg:grid-cols-3">{deliveryZones.filter(zone => zone.active).map((zone) => {
     const isOpen = openZone === zone.id;
     return <article key={zone.id} className="rounded-sm border border-border/60 bg-card/30 p-7 sm:p-8">
       <button type="button" aria-expanded={isOpen} onClick={() => setOpenZone(isOpen ? null : zone.id)} className="w-full text-left">

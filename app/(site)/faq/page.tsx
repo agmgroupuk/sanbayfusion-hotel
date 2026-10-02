@@ -1,52 +1,55 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PageHeader } from "@/components/site/page-header";
-import { Reveal } from "@/components/motion/reveal";
+import { membershipPlans } from "@/lib/membership-plans";
+import { site } from "@/lib/site";
 
-export const metadata: Metadata = { title: "FAQ", description: "Frequently asked questions about Sanbay Fusion food memberships, invoices, delivery, and package rules.", alternates: { canonical: "/faq" } };
-
+export const metadata: Metadata = { title: "FAQ", description: "Answers about accounts, service months, Standard Meals, application review, payments, orders and support.", alternates: { canonical: "/faq" } };
+const baht = (value: number) => "฿" + value.toLocaleString("en-US");
 const sections = [
-  {
-    title: "Membership FAQ",
-    questions: [
-      ["How long is a Sanbay Fusion membership?", "Choose exactly 1 to 12 eligible service months in one calendar year. Months may be non-consecutive. The year is explicit and past months are unavailable."],
-      ["How do I become a member?", "Choose a plan, sign in, configure your package, and save your payment method securely. Authorize the displayed amount and submit for review without being charged. Approval triggers the authorized charge; successful payment activates access."],
-      ["Do I pay when I choose a membership?", "No. Saving your payment method and submitting an application do not charge the membership fee. We attempt the displayed authorized amount only after admin approval."],
-      ["How long do I have to pay my membership invoice?", "The standard payment period is 3 days from invoice issue. The exact deadline appears on the invoice. An unpaid invoice may expire without activating membership."],
-      ["What does the first invoice include?", "Membership only charges the plan fee. Membership with a prepaid package also charges selected monthly products multiplied by membership months, monthly add-ons, and one-time add-ons. All charges are shown before payment."],
-      ["What happens after I pay the membership fee?", "After approval and verified successful payment, your Member ID is issued and your selected service months are activated. If your bank requires authentication or declines payment, use your dashboard to complete authentication or update your card."],
-      ["When does my selected membership term begin?", "Approval and successful payment activate the agreement. Services and the complimentary monthly meal are available only during the selected calendar months shown in your dashboard."],
-      ["Is the membership fee refundable?", "Membership fees are non-refundable after payment and activation except where a refund is required by applicable law."],
-      ["Can I cancel my membership?", "You may request cancellation at any time. Cancellation ends future membership use according to the applicable terms and does not automatically create a refund."],
-      ["Can I change my package after activation?", "No. Once finalized and activated, the agreed plan, package, and included products are locked for that membership term unless the team approves an exception."],
-      ["Can I upgrade or downgrade later?", "Not during the active term unless Sanbay Fusion specifically approves an exception. Review the final configuration carefully before paying the invoice."],
-      ["What happens if an included product is unavailable?", "The team may contact you and offer a suitable replacement. This is a delivery-specific substitution and does not permanently change your membership package."],
-    ],
-  },
-  {
-    title: "Delivery & order FAQ",
-    questions: [
-      ["How early must I request a delivery?", "Eligible deliveries should normally be requested at least 3 days before the requested date. The actual cut-off date and time should be shown when a future delivery system is available."],
-      ["What happens if I order too late?", "The requested delivery date may be unavailable. Where the finalized terms say the opportunity expires, the missed entitlement will not silently roll over."],
-      ["Do I need to pay for each delivery?", "The membership fee and individual food, beverage, delivery, or order charges are separate where the selected membership requires them. Items, fees, taxes, and total must be shown before confirmation."],
-      ["When is my delivery confirmed?", "After the request is submitted within the notice period, selections are complete, any required payment is made, and Sanbay Fusion confirms the delivery."],
-      ["Can unused deliveries be carried forward?", "Not automatically unless the finalized membership terms specifically allow it. Package quantities and delivery scheduling are separate. Contact the team about scheduling and distribution."],
-      ["What if I receive the wrong or damaged item?", "Contact Sanbay Fusion promptly. The team will review the order and determine an appropriate correction or replacement under company policy and applicable law."],
-      ["What are members responsible for?", "Members must request deliveries on time, provide accurate address and contact details, complete applicable payments, be available for confirmed deliveries, provide accurate allergy information, and comply with age or identity requirements for regulated products."],
-    ],
-  },
-  {
-    title: "Food, alcohol & account FAQ",
-    questions: [
-      ["What if I have food allergies?", "Provide allergy and dietary details before ordering. The team will review them, but no requirement is guaranteed until Sanbay Fusion confirms it."],
-      ["How are alcohol products handled?", "Alcohol is subject to applicable Thai law, licensing, age and identity checks, permitted sales conditions, and delivery restrictions. Website availability does not override legal restrictions."],
-      ["Can someone else use my membership?", "Memberships are personal to the registered member unless the plan expressly permits household members or another approved arrangement."],
-      ["How are prepaid quantities calculated?", "Each product costs its unit price × monthly quantity × membership months. A quantity of 4 per month in a 3-month term includes 12 units. Monthly add-ons use the duration multiplier; one-time add-ons are charged once. Delivery frequency does not determine pricing."],
-      ["What happens when my membership expires?", "Future benefits stop at the expiry date unless the membership is renewed or a new membership is created. Renewal terms and prices may differ."],
-      ["What are the important membership rules?", "Before submitting a request, review the selected duration, 3-day invoice payment window, non-refundable fee rule, minimum 3-day delivery notice, locked finalized package, and possible product substitutions."],
-    ],
-  },
-] as const;
+  { title: "Getting started", questions: [
+    ["What is Sanbay Fusion?", site.legalName + " provides food memberships, scheduled meals and eligible member ordering, with meeting and private-event enquiries handled by the team. Current delivery coverage is Bangkok, subject to address validation."],
+    ["Who can apply for membership?", "Customers who complete Account Center, have an eligible delivery address and a verified default payment method can submit an application. Every application is reviewed; submission does not guarantee acceptance. Contact us if you need help checking your arrangements before applying."],
+    ["How do I create an account?", "Use Sign Up to enter your details, choose and confirm a password that meets the displayed requirements, and accept the required terms. If you already have an account, sign in. Continue in Account Center to complete the required personal, billing, delivery and payment information."],
+    ["How do the 1–12 month plans work?", "Choose a plan for 1 to 12 selected service months. The one-time membership fee ranges from " + baht(membershipPlans[0].price) + " for one month to " + baht(membershipPlans[11].price) + " for twelve months. Longer plans have higher total fees and lower effective monthly fees. Plan pages show the current fee and included Standard Meal allowance."],
+    ["Can my service months be different months?", "Yes. Choose exactly the number of months in your plan, within one calendar year. You can choose eligible months in the current or next year; they need not be consecutive. Past months and dates that cannot meet the scheduling notice are unavailable. Your selected months are fixed when you submit the final application."],
+    ["What is included with membership?", "Each selected service month includes one Standard Meal allowance at the value displayed for your plan. Membership also enables eligible member ordering during selected months after activation. Optional prepaid packages and additional orders are separate from that allowance."],
+  ] },
+  { title: "Standard Meals and additional orders", questions: [
+    ["How does the included Standard Meal work?", "Schedule a date and time for the selected month, then start that month's Standard Meal order from your dashboard during that service month. Choose eligible food. Your saved plan allowance is applied to one meal order, up to its food total. Scheduling alone does not place or redeem the order."],
+    ["What if my meal exceeds the included allowance?", "Checkout shows the allowance applied and the excess you must pay. If eligible food costs less than the allowance, there is no food charge for that order, but the unused balance is not cash or credit and cannot be carried into another order. Drinks and other non-food items must be ordered separately."],
+    ["Can I schedule my meal later?", "Yes. Select Schedule later during configuration, then use Account Center to choose a slot. Future selected months can be scheduled in advance. Meal orders themselves must be placed in the corresponding selected month."],
+    ["What delivery notice and times apply?", "Standard Meal dates require at least three calendar days' notice and must fall within the selected month. Available time choices run from 11:00 AM to midnight in 30-minute steps, using Bangkok time. Midnight closes the selected delivery day. Requests remain subject to team confirmation and availability."],
+    ["How do additional orders work?", "During an active selected service month, open member ordering in your dashboard, choose eligible products and review the checkout total. Additional orders are paid separately. Ordering is unavailable in unselected months or after expiry; the server validates your membership and prices."],
+    ["How are prepaid package quantities calculated?", "Monthly product cost is unit price × monthly quantity × selected service months. Monthly add-ons follow the same rule; one-time add-ons are charged once. Four units per month means four products, not four delivery visits. Paid package quantities are separate from the included Standard Meal."],
+    ["Can I change a package or carry unused benefits forward?", "Review your selections carefully before submission. Finalized packages are ordinarily locked after activation; contact the team about exceptions or unavailable items. Standard Meal benefits do not accumulate or roll over. Any arrangements for unused prepaid quantities must follow your agreed terms."],
+    ["What about allergies, unavailable products or a problem with delivery?", "Share allergies and dietary requirements before ordering and obtain confirmation from the team. Availability and substitutions may need discussion. Contact us promptly about incorrect, damaged or unsafe food so the team can review the appropriate remedy."],
+    ["Can I add alcohol to a membership?", "Alcohol is excluded from the current membership application and prepaid package flow. A catalogue listing does not establish eligibility to purchase or deliver a regulated product. Contact the team about any separate event requirements."],
+  ] },
+  { title: "Review, payment and Account Center", questions: [
+    ["How is my application reviewed?", "Submission records your selected months, configuration, addresses, agreed amount and payment authorization and creates a draft invoice. The team reviews your application and may contact you to verify details. Track its status in Account Center; approval and payment are separate steps."],
+    ["When am I charged?", "Application submission does not collect the membership fee. After approval, staff can collect the exact authorized invoice amount. Approval alone does not charge or activate membership. Card verification is a separate USD $2 payment, refunded after successful verification. Online payments currently operate in test mode; live card payments are not available."],
+    ["When does membership become active?", "After the application is approved and successful payment is verified, membership activates and your Member ID is issued. Benefits and ordering still apply only during selected service months. An approved but unpaid application is not an active membership."],
+    ["Where can I see my membership and order status?", "Sign in and open Account Center. Your dashboard shows applications, membership details and Member ID, selected months, Standard Meal status, orders and payment records."],
+    ["How do saved payment methods work?", "Cards are entered through Stripe. Account Center uses a USD $2 verification payment and initiates a refund after successful verification; bank display times vary. Choose a verified card as your default before applying. Sanbay Fusion stores safe references such as card brand, last four digits and expiry, not complete card numbers or CVC."],
+    ["How do I update billing and delivery information?", "Use the billing and delivery address sections in Account Center. Your final application keeps the addresses you accepted when submitting. Changing your saved address does not rewrite an existing agreement or order; contact the team about changes to those arrangements."],
+    ["What if my payment needs additional authentication?", "Follow the payment action shown in Account Center to complete your bank's authentication. If no action is available or you cannot complete it, contact the team with your application reference. Membership remains inactive until payment is verified."],
+    ["What happens if payment fails?", "Check the status in Account Center and contact the team about retrying the approved invoice or reviewing the payment method. Updating your default card does not silently change an already submitted payment agreement. Do not submit duplicate applications to resolve a payment problem."],
+  ] },
+  { title: "Cancellation, expiry and help", questions: [
+    ["How do cancellations work?", "Contact the team with your application or Member ID to request cancellation. The team must review the request and confirm its effect on service and outstanding orders. Sending a request does not automatically cancel an invoice, end access or issue a refund."],
+    ["What is refundable or non-refundable?", "Under the membership terms, the membership fee is non-refundable after payment and activation except where applicable law requires a remedy. Cancellation does not automatically refund unused benefits or prepaid quantities. The separate USD $2 card verification is refunded after successful verification. Contact the team about disputed or incorrect charges and product problems."],
+    ["When does membership expire?", "For current plans, the term ends at the start of the day after your last selected calendar month, in Bangkok time. Benefits are available only in selected months. There is no automatic renewal or recurring membership charge. Historical agreements retain their saved terms."],
+    ["Can I buy another membership while mine is ongoing?", "You cannot buy another membership while your existing membership is ongoing or has selected service months remaining, including gaps between months. After expiry, review the available plans and submit a new application."],
+    ["How do I contact Sanbay Fusion?", "Call " + site.phone + ", email " + site.email + ", or use our Contact page for the official business location and enquiry form. Include your application or order reference when asking about an existing request; never send card details, passwords or security codes."],
+    ["How are reservations and private events handled?", "The Reservations page lets you request a meeting with the team. The Events page collects your private-event brief. Both are enquiries: the team reviews availability and confirms arrangements directly. Submitting a form does not create an instant table booking, confirmed event or final quote."],
+  ] },
+];
 
 export default function FAQPage() {
-  return <div className="pb-28"><PageHeader eyebrow="Questions" title="Before your first delivery" lead="Clear answers about membership requests, invoices, activation, delivery deadlines, package rules, and regulated products." /><div className="mx-auto max-w-3xl px-5 sm:px-8"><div className="mb-12 grid gap-4 border-y border-gold/50 bg-gold/5 p-6 text-sm leading-relaxed sm:grid-cols-2"><p><strong className="text-gold">selected service months</strong><br />Services apply only in your selected calendar months after approval and payment.</p><p><strong className="text-gold">3-day invoice window</strong><br />Unpaid invoices may expire.</p><p><strong className="text-gold">Non-refundable fee</strong><br />Except where required by law.</p><p><strong className="text-gold">3-day delivery notice</strong><br />Late requests may be unavailable.</p></div>{sections.map((section) => <section key={section.title} className="mb-16"><h2 className="text-eyebrow text-gold">{section.title}</h2><div className="mt-4 divide-y divide-border/50">{section.questions.map(([question, answer], index) => <Reveal key={question} variant="up" delay={index * 0.015}><details className="group py-6"><summary className="flex cursor-pointer list-none items-center justify-between gap-6 font-display text-2xl font-light italic marker:hidden"><span>{question}</span><span className="text-gold transition-transform group-open:rotate-45">+</span></summary><p className="mt-4 max-w-2xl text-base leading-relaxed text-foreground/75">{answer}</p></details></Reveal>)}</div></section>)}</div></div>;
+  return <div className="pb-28"><PageHeader eyebrow="Questions" title="Know what happens next" lead="Accounts, selected service months, included meals and payment — explained before you apply." /><div className="mx-auto max-w-3xl px-5 sm:px-8">
+    <nav aria-label="FAQ topics" className="mb-12 flex flex-wrap gap-3">{sections.map((section, index) => <a key={section.title} href={"#faq-" + index} className="rounded-full border border-border/60 px-4 py-2 text-sm hover:border-gold">{section.title}</a>)}</nav>
+    {sections.map((section, index) => <section key={section.title} id={"faq-" + index} className="mb-16 scroll-mt-28"><h2 className="text-eyebrow text-gold">{section.title}</h2><div className="mt-4 divide-y divide-border/50">{section.questions.map(([question, answer]) => <details key={question} className="group py-6"><summary className="flex cursor-pointer list-none items-center justify-between gap-6 rounded-sm font-display text-2xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"><span>{question}</span><span aria-hidden="true" className="shrink-0 text-gold group-open:rotate-45">+</span></summary><p className="mt-4 text-base leading-7 text-foreground/75">{answer}</p></details>)}</div></section>)}
+    <p className="border-t border-border/60 pt-8 text-sm leading-7">Read the <Link href="/terms-and-conditions" className="text-gold underline">membership terms</Link> and <Link href="/privacy-policy" className="text-gold underline">privacy policy</Link>, or <Link href="/contact" className="text-gold underline">contact the team</Link> about your circumstances.</p>
+  </div></div>;
 }

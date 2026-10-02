@@ -155,8 +155,7 @@ export function ContactForm() {
           )}
         </Button>
         <p className="text-xs text-muted-foreground">
-          For reservations, please use the booking form — this is for general
-          enquiries.
+          For a meeting request, please use the Reservations page. For a private event, use the Events page. This form is for general enquiries.
         </p>
       </form>
     </Form>

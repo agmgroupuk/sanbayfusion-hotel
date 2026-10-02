@@ -10,7 +10,7 @@ import { Parallax } from "@/components/motion/parallax";
 export const metadata: Metadata = {
   title: "Our Story",
   description:
-    "The story behind Sanbay Fusion Bar & Restaurant — a warm, modern room built on fire, precision, and the people who grow, fish, and forage for us.",
+    "The Sanbay Fusion approach to food memberships, selected service months and advance planning in Thailand.",
   alternates: {
     canonical: "/story",
   },
@@ -21,7 +21,7 @@ export default async function StoryPage() {
 
   return (
     <div className="pb-28">
-      <PageHeader eyebrow="Our Story" title="A room of our own" lead={story.intro} />
+      <PageHeader eyebrow="Our Story" title="Good food starts with a plan" lead={story.intro} />
 
       <div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-[0.95fr_1.05fr] lg:gap-20">
         {story.portrait && (
@@ -66,12 +66,12 @@ export default async function StoryPage() {
       </div>
 
       <Reveal variant="fade" className="mx-auto mt-24 max-w-3xl px-5 text-center sm:px-8">
-        <p className="lead">Come and taste it for yourself.</p>
+        <p className="lead">Talk through your plans with the team.</p>
         <Link
           href="/reservations"
           className="mt-6 inline-flex items-center justify-center rounded-full bg-gold px-7 py-3 text-eyebrow text-gold-foreground transition-transform hover:-translate-y-0.5"
         >
-          Reserve a Table
+          Request a Meeting
         </Link>
       </Reveal>
     </div>

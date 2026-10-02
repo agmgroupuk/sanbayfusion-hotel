@@ -21,7 +21,7 @@ export default function PrivacyPolicyPage() {
       eyebrow="Privacy"
       title="Your information, handled with care"
       lead="This policy explains what Sanbay Fusion may collect through membership applications, contact forms, delivery services, and related customer interactions, and how we use it."
-      updated="20 September 2026"
+      updated="2 October 2026"
     >
       <div className="rounded-sm border border-gold/50 bg-gold/5 p-6 sm:p-8">
         <p className="text-eyebrow text-gold">Our approach</p>
@@ -37,10 +37,7 @@ export default function PrivacyPolicyPage() {
 
       <LegalSection title="1. Who controls your data">
         <p>
-          Sanbay Fusion operates this website and is responsible for personal information
-          collected through it. The legal company name, registration number, registered
-          address, privacy contact, and customer-service details must be verified in the
-          site settings before this policy is treated as final legal advice.
+          {site.legalName} operates this website and is responsible for personal information collected through it. Our business location is {site.address.line1}, {site.address.line2}, {site.address.city} {site.address.postalCode}, {site.address.country}. You can contact us on {site.phone}.
         </p>
         <p>
           Privacy questions and requests can be sent to{" "}
@@ -52,21 +49,22 @@ export default function PrivacyPolicyPage() {
         <p>
           This policy covers the website, membership requests and applications, membership
           administration, contact forms, reservations, invoices, payments, food and
-          beverage orders, deliveries, customer support, email, telephone, LINE or other
-          messaging channels used by the business, promotions, and customer feedback.
+          beverage orders, deliveries, Account Center, customer support, email and telephone enquiries.
         </p>
       </LegalSection>
 
       <LegalSection title="3. Information we may collect">
         <p>Depending on how you interact with us, this may include:</p>
         <ul className="list-disc space-y-2 pl-6">
-          <li>Identity and contact details such as name, phone, email, LINE ID, and preferred contact method.</li>
-          <li>Delivery details such as address, building, unit, district, province, postal code, access instructions, and landmarks.</li>
-          <li>Membership plan, fee, request status, delivery entitlement, configuration, food preferences, beverage selections, add-ons, cancellation requests, and final package records.</li>
-          <li>Invoice number, amount, issue date, payment deadline, status, transaction reference, and dispute information. Payment-card numbers, CVV codes, and online-banking passwords should not be stored directly by Sanbay Fusion.</li>
+          <li>Account and contact details such as name, phone, email, profile information and enquiry messages.</li>
+          <li>Billing and delivery addresses, country, building or unit, district, province, postal code, delivery instructions and location information supplied for address checks.</li>
+          <li>Membership plan and price, selected service months, application status, configuration, food preferences, add-ons, Standard Meal allowances and schedules, cancellation correspondence and final agreement records.</li>
+          <li>Orders, product quantities, totals, payment and fulfilment status; meeting requests and private-event briefs, including dates, guest counts and service preferences.</li>
+          <li>Stripe customer, payment-method, invoice, payment and refund references; amounts, currencies and statuses; card brand, last four digits, expiry, verification and default-card status. Card entry is handled through Stripe. Our application does not store complete card numbers, CVC or online-banking passwords.</li>
           <li>Allergy and dietary information that you choose to provide. Please share only what is reasonably necessary for the team to assess your request safely.</li>
-          <li>Age confirmation or limited verification information where regulated products require it.</li>
-          <li>Technical information such as IP address, browser, device, pages visited, session data, security logs, and error logs.</li>
+          <li>Authentication and security records, including password hashes, session and reset-token hashes, email-change requests, two-factor settings, encrypted authenticator secrets, hashed recovery codes and account security events.</li>
+          <li>Operational request and error logs, session data and abuse-prevention records. Hosting and connected providers may process IP addresses and request information to deliver and secure their services.</li>
+          <li>Transactional email content, recipient address, delivery status and provider references. Where email tracking is enabled, the email provider may also record message opens and link interactions.</li>
         </ul>
       </LegalSection>
 
@@ -124,9 +122,16 @@ export default function PrivacyPolicyPage() {
         <p>
           We may disclose information where required or permitted by law, for lawful
           requests, fraud investigation, safety, legal claims, or protection of our
-          rights. Actual vendors and any international transfer arrangements should be
-          added once the production providers are confirmed.
+          rights.
         </p>
+        <ul className="list-disc space-y-2 pl-6">
+          <li>Stripe processes card entry, verification, invoices, payments and refunds, and returns payment status and safe card references to the application.</li>
+          <li>Resend sends account, security, application, payment, order, delivery and enquiry emails. Email recipients, message content and delivery records are processed for those sends.</li>
+          <li>Railway hosts the application and database and processes the records and operational logs needed to run them.</li>
+          <li>Sanity supplies editorial content when configured. Requests for hosted content or images may disclose technical request information to that provider.</li>
+          <li>The delivery checker supports Google address search and geocoding when configured. Address queries and selected location information are sent to Google when those features are used. The Contact page currently has no embedded map.</li>
+        </ul>
+        <p>Providers may process information outside Thailand. The location and handling of that processing depend on the provider and service configuration. Contact us for questions about the providers used for your information.</p>
       </LegalSection>
 
       <LegalSection title="8. Retention and security">
@@ -134,14 +139,10 @@ export default function PrivacyPolicyPage() {
           We keep information only as long as reasonably necessary for the purpose it was
           collected, applicable tax, accounting, legal, contractual, dispute, security,
           and compliance requirements. Different categories may have different retention
-          periods. When no longer needed, information should be securely deleted or
-          anonymized where appropriate.
+          periods. Account, transaction, consent and email-delivery records are stored beyond individual sessions; closing a browser or deleting cookies does not delete those records. Contact us about retention or deletion of your information.
         </p>
         <p>
-          We use appropriate organizational and technical measures such as secure
-          connections, restricted access, role-based permissions, secure hosting,
-          updates, backups, monitoring, and audit records. No online system can promise
-          absolute security.
+          The application uses password hashing, hashed session and recovery tokens, encrypted authenticator secrets, access checks and account security records. Payment card entry is handled by Stripe. No online system can promise absolute security. Do not send passwords, recovery codes or card security codes in enquiry forms or email.
         </p>
       </LegalSection>
 
@@ -153,18 +154,13 @@ export default function PrivacyPolicyPage() {
           marketing.
         </p>
         <p>
-          Promotional messages are separate and optional. Where marketing is used, it
-          should have its own consent control and an appropriate unsubscribe method. You
-          should not have to accept marketing to apply for membership.
+          Creating an account or applying for membership does not enrol you in a marketing mailing list. The current application sends service and security messages; these are separate from any promotional communications.
         </p>
       </LegalSection>
 
       <LegalSection title="10. Cookies and technical data">
         <p>
-          Cookies and similar technologies may support essential website operation,
-          security, sessions, forms, membership configuration, preferences, analytics,
-          performance, or marketing where implemented and permitted. Non-essential
-          cookies should be handled through an appropriate consent or preference control.
+          First-party cookies maintain sign-in sessions and preserve membership checkout selections. Browser session storage also retains membership selections and the return path through Account Center. Stripe and configured address-search or content providers may use their own browser technologies. The application currently includes no separate advertising or site-analytics tracker.
         </p>
         <p>
           See our{" "}
@@ -189,17 +185,12 @@ export default function PrivacyPolicyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="12. Regulated products and children">
+      <LegalSection title="12. Information you share in enquiries">
         <p>
-          Where alcohol or another regulated product is offered, we may process limited
-          information needed to verify eligibility and comply with legal requirements.
-          We collect only what is reasonably necessary and do not retain identity
-          documents merely because an ID was visually checked unless legally justified.
+          Free-text enquiries, dietary notes and event briefs may contain information you choose to share. Provide only details needed for the request. Please do not include identity documents, sensitive information about other people or payment credentials in these fields.
         </p>
         <p>
-          Membership services are not intended to encourage children to independently
-          purchase age-restricted products. Appropriate age and identity controls apply
-          where required.
+          Alcohol is excluded from current membership applications. If a separate service requires eligibility information, the team will explain what is needed for that request. Contact us if information about a child has been submitted and needs review.
         </p>
       </LegalSection>
 

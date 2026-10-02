@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 const keyRules = [
   ["1 to 12 month membership", "Choose exactly 1 to 12 eligible calendar service months, not necessarily consecutive."],
-  ["Apply before payment", "Submit without a membership charge. Approval triggers the exact authorized charge; successful payment activates membership."],
+  ["Apply before payment", "Submit without a membership charge. Approval makes the authorized invoice ready for staff collection; verified successful payment activates membership."],
   ["Non-refundable fee", "Membership fees are non-refundable after payment and activation except where required by law."],
   ["3-day delivery notice", "Eligible delivery requests normally require at least 3 days' advance notice."],
   ["Final package lock", "The agreed plan and package are locked after activation."],
@@ -23,7 +23,7 @@ export default function TermsPage() {
       eyebrow="Membership terms"
       title="Clear terms for a considered service"
       lead="These terms explain how membership requests, payments, activation, package quantities, food packages, regulated products, and cancellation work. Please read them before applying or paying."
-      updated="1 October 2026"
+      updated="2 October 2026"
     >
       <div className="rounded-sm border border-gold/50 bg-gold/5 p-6 sm:p-8">
         <p className="text-eyebrow text-gold">Read first</p>
@@ -39,19 +39,19 @@ export default function TermsPage() {
 
       <LegalSection title="1. Applying for membership">
         <p>
-          Selecting a plan does not activate membership. Application checkout saves your payment method securely and records your authorization
+          Selecting a plan does not activate membership. Complete your personal information, billing and eligible delivery addresses in Account Center, verify a saved payment method and set a default card before applying. Application checkout records your authorization
           for the displayed membership and package amount. Submission places the application
           in pending review status without charging the membership fee.
           We may request identity, contact, delivery, age-verification, dietary, or
           product information before deciding whether to accept it.
         </p>
         <p>
-          If approved, we attempt the exact authorized charge using your saved payment method.
+          Approval makes your draft invoice ready for staff to collect the exact authorized amount using the agreed saved payment method. Approval alone does not collect payment.
           Declined applications are not charged. Your bank may require further authentication
           or a different payment method. The
-          membership becomes active only after the required fee is received and the
-          team confirms activation.
+          membership becomes active and a Member ID is issued only after approval and verified successful payment.
         </p>
+        <p>Card verification is separate: Account Center uses a USD $2 verification payment and initiates a refund after successful verification. Your issuer may take additional time to display the refund. Online payments currently operate in test mode; live card payments are not available.</p>
       </LegalSection>
 
       <LegalSection title="2. Term, fee, and authorized charge">
@@ -59,7 +59,7 @@ export default function TermsPage() {
           Each new membership covers exactly the selected 1 to 12 service months in one explicit calendar year, subject to approval and successful payment. Months need not be consecutive; service entitlement exists only in the selected months. The dashboard distinguishes upcoming, current and completed months. Selected months become fixed on final submission. Existing agreements retain their saved terms.
         </p>
         <p>
-          One complimentary member meal is included per selected service month, up to the menu value shown for your plan. This is separate from prepaid packages and extra orders. Complimentary benefit has no cash value and applies only to eligible included menu selections. Unused benefits do not accumulate, carry forward, or convert into refunds or credit. Redemption requires a request during the selected month, at least three days of advance scheduling, and team confirmation of eligible menu and availability. You cannot purchase another membership while your existing membership is active or has service months remaining.
+          One Standard Meal allowance is included per selected service month, up to the menu value shown for your plan. It applies to eligible food in one meal order, separately from prepaid packages and extra orders. Any excess is payable at checkout; drinks and other products must be ordered separately. Unused allowance has no cash value and does not accumulate, carry forward, or convert into refunds or credit. You may schedule a future selected month now or choose Schedule later. Place the meal order during its selected service month; saving a delivery slot alone does not place or redeem an order. At least three calendar days of scheduling notice and confirmation of eligible menu and availability are required. You cannot purchase another membership while your existing membership is ongoing or has service months remaining.
         </p>
         <p>
           Your submitted application records the exact membership and package amount
@@ -69,7 +69,7 @@ export default function TermsPage() {
         <p>
           Saving a card does not guarantee payment. If the issuer requires authentication
           or declines the charge, membership remains inactive until payment succeeds.
-          Use your dashboard to authenticate, update the payment method, or retry.
+          Follow the payment action shown in Account Center or contact the team to resolve payment on the approved invoice. Changing a default card does not rewrite a submitted payment agreement.
         </p>
       </LegalSection>
 
@@ -102,17 +102,17 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="5. Delivery entitlements and notice">
+      <LegalSection title="5. Package quantities and delivery notice">
         <p>
           Selected prepaid product quantities are monthly quantities. Each product is priced
           at its unit price multiplied by its monthly quantity and the membership duration.
           Monthly add-ons follow the same rule; one-time add-ons are charged once.
           Package quantities do not specify delivery counts. Scheduling and distribution
-          are arranged separately within the membership term.
+          are arranged separately within the selected service months.
         </p>
         <p>
           Unless another deadline is shown, delivery requests must be made at least
-          three days in advance. Late requests are not guaranteed. If the finalized
+          three calendar days in advance. Standard Meal slots run from 11:00 AM to midnight in half-hour steps, using Bangkok time. Midnight closes the selected day. Late requests are not guaranteed. If the finalized
           terms state that an opportunity expires, a missed deadline does not create an
           automatic refund, cash credit, replacement delivery, extension, or rollover.
         </p>
@@ -156,7 +156,7 @@ export default function TermsPage() {
 
       <LegalSection title="8. Alcohol and regulated products">
         <p>
-          Alcohol options are separate regulated products. Their availability depends on
+          Alcohol is excluded from the current membership application and prepaid package flow. Catalogue references do not constitute permission to purchase or deliver a regulated product. Any separate offering depends on
           applicable Thai licensing, age and identity verification, permitted sales
           conditions, advertising, import, premises, and delivery requirements. An
           option shown on the website does not override a legal restriction.
@@ -172,14 +172,14 @@ export default function TermsPage() {
         <p>
           Once the membership fee has been paid and the membership activated, the fee is
           non-refundable except where a refund or other remedy is required by applicable
-          law. Members may request cancellation at any time, but cancellation does not
+          law. Members may request cancellation by contacting the team with their application or Member ID. A request requires review and confirmation and does not itself end access or cancel an invoice. Cancellation does not
           automatically refund membership fees, fulfilled orders, unused benefits, or
           unused package quantities.
         </p>
         <p>
           Memberships are personal and non-transferable unless the plan expressly
           permits an approved household or business arrangement. At the end of the
-          selected membership term, benefits expire unless a new or renewed membership is agreed.
+          last selected calendar month, benefits expire at the start of the following day in Bangkok time. There is no automatic renewal or recurring membership charge. Historical agreements retain their saved terms.
         </p>
       </LegalSection>
 
@@ -235,9 +235,7 @@ export default function TermsPage() {
           <a className="text-gold underline decoration-gold/50 underline-offset-4" href={`mailto:${site.email}`}>
             {site.email}
           </a>
-          . Replace placeholder company, registration, address, phone, and customer
-          service details in the site settings before publishing this as final legal
-          advice.
+          {" "}or {site.phone}. The service is operated by {site.legalName}. Our business location is {site.address.line1}, {site.address.line2}, {site.address.city} {site.address.postalCode}, {site.address.country}.
         </p>
       </LegalSection>
     </LegalPage>

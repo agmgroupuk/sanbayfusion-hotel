@@ -29,16 +29,14 @@ export function CraftSection() {
             </RevealItem>
             <RevealItem variant="up">
               <p className="lead measure mt-6">
-                Behind each plate is a discipline measured in millimetres and
-                seconds. Our chef builds every course like a sentence — nothing
-                arbitrary, nothing wasted.
+                Good food begins with understanding your preferences, planning
+                the details and giving the kitchen time to prepare.
               </p>
             </RevealItem>
             <RevealItem variant="up">
               <p className="measure mt-4 text-foreground/85">
-                We work with a small, devoted team and a rotating cast of growers,
-                fishers, and foragers. What arrives at your table tonight was
-                decided this morning.
+                Tell us about dietary needs before ordering. The team will review
+                availability and confirm whether your requirements can be accommodated.
               </p>
             </RevealItem>
           </RevealGroup>

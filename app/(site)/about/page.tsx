@@ -16,6 +16,7 @@ import {
   UtensilsCrossed,
   Wine,
 } from "lucide-react";
+import { site } from "@/lib/site";
 import { Reveal } from "@/components/motion/reveal";
 import { KineticText } from "@/components/motion/kinetic-text";
 
@@ -27,12 +28,12 @@ export const metadata: Metadata = {
 };
 
 const journeySteps = [
-  ["01", "Plan your Thailand trip", "Know your expected travel dates and accommodation arrangements."],
-  ["02", "Choose your membership", "Select a duration that matches your planned stay or service period."],
-  ["03", "Tell us what you need", "Choose membership only or arrange eligible food, beverages, and other available services."],
-  ["04", "Share your schedule", "Provide dates, locations, delivery information, and relevant details for your stay."],
-  ["05", "We prepare", "Our team reviews confirmed requirements around availability, service area, and schedule."],
-  ["06", "Arrive in Thailand", "Know what has been planned and confirmed before your visit begins."],
+  ["01", "Complete your account", "Sign in and save personal information, billing and delivery addresses, and a verified default card."],
+  ["02", "Choose your service months", "Select a 1 to 12 month plan and the same number of eligible months in one calendar year."],
+  ["03", "Configure and schedule", "Choose membership only or an eligible prepaid package. Schedule Standard Meals now or later."],
+  ["04", "Apply for review", "Review your selections and authorize the agreed amount. Submission does not collect the membership fee."],
+  ["05", "Approval and payment", "The team reviews your application. After approval, staff can collect the agreed invoice. Verified payment activates membership."],
+  ["06", "Enjoy your selected months", "Use your Standard Meal allowance, place eligible additional orders and track everything in Account Center."],
 ] as const;
 
 const membershipReasons = [
@@ -99,7 +100,7 @@ export default function AboutPage() {
           <SectionLabel>About Sanbay Fusion</SectionLabel>
           <KineticText as="h2" text="Hospitality experience, shaped around the way people travel" className="text-h2 mt-6 max-w-3xl font-display font-light" />
           <div className="mt-8 max-w-2xl space-y-5 text-base leading-relaxed text-foreground/75">
-            <p>Sanbay Fusion operates from an established Thai business background in food service and related food and beverage activities.</p>
+            <p>{site.name} is operated by {site.legalName}, based in {site.address.city}, {site.address.country}. Visit our <Link href="/contact" className="text-gold underline underline-offset-4">Contact page</Link> for our business address and contact details.</p>
             <p>Our business was established in 2018, with experience connected to restaurants, food service, food products, beverages, sourcing, and customer hospitality.</p>
             <p>Today, we are developing that experience into a membership-based service focused on helping international visitors prepare their food, beverage, and related hospitality requirements around their time in Thailand.</p>
             <p>Rather than waiting until arrival to begin organizing everything, members can plan with us in advance.</p>
@@ -200,9 +201,9 @@ export default function AboutPage() {
       </section>
 
       <section className="mx-auto grid max-w-7xl gap-12 px-5 py-24 sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:py-36">
-        <Reveal variant="up"><SectionLabel>Membership duration</SectionLabel><KineticText as="h2" text="Choose the period that fits your stay" className="text-h2 mt-6 max-w-xl font-display font-light" /><p className="mt-6 max-w-xl text-base leading-relaxed text-foreground/70">Memberships are currently available for different durations, ranging from 1 month through 12 months. The selected duration is the actual membership period after activation.</p></Reveal>
+        <Reveal variant="up"><SectionLabel>Membership duration</SectionLabel><KineticText as="h2" text="Choose the period that fits your stay" className="text-h2 mt-6 max-w-xl font-display font-light" /><p className="mt-6 max-w-xl text-base leading-relaxed text-foreground/70">Choose 1 to 12 eligible service months within one calendar year. Months may be non-consecutive. After approval and verified payment, benefits apply only during your selected months; the membership ends after the last selected month.</p></Reveal>
         <Reveal variant="scale" className="grid grid-cols-3 border-y border-border/70">
-          {["1 Month", "3 Months", "12 Months"].map((duration, index) => <div key={duration} className="border-r border-border/70 px-4 py-8 last:border-r-0 sm:px-7 sm:py-10"><p className="text-eyebrow text-gold">{index === 1 ? "A longer stay" : index === 2 ? "A full year" : "A shorter stay"}</p><p className="mt-5 font-display text-2xl sm:text-3xl">{duration}</p><p className="mt-3 text-xs leading-relaxed text-muted-foreground">Active for the applicable {duration.toLowerCase()} membership period after activation.</p></div>)}
+          {["1 Month", "3 Months", "12 Months"].map((duration, index) => <div key={duration} className="border-r border-border/70 px-4 py-8 last:border-r-0 sm:px-7 sm:py-10"><p className="text-eyebrow text-gold">{index === 1 ? "Plan ahead" : index === 2 ? "All twelve months" : "One selected month"}</p><p className="mt-5 font-display text-2xl sm:text-3xl">{duration}</p><p className="mt-3 text-xs leading-relaxed text-muted-foreground">Benefits in {duration.toLowerCase()} of selected calendar service, after approval and payment.</p></div>)}
         </Reveal>
       </section>
 
@@ -224,7 +225,7 @@ export default function AboutPage() {
 
       <section className="mx-auto grid max-w-7xl gap-5 px-5 py-24 sm:px-8 lg:grid-cols-2 lg:py-32">
         <Reveal variant="up" className="border border-gold/40 bg-gold/[0.05] p-7 sm:p-10"><SectionLabel>Good to know</SectionLabel><h2 className="mt-6 font-display text-4xl font-light">Clear expectations make better arrangements.</h2><p className="mt-6 text-sm leading-relaxed text-foreground/75">Membership does not guarantee that every requested product, date, location, or service will always be available. Requests remain subject to:</p><ul className="mt-6 grid gap-3 text-sm text-foreground/75 sm:grid-cols-2">{["Service-area eligibility", "Product availability", "Advance scheduling", "Successful payment", "Customer / account verification", "Applicable Thai laws and regulations", "Age verification for age-restricted products", "Final confirmation by Sanbay Fusion"].map((item) => <li key={item} className="flex gap-2"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-gold" />{item}</li>)}</ul></Reveal>
-        <Reveal variant="up" delay={0.1} className="border border-border/70 bg-card/40 p-7 sm:p-10"><CreditCard className="size-6 text-gold" /><h2 className="mt-6 font-display text-4xl font-light">Your account. Your payment method.</h2><p className="mt-6 text-sm leading-relaxed text-foreground/75">Customers manage personal information, addresses, security settings, and supported payment methods through their Sanbay Fusion account.</p><p className="mt-5 text-sm leading-relaxed text-muted-foreground">Payment information is handled through the site&apos;s secure payment-provider integration. Sanbay Fusion does not claim to store complete card numbers or security codes.</p><Link href="/signup" className="mt-8 inline-flex items-center gap-3 rounded-full border border-foreground/30 px-5 py-3 text-eyebrow transition-colors hover:border-gold hover:text-gold">Create an account <ArrowRight className="size-4" /></Link></Reveal>
+        <Reveal variant="up" delay={0.1} className="border border-border/70 bg-card/40 p-7 sm:p-10"><CreditCard className="size-6 text-gold" /><h2 className="mt-6 font-display text-4xl font-light">Your account. Your payment method.</h2><p className="mt-6 text-sm leading-relaxed text-foreground/75">Customers manage personal information, addresses, security settings, and supported payment methods through their Sanbay Fusion account.</p><p className="mt-5 text-sm leading-relaxed text-muted-foreground">Payment information is handled through the site&apos;s secure payment-provider integration. Sanbay Fusion stores safe payment references, card brand, last four digits and expiry; complete card numbers and CVC are handled through Stripe.</p><Link href="/signup" className="mt-8 inline-flex items-center gap-3 rounded-full border border-foreground/30 px-5 py-3 text-eyebrow transition-colors hover:border-gold hover:text-gold">Create an account <ArrowRight className="size-4" /></Link></Reveal>
       </section>
 
       <Reveal variant="scale" className="mx-auto max-w-7xl px-5 sm:px-8">

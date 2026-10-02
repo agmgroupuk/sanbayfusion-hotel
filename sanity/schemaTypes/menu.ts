@@ -17,7 +17,7 @@ export const menuType = defineType({
       name: "priceNote",
       title: "Price note",
       type: "string",
-      description: "Use Thai baht pricing, e.g. ฿3,950 per guest · Wine pairing ฿2,200",
+      description: "Use approved current pricing in Thai baht. Do not publish example prices or unconfirmed offerings.",
     }),
     defineField({
       name: "sections",

@@ -1,7 +1,7 @@
 {
   "name": "sanbay-fusion",
   "version": "0.1.0",
-  "description": "A cinematic Next.js portfolio build for a fictional Michelin-starred restaurant, with a Sanity-managed menu & story and a real reservation system.",
+  "description": "Sanbay Fusion food memberships, selected service months, member ordering, meetings and private-event enquiries.",
   "author": "Zakaria Shahruri",
   "private": true,
   "license": "MIT",

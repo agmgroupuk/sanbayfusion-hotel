@@ -14,7 +14,7 @@ export default function CookiePolicyPage() {
       eyebrow="Legal"
       title="Cookie Policy"
       lead="A clear look at the small files and technologies that help this website work."
-      updated="20 September 2026"
+      updated="2 October 2026"
     >
       <LegalSection title="What cookies are">
         <p>
@@ -26,18 +26,16 @@ export default function CookiePolicyPage() {
 
       <LegalSection title="How we use them">
         <p>
-          We may use essential cookies to provide core website functions, maintain
-          security, and remember choices. If analytics, embedded maps, video, or other
-          third-party services are enabled, those providers may set their own cookies.
+          Our sign-in cookie, sbf_customer_session, maintains your authenticated session for up to 30 days. Signing out removes it. Membership checkout uses sbf_membership_checkout and numbered companion cookies to preserve selections for up to 24 hours while you sign in and complete your account. Prices are validated by the server when those selections are restored.
         </p>
+        <p>Browser session storage also keeps membership configuration, a submission reference and the return path through Account Center. It is normally cleared when the browser tab or session ends. Deleting browser storage does not delete records already submitted to your account.</p>
+        <p>Stripe uses browser technologies for payment functionality and fraud prevention. Google address search and Sanity content requests may involve third-party technologies when configured. The Contact map is currently pending and does not load an embedded map. No separate advertising or site-analytics tracker is included in the current application.</p>
       </LegalSection>
 
       <LegalSection title="Your choices">
         <p>
           You can control or delete cookies through your browser settings. Blocking
-          essential cookies may affect reservations, forms, maps, or other website
-          features. Any consent controls shown on this website take priority for the
-          services they cover.
+          essential cookies prevents sign-in or interrupts membership checkout. Blocking third-party services may affect payments or address search. This website does not currently provide a separate cookie-preference panel. See the Privacy Policy for how submitted information is handled.
         </p>
       </LegalSection>
 

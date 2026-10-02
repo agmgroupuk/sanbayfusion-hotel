@@ -20,22 +20,22 @@ export const metadata: Metadata = {
 
 const membershipHighlights = [
   {
-    title: "Priority reservations",
+    title: "Selected service months",
     description: "Choose 1 to 12 eligible service months; they do not have to be consecutive.",
     icon: Crown,
   },
   {
-    title: "Members’ tables",
+    title: "Your package choice",
     description: "Select membership only or add monthly prepaid food and beverage quantities.",
     icon: Users,
   },
   {
-    title: "Private rooms & lounges",
-    description: "Seasonal meals, snacks, drinks, pantry products, and add-ons move with the market.",
+    title: "Included Standard Meal",
+    description: "One Standard Meal allowance in each selected service month, with eligible food and any excess shown at checkout.",
     icon: Sparkles,
   },
   {
-    title: "Discreet, elevated service",
+    title: "A clear agreement",
     description: "Your paid package quantities and prices are saved for your membership term.",
     icon: ShieldCheck,
   },
@@ -79,7 +79,7 @@ export default async function MembershipPage() {
 
         <Reveal variant="fade" className="mt-20 text-center">
           <p className="lead mx-auto max-w-2xl text-foreground/80">
-            Membership is about continuity: better food at home, clear delivery days, and a kitchen you can return to without starting from zero each time.
+            Manage selected months, Standard Meal schedules, eligible orders and payment status from Account Center. Approval and verified payment are required before benefits become available.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
