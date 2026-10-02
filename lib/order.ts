@@ -3,7 +3,7 @@ import "server-only";
 import { legacyOrderingPermissions } from "@/lib/legacy-membership-ordering";
 import { z } from "zod";
 import { catalogueCategories } from "@/lib/catalogue";
-import { alcoholSalesEnabled, membershipPlanAllowsCatalogueCategory, membershipPlans } from "@/lib/membership-plans";
+import { membershipPlanAllowsCatalogueCategory, membershipPlans } from "@/lib/membership-plans";
 
 export const cartItemSchema = z.object({
   category: z.string().min(1).max(120),
@@ -28,7 +28,8 @@ export function priceCart(raw: unknown, membershipPlanId: string) {
     const category = catalogueCategories.find((entry) => entry.name === item.category);
     const product = category?.products.find((entry) => entry.name === item.name);
     if (!category || !product) return null;
-    if (category.group === "alcohol" && !alcoholSalesEnabled) return null;
+    // Stripe-paid orders exclude alcohol independently of public catalogue flags.
+    if (category.group === "alcohol") return null;
     if (!membershipPlanAllowsCatalogueCategory(plan, category.name, category.group)) return null;
     return { ...item, price: product.price, lineTotal: product.price * item.quantity };
   });

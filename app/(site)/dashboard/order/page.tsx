@@ -6,6 +6,8 @@ import { benefitRedemptionsForAccount } from "@/lib/membership-benefits";
 import { bangkokDate } from "@/lib/membership-service-months";
 import { MemberOrderMenu } from "@/components/orders/member-order-menu";
 import { getCurrentAccount } from "@/lib/auth";
+import { catalogueCategories } from "@/lib/catalogue";
+import { priceCart } from "@/lib/order";
 
 
 
@@ -24,5 +26,5 @@ export default async function MemberOrderPage({ searchParams }: { searchParams: 
     ? membership.purchaseSnapshot as { purchaseMode?: string }
     : null;
   const prepaid = purchase?.purchaseMode === "membership_with_package";
-  return <>{prepaid && !meal && <div className="mx-auto max-w-7xl px-5 pt-24 sm:px-8"><p className="border-l-2 border-gold pl-4 text-sm leading-relaxed text-muted-foreground">Place Order is for additional items outside your prepaid package and is charged separately. Your included package deliveries follow the schedule in your membership dashboard and are not charged again.</p></div>}<MemberOrderMenu standardMeal={meal ? { membershipId: membership.id, serviceMonth: meal.serviceMonth, allowance: meal.menuValue } : undefined} /></>;
+  return <>{prepaid && !meal && <div className="mx-auto max-w-7xl px-5 pt-24 sm:px-8"><p className="border-l-2 border-gold pl-4 text-sm leading-relaxed text-muted-foreground">Place Order is for additional items outside your prepaid package and is charged separately. Your included package deliveries follow the schedule in your membership dashboard and are not charged again.</p></div>}<MemberOrderMenu availableCategories={catalogueCategories.filter(category => category.products[0] && priceCart([{category:category.name,name:category.products[0].name,quantity:1}], membership.planId).ok).map(category=>category.name)} standardMeal={meal ? { membershipId: membership.id, serviceMonth: meal.serviceMonth, allowance: meal.menuValue } : undefined} /></>;
 }

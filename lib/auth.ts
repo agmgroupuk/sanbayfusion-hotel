@@ -3,7 +3,8 @@ import "server-only";
 import { createHash, randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import { and, eq, gt, isNull } from "drizzle-orm";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { platformTrustedHosts, sharedSessionCookie } from "./platform-hosts";
 import { db } from "@/lib/db";
 import { customerAccounts, customerSessions, passwordResetTokens, type CustomerAccount } from "@/lib/db/schema";
 
@@ -36,12 +37,16 @@ export async function createCustomerSession(accountId: string) {
   const token = randomBytes(32).toString("base64url");
   await db.insert(customerSessions).values({ accountId, tokenHash: hashToken(token), expiresAt: new Date(Date.now() + sessionLifetimeMs) });
   (await cookies()).set(sessionCookie, token, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: sessionLifetimeMs / 1000 });
+  if (process.env.NODE_ENV === "production" && platformTrustedHosts.includes((await headers()).get("host") ?? "")) {
+    (await cookies()).set(sharedSessionCookie, token, { domain: "sanbayfusion.com", httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: sessionLifetimeMs / 1000 });
+  }
   return true;
 }
 
 export async function getCurrentAccount(): Promise<CustomerAccount | null> {
   if (!db) return null;
-  const token = (await cookies()).get(sessionCookie)?.value;
+  const store = await cookies();
+  const token = store.get(sharedSessionCookie)?.value ?? store.get(sessionCookie)?.value;
   if (!token) return null;
   try {
     const result = await db.select({ account: customerAccounts }).from(customerSessions).innerJoin(customerAccounts, eq(customerSessions.accountId, customerAccounts.id)).where(and(eq(customerSessions.tokenHash, hashToken(token)), gt(customerSessions.expiresAt, new Date()))).limit(1);
@@ -55,8 +60,11 @@ export async function getCurrentAccount(): Promise<CustomerAccount | null> {
 export async function destroyCustomerSession() {
   if (!db) return;
   const cookieStore = await cookies();
-  const token = cookieStore.get(sessionCookie)?.value;
-  if (token) await db.delete(customerSessions).where(eq(customerSessions.tokenHash, hashToken(token)));
+  for (const name of [sharedSessionCookie, sessionCookie]) {
+    const token = cookieStore.get(name)?.value;
+    if (token) await db.delete(customerSessions).where(eq(customerSessions.tokenHash, hashToken(token)));
+  }
+  cookieStore.set(sharedSessionCookie, "", { domain: "sanbayfusion.com", httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 0 });
   cookieStore.delete(sessionCookie);
 }
 

@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { db } from "@/lib/db";
 import { recordMembershipPayment } from "@/lib/membership-activation";
-import { recordOrderPayment } from "@/lib/order-payment";
+import { recordOrderPayment, reconcileOrderPayment } from "@/lib/order-payment";
 import { reconcileApplicationPayment } from "@/lib/membership-application";
 import { reconcileMembershipInvoice } from "@/lib/membership-invoice";
 import { reconcileCardVerification, stripeObjectId } from "@/lib/account/card-verification";
@@ -38,6 +38,10 @@ export async function POST(request: Request) {
   }
   if (event.type.startsWith("payment_intent.")) {
     const intent = event.data.object as Stripe.PaymentIntent;
+    if (intent.metadata.payment_type === "ORDER_PAYMENT") {
+      await reconcileOrderPayment(intent.id);
+      return NextResponse.json({ ok: true });
+    }
     if (intent.metadata.purpose === "CARD_VERIFICATION") {
       await reconcileCardVerification(intent.id);
       return NextResponse.json({ ok: true });

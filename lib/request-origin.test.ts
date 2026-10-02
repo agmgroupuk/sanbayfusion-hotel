@@ -11,6 +11,11 @@ afterEach(() => vi.unstubAllEnvs());
 const request = (origin: string, headers: Record<string, string> = {}) => new Request("http://0.0.0.0:8080/api/membership/checkout-selection", { headers: { origin, ...headers } });
 
 describe("public origin validation behind Railway", () => {
+  it.each(["account", "pay", "checkout"])("accepts the explicit %s subdomain without wildcard origins", host => {
+    expect(hasValidRequestOrigin(request(`https://${host}.sanbayfusion.com`))).toBe(true);
+    expect(hasValidRequestOrigin(request(`https://${host}.sanbayfusion.com.attacker.invalid`))).toBe(false);
+    expect(hasValidRequestOrigin(request("https://untrusted.sanbayfusion.com"))).toBe(false);
+  });
   it("accepts the configured HTTPS origin despite an internal HTTP request URL", () => {
     expect(hasValidRequestOrigin(request("https://sanbayfusion.com"))).toBe(true);
   });
@@ -26,7 +31,7 @@ describe("public origin validation behind Railway", () => {
     expect(hasValidRequestOrigin(request("https://owned.up.railway.app"))).toBe(true);
     expect(hasValidRequestOrigin(request("https://other.up.railway.app"))).toBe(false);
     vi.stubEnv("RAILWAY_PUBLIC_DOMAIN", "sanbayfusion.com@attacker.invalid");
-    expect(trustedPublicOrigins()).toEqual(["https://sanbayfusion.com"]);
+    expect(trustedPublicOrigins()).toEqual(["https://sanbayfusion.com", "https://account.sanbayfusion.com", "https://pay.sanbayfusion.com", "https://checkout.sanbayfusion.com"]);
   });
   it("supports same-origin local development without trusting arbitrary hosts", () => {
     vi.stubEnv("NODE_ENV", "development");

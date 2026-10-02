@@ -82,8 +82,8 @@ describe("Standard Meal entitlement and order enforcement", () => {
     expect((await benefitRedemptionsForAccount(account))[0]).toMatchObject({ status: "redeemed", redeemedAt: expect.any(Date), orderId: expect.any(String) });
     await expect(createStandardMealOrder(account, meal, cart(9))).rejects.toThrow("another order");
     const extra = await orderApi(new Request("http://localhost/api/orders/payment-intent", { method: "POST", body: JSON.stringify({ cart: cart(8) }) }));
-    expect(extra.status).toBe(200); expect(await extra.json()).toMatchObject({ total: 2560 });
-    expect(state.create).toHaveBeenCalledWith(expect.objectContaining({ amount: 256000, metadata: expect.objectContaining({ purchase_mode: "EXTRA_ORDER" }) }));
+    expect(extra.status).toBe(400); // Additional orders require a schedule, saved address and verified card.
+    expect(state.create).not.toHaveBeenCalled();
   });
   it("reserves once across concurrent excess payments, then redeems only after verified payment", async () => {
     const meal = await scheduledMeal();

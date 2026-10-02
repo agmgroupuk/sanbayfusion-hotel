@@ -7,7 +7,10 @@ export function bangkokDate(now = new Date()) {
 }
 
 export function earliestServiceDate(now = new Date()) {
-  return bangkokDate(new Date(now.getTime() + membershipAdvanceNoticeDays * 86400000));
+  // Calendar-day cutoff: any time on October 7 (Bangkok) permits October 10.
+  const date = new Date(`${bangkokDate(now)}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + membershipAdvanceNoticeDays);
+  return date.toISOString().slice(0, 10);
 }
 
 export function serviceYears(now = new Date()) {

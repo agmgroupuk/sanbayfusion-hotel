@@ -17,6 +17,8 @@ export async function POST(request: Request) {
   if (!order?.stripePaymentIntentId) return NextResponse.json({ error: "Order not found." }, { status: 404 });
   const intent = await stripe.paymentIntents.retrieve(order.stripePaymentIntentId);
   if (intent.status !== "succeeded") return NextResponse.json({ error: "Payment has not been completed." }, { status: 402 });
-  if (!await recordOrderPayment(intent)) return NextResponse.json({ error: "Payment did not match this order." }, { status: 409 });
+  const paid = await recordOrderPayment(intent);
+  if (!paid) return NextResponse.json({ error: "Payment did not match this order." }, { status: 409 });
+  if (paid.status !== "confirmed") return NextResponse.json({ error: "Payment was received. Your delivery eligibility changed, so this order needs staff review before confirmation. Please contact support." }, { status: 409 });
   return NextResponse.json({ orderNumber: order.orderNumber, total: order.total });
 }
