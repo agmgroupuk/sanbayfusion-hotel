@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { navLinks, site } from "@/lib/site";
+import { SocialLinks } from "./social-links";
 
 export function SiteFooter() {
   return (
@@ -10,12 +11,16 @@ export function SiteFooter() {
           <div className="flex min-w-0 max-w-sm flex-col items-start">
             <Image src="/brand/sanbayfusion-logo.webp" alt={site.name} width={240} height={120} sizes="240px" className="block h-auto w-48 max-w-full object-contain object-left sm:w-56" />
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-gold">{site.tagline}.</p>
+            <p className="mt-8 mb-4 text-xs font-medium uppercase tracking-[0.16em] text-gold">Connect with Sanbay Fusion</p>
+            <SocialLinks />
+            <p className="mt-4 text-xs text-muted-foreground">@{site.socialHandle}</p>
           </div>
 
           <div>
             <p className="text-eyebrow text-muted-foreground">Visit</p>
             <address className="mt-4 space-y-1 text-sm not-italic text-foreground/80">
               <p>{site.legalName}</p>
+              <p className="pb-3 text-gold">Manager: {site.managerName}</p>
               <p>{site.address.line1}</p>
               <p>{site.address.line2}</p>
               <p>{site.address.city} {site.address.postalCode}, {site.address.country}</p>

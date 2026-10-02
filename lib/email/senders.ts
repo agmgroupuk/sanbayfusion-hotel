@@ -1,7 +1,8 @@
+import { site } from "../site";
 export type EmailPurpose = "account" | "support" | "reservation";
 export function emailSender(purpose: EmailPurpose) {
   const variable = `${purpose.toUpperCase()}_FROM_EMAIL`;
-  return process.env[variable] || `Sanbay Fusion <${purpose}@sanbayfusion.com>`;
+  return process.env[variable] || `${site.name} <${site.emails[purpose]}>`;
 }
 
 export function templatePurpose(alias: string): EmailPurpose {

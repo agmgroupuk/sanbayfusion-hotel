@@ -1,3 +1,4 @@
+import { BusinessEmailFooter } from "./business-footer";
 import {
   Body,
   Container,
@@ -44,7 +45,7 @@ export function GuestConfirmationEmail({
       <Body style={{ backgroundColor: paper, margin: 0, fontFamily: "Georgia, 'Times New Roman', serif" }}>
         <Container style={{ maxWidth: "560px", margin: "0 auto", padding: "40px 32px" }}>
           <Text style={{ letterSpacing: "0.3em", textTransform: "uppercase", fontSize: "11px", color: gold, fontFamily: "Arial, sans-serif", margin: 0 }}>
-            Sanbay Fusion Bar & Restaurant · City
+            {site.legalName}
           </Text>
           <Heading style={{ color: ink, fontSize: "30px", fontWeight: 400, margin: "16px 0 0" }}>
             Your meeting is requested
@@ -67,9 +68,7 @@ export function GuestConfirmationEmail({
           </Text>
 
           <Hr style={{ borderColor: "#ece7dc", margin: "28px 0" }} />
-          <Text style={{ color: muted, fontSize: "12px", fontFamily: "Arial, sans-serif" }}>
-            {site.name} · {site.address.line1} · {site.phone}
-          </Text>
+          <BusinessEmailFooter />
         </Container>
       </Body>
     </Html>

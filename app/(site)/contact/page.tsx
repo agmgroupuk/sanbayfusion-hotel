@@ -1,3 +1,4 @@
+import { SocialLinks } from "@/components/site/social-links";
 import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { PageHeader } from "@/components/site/page-header";
@@ -36,7 +37,7 @@ export default function ContactPage() {
 
           <Reveal variant="up" className="mt-10">
             <h2 className="text-eyebrow text-gold">Get in touch</h2>
-            <div className="mt-5 space-y-2 text-foreground/85">
+            <p className="mt-5 text-gold">Manager: {site.managerName}</p><div className="mt-5 space-y-2 text-foreground/85">
               <p>
                 <a href={`tel:${site.phone.replace(/\s/g, "")}`} className="hover:text-foreground">
                   {site.phone}
@@ -48,6 +49,7 @@ export default function ContactPage() {
                 </a>
               </p>
             </div>
+            <div className="mt-6"><SocialLinks /></div>
             <Link
               href="/reservations"
               className="mt-8 inline-flex items-center justify-center rounded-full bg-gold px-7 py-3 text-eyebrow text-gold-foreground transition-transform hover:-translate-y-0.5"

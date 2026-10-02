@@ -1,3 +1,4 @@
+import { ContactAssistance } from "@/components/site/contact-assistance";
 import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { CalendarDays, ClipboardCheck, CreditCard, FileCheck2, MapPin, ShoppingBag, UserRound, UtensilsCrossed } from "lucide-react";
@@ -43,5 +44,5 @@ export default function HowItWorksPage() {
       <section className="mt-12 border-y border-border/60 py-8"><h2 className="font-display text-3xl">One Standard Meal in each selected month</h2><p className="mt-5 max-w-3xl text-sm leading-7 text-foreground/75">You may schedule future selected months in advance, but place each included meal order during its own selected month. The allowance applies to eligible food in one meal order; pay any excess at checkout. Order drinks and other products separately. Unused allowance has no cash value and does not roll over.</p><p className="mt-4 max-w-3xl text-sm leading-7 text-foreground/75">Benefits are unavailable in gaps between selected months. Membership expires after the last selected month; it does not automatically renew. You cannot purchase another membership while an existing membership is ongoing or has service months remaining.</p></section>
       <section className="mt-10 border border-border/60 p-7"><h2 className="font-display text-3xl">Planning a private occasion?</h2><p className="mt-4 text-sm leading-7 text-foreground/75">Our separate <Link href="/events" className="text-gold underline">Private Events &amp; Bespoke Hospitality</Link> service lets you share a brief before or during your Thailand visit. The events team reviews catering, beverages, staffing, entertainment and logistics before preparing a tailored proposal. Event enquiries do not use the membership checkout or create an automatic booking or charge.</p></section><div className="mt-10 flex flex-wrap gap-5"><Link href="/plans" className="inline-flex rounded-full bg-gold px-7 py-3 text-eyebrow text-gold-foreground">View membership plans</Link><Link href="/faq" className="inline-flex items-center text-sm text-gold underline underline-offset-4">Read the FAQ</Link></div>
     </div>
-  </div>;
+  <ContactAssistance /></div>;
 }

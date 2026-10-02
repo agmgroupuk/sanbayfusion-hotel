@@ -1,3 +1,4 @@
+import { ContactAssistance } from "@/components/site/contact-assistance";
 import { pageMetadata } from "@/lib/seo";
 import Image from "next/image";
 import Link from "next/link";
@@ -230,6 +231,6 @@ export default function AboutPage() {
           <div className="relative max-w-3xl"><p className="text-eyebrow text-gold-foreground/70">Begin before you arrive</p><h2 className="mt-6 font-display text-5xl font-light leading-[0.98] sm:text-6xl">Plan more of your Thailand stay before you arrive.</h2><p className="mt-7 max-w-2xl text-base leading-relaxed text-gold-foreground/80">Create your account, explore Sanbay Fusion memberships, and begin arranging your requirements around your planned time in Thailand.</p><div className="mt-9 flex flex-wrap gap-3"><Link href="/plans" className="inline-flex items-center gap-3 rounded-full bg-gold-foreground px-6 py-3.5 text-eyebrow text-gold transition-transform hover:-translate-y-0.5">Explore memberships <ArrowRight className="size-4" /></Link><Link href="/how-it-works" className="inline-flex items-center gap-3 rounded-full border border-gold-foreground/50 px-6 py-3.5 text-eyebrow transition-colors hover:bg-gold-foreground/10">How it works</Link><Link href="/signup" className="inline-flex items-center gap-3 rounded-full border border-gold-foreground/50 px-6 py-3.5 text-eyebrow transition-colors hover:bg-gold-foreground/10">Create account</Link></div></div>
         </section>
       </Reveal>
-    </div>
+    <section className="mx-auto max-w-7xl px-5 sm:px-8"><ContactAssistance personal /></section></div>
   );
 }

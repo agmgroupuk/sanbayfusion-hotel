@@ -1,3 +1,5 @@
+import { site } from "../site";
+import { emailFooterHtml, emailFooterText, securityEmailAliases } from "./footer";
 /** Shared source for application emails and the matching Resend dashboard templates. */
 export type ManagedEmailTemplate = {
   alias: string;
@@ -25,7 +27,7 @@ const meetingDetails: Array<[string, string]> = [
 
 const accountAction = { label: "Open Account Center", url: "https://sanbayfusion.com/dashboard" };
 const membershipAction = { label: "View your membership", url: "https://sanbayfusion.com/dashboard/membership" };
-const securityNote = "If you did not make this change, contact account@sanbayfusion.com immediately. We will never ask you to email your password, authentication codes or card details.";
+const securityNote = `If you did not make this change, contact ${site.emails.account} immediately. We will never ask you to email your password, authentication codes or card details.`;
 const membershipReference: Array<[string, string]> = [["Reference", "{{{REQUEST_NUMBER}}}"], ["Membership", "{{{PLAN_NAME}}}"]];
 const deliveryDetails: Array<[string, string]> = [["Reference", "{{{REQUEST_NUMBER}}}"], ["Service", "{{{MEAL_NAME}}}"], ["Delivery date", "{{{DELIVERY_DATE}}}"], ["Delivery time", "{{{DELIVERY_TIME}}} (Bangkok)"]];
 const orderDetails: Array<[string, string]> = [["Order", "{{{ORDER_NUMBER}}}"], ["Total", "{{{TOTAL_AMOUNT}}}"], ["Order status", "{{{ORDER_STATUS}}}"], ["Payment status", "{{{PAYMENT_STATUS}}}"]];
@@ -66,7 +68,7 @@ export const managedEmailTemplates: ManagedEmailTemplate[] = [
   },
   {
     alias: "sanbay-membership-declined", name: "Sanbay Fusion - Membership declined", subject: "An update on your Sanbay Fusion application", heading: "Application update",
-    introduction: "We are unable to approve this application. Please contact support@sanbayfusion.com if you would like to discuss the decision or a future application.",
+    introduction: `We are unable to approve this application. Please contact ${site.emails.support} if you would like to discuss the decision or a future application.`,
     details: membershipReference, action: membershipAction, note: "This notice is not a payment receipt. Any separate card verification transaction follows its own refund process.",
   },
   {
@@ -107,7 +109,7 @@ export const managedEmailTemplates: ManagedEmailTemplate[] = [
   {
     alias: "sanbay-order-confirmation", name: "Sanbay Fusion - Order confirmation", subject: "Your Sanbay Fusion order is confirmed", heading: "Order confirmed",
     introduction: "Thank you for your order. Its payable amount has been settled, including any eligible Standard Meal allowance. Your order details are saved in your account.",
-    details: orderDetails, action: accountAction, note: "This confirms your order, not delivery completion. Contact support@sanbayfusion.com and quote your order reference for assistance.",
+    details: orderDetails, action: accountAction, note: `This confirms your order, not delivery completion. Contact ${site.emails.support} and quote your order reference for assistance.`,
   },
   {
     alias: "sanbay-order-update", name: "Sanbay Fusion - Order status update", subject: "An update on your Sanbay Fusion order", heading: "Order update",
@@ -181,8 +183,8 @@ export function managedTemplateContent(template: ManagedEmailTemplate) {
   const paragraph = "font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:26px;color:#3f392e;";
   const details = template.details.map(([label, value]) => `<tr><td bgcolor="#ffffff" style="${paragraph}padding-top:10px;padding-bottom:10px;padding-left:16px;padding-right:16px;"><strong>${escape(label)}</strong><br>${escape(value)}</td></tr>`).join("");
   const action = template.action ? `<tr><td bgcolor="#faf8f3" style="padding-top:24px;padding-bottom:12px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#1a1712" style="padding-top:14px;padding-bottom:14px;padding-left:22px;padding-right:22px;"><a href="${escape(template.action.url)}" style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:24px;color:#e6c17a;text-decoration:none;">${escape(template.action.label)}</a></td></tr></table></td></tr>` : "";
-  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta http-equiv="X-UA-Compatible" content="IE=edge"><title>${escape(template.subject)}</title></head><body style="margin-top:0;margin-right:0;margin-bottom:0;margin-left:0;background-color:#eeeae2;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#eeeae2" style="padding-top:24px;padding-bottom:24px;padding-left:12px;padding-right:12px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;"><tr><td align="center" bgcolor="#1a1712" style="padding-top:24px;padding-bottom:24px;"><img src="https://sanbayfusion.com/brand/sanbayfusion-logo.png" width="240" height="120" border="0" alt="Sanbay Fusion" style="display:block;"></td></tr><tr><td bgcolor="#faf8f3" style="padding-top:30px;padding-bottom:30px;padding-left:28px;padding-right:28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#faf8f3"><h1 style="font-family:Georgia,Arial,serif;font-size:28px;line-height:36px;color:#1a1712;margin-top:0;margin-bottom:16px;">${escape(template.heading)}</h1><p style="${paragraph}margin-top:0;margin-bottom:24px;">${escape(template.introduction)}</p></td></tr>${details}${action}<tr><td bgcolor="#faf8f3"><p style="${paragraph}font-size:14px;line-height:22px;margin-top:24px;margin-bottom:0;">${escape(template.note)}</p></td></tr></table></td></tr><tr><td align="center" bgcolor="#1a1712" style="padding-top:18px;padding-bottom:18px;"><p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:20px;color:#e6c17a;margin-top:0;margin-bottom:0;">Sanbay Fusion<br><a href="https://sanbayfusion.com" style="font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:20px;color:#e6c17a;">sanbayfusion.com</a></p></td></tr></table></td></tr></table></body></html>`;
-  const text = ["SANBAY FUSION", template.heading, template.introduction, ...template.details.map(([label, value]) => `${label}: ${value}`), template.action ? `${template.action.label}: ${template.action.url}` : "", template.note, "https://sanbayfusion.com"].filter(Boolean).join("\n\n");
+  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta http-equiv="X-UA-Compatible" content="IE=edge"><title>${escape(template.subject)}</title></head><body style="margin-top:0;margin-right:0;margin-bottom:0;margin-left:0;background-color:#eeeae2;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#eeeae2" style="padding-top:24px;padding-bottom:24px;padding-left:12px;padding-right:12px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;"><tr><td align="center" bgcolor="#1a1712" style="padding-top:24px;padding-bottom:24px;"><img src="${site.url}${site.logo}" width="240" height="120" border="0" alt="Sanbay Fusion" style="display:block;"></td></tr><tr><td bgcolor="#faf8f3" style="padding-top:30px;padding-bottom:30px;padding-left:28px;padding-right:28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#faf8f3"><h1 style="font-family:Georgia,Arial,serif;font-size:28px;line-height:36px;color:#1a1712;margin-top:0;margin-bottom:16px;">${escape(template.heading)}</h1><p style="${paragraph}margin-top:0;margin-bottom:24px;">${escape(template.introduction)}</p></td></tr>${details}${action}<tr><td bgcolor="#faf8f3"><p style="${paragraph}font-size:14px;line-height:22px;margin-top:24px;margin-bottom:0;">${escape(template.note)}</p></td></tr></table></td></tr><tr><td align="center" bgcolor="#1a1712" style="padding-top:18px;padding-bottom:18px;">${emailFooterHtml(securityEmailAliases.has(template.alias))}</td></tr></table></td></tr></table></body></html>`;
+  const text = ["SANBAY FUSION", template.heading, template.introduction, ...template.details.map(([label, value]) => `${label}: ${value}`), template.action ? `${template.action.label}: ${template.action.url}` : "", template.note, emailFooterText(securityEmailAliases.has(template.alias))].filter(Boolean).join("\n\n");
   const variables = [...new Set([...`${html}\n${text}`.matchAll(/\{\{\{([A-Z_]+)\}\}\}/g)].map(match => match[1]))].map(key => ({ key, type: "string" as const }));
   return { html, text, variables };
 }

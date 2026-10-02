@@ -1,4 +1,4 @@
-import { site } from "@/lib/site";
+import { site, socialProfiles } from "@/lib/site";
 
 /** One real business, typed as both Organization and LocalBusiness, not two competing entities. */
 export function businessStructuredData() {
@@ -24,6 +24,7 @@ export function businessStructuredData() {
         image: `${site.url}${site.logo}`,
         telephone: site.phone.replace(/\s/g, ""),
         email: site.email,
+        sameAs: socialProfiles.filter(profile => profile.identityVerified && profile.url).map(profile => profile.url),
         address: {
           "@type": "PostalAddress",
           streetAddress: `${site.address.line1}, ${site.address.line2}`,
