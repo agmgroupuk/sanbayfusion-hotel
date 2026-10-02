@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Image from "next/image";
 import Link from "next/link";
 import { getStory } from "@/lib/sanity/queries";
@@ -7,14 +7,7 @@ import { PortableText } from "@/components/portable-text";
 import { Reveal } from "@/components/motion/reveal";
 import { Parallax } from "@/components/motion/parallax";
 
-export const metadata: Metadata = {
-  title: "Our Story",
-  description:
-    "The Sanbay Fusion approach to food memberships and travel planning for eligible foreign visitors who normally live outside Thailand.",
-  alternates: {
-    canonical: "/story",
-  },
-};
+export const metadata = pageMetadata("/story");
 
 export default async function StoryPage() {
   const story = await getStory();

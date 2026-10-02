@@ -1,17 +1,11 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { PageHeader } from "@/components/site/page-header";
 import { Reveal } from "@/components/motion/reveal";
 import { ContactForm } from "@/components/contact/contact-form";
 import { site } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Contact & Location",
-  description: `Contact ${site.legalName} at ${site.address.line1}, ${site.address.city} ${site.address.postalCode}. Membership, delivery and event enquiries.`,
-  alternates: {
-    canonical: "/contact",
-  },
-};
+export const metadata = pageMetadata("/contact");
 
 export default function ContactPage() {
   return (

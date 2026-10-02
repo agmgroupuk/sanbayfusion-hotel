@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
@@ -6,11 +6,7 @@ import { EventBookingForm } from "@/components/events/event-booking-form";
 import { Reveal } from "@/components/motion/reveal";
 import { site } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: { absolute: "Private Events & Bespoke Hospitality in Thailand | Sanbay Fusion" },
-  description: "Plan private dinners, celebrations, villa events, corporate gatherings and bespoke hospitality experiences in Thailand with Sanbay Fusion.",
-  alternates: { canonical: "/events" },
-};
+export const metadata = pageMetadata("/events");
 const occasions = [
   ["Private Dinners", "A considered menu. A table of your own."],
   ["Birthday Celebrations", "An occasion shaped around the person at its heart."],

@@ -1,11 +1,11 @@
 import { MembershipEligibilityNotice } from "@/components/membership/eligibility-notice";
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { getMenu } from "@/lib/sanity/queries";
 import { dietaryLabels } from "@/lib/content/types";
 import { PageHeader } from "@/components/site/page-header";
 
-export const metadata: Metadata = { title: "Menu", description: "Explore Sanbay Fusion food and non-alcoholic drinks for Standard Meals, prepaid packages and member orders.", alternates: { canonical: "/menu" } };
+export const metadata = pageMetadata("/menu");
 export const revalidate = 60;
 
 export default async function MenuPage() {

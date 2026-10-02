@@ -1,12 +1,8 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { LegalPage, LegalSection } from "@/components/site/legal-page";
 import { site } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Accessibility",
-  description: `Accessibility statement for the ${site.name} website and service enquiries.`,
-  alternates: { canonical: "/accessibility" },
-};
+export const metadata = pageMetadata("/accessibility");
 
 export default function AccessibilityPage() {
   return (

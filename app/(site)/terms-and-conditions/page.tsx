@@ -1,13 +1,9 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { LegalPage, LegalSection } from "@/components/site/legal-page";
 import { membershipEligibilityNotice } from "@/lib/membership-eligibility";
 import { site } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Membership Terms & Conditions",
-  description: `Membership application, invoice, delivery, cancellation, and service terms for ${site.name}.`,
-  alternates: { canonical: "/terms-and-conditions" },
-};
+export const metadata = pageMetadata("/terms-and-conditions");
 
 const keyRules = [
   ["International visitors only", membershipEligibilityNotice],

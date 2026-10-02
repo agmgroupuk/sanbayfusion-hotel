@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { createPageMetadata } from "@/lib/seo";
 import { notFound } from "next/navigation";
 import { MembershipDetail } from "@/components/membership/membership-detail";
 import { membershipPlans } from "@/lib/membership-plans";
@@ -13,10 +14,8 @@ type PlanPageProps = {
 export async function generateMetadata({ params }: PlanPageProps): Promise<Metadata> {
   const { "plan-slug": slug } = await params;
   const plan = membershipPlans.find((item) => item.slug === slug);
-  return {
-    title: plan ? `${plan.name} · Membership` : "Membership detail",
-    description: plan ? `${plan.name}: ฿${plan.price.toLocaleString("en-US")} for ${plan.durationMonths} selected service months for eligible foreign visitors normally living outside Thailand, with an included Standard Meal allowance.` : "Membership details.",
-  };
+  if (!plan) return { title: "Membership not found", robots: { index: false, follow: false } };
+  return createPageMetadata(`/plans/${plan.slug}`, `${plan.name} for International Visitors`, `${plan.name}: THB ${plan.price.toLocaleString("en-US")} for ${plan.durationMonths} selected service months. For eligible international visitors to Thailand; application approval required.`);
 }
 
 export default async function PlanDetailPage({ params }: PlanPageProps) {

@@ -2,7 +2,7 @@ import { SmoothScroll } from "@/components/motion/smooth-scroll";
 import { ScrollProgress } from "@/components/motion/scroll-progress";
 import { SiteNav } from "@/components/site/site-nav";
 import { SiteFooter } from "@/components/site/site-footer";
-import { RestaurantJsonLd } from "@/components/site/restaurant-jsonld";
+import { BusinessJsonLd } from "@/components/site/business-jsonld";
 import { getCurrentAccount } from "@/lib/auth";
 import { signOut } from "@/app/auth/actions";
 
@@ -12,7 +12,7 @@ export default async function SiteLayout({
   const account = await getCurrentAccount();
   return (
     <SmoothScroll>
-      <RestaurantJsonLd />
+      <BusinessJsonLd />
       <ScrollProgress />
       <a
         href="#main"

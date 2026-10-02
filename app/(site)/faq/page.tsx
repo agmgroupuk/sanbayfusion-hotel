@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { PageHeader } from "@/components/site/page-header";
 import { membershipPlans } from "@/lib/membership-plans";
 import { membershipEligibilityNotice } from "@/lib/membership-eligibility";
 import { site } from "@/lib/site";
 
-export const metadata: Metadata = { title: "FAQ", description: "Eligibility for foreign visitors to Thailand, travel service months, Standard Meals, application review, payments and support.", alternates: { canonical: "/faq" } };
+export const metadata = pageMetadata("/faq");
 const baht = (value: number) => "฿" + value.toLocaleString("en-US");
 const sections = [
   { title: "International-visitor eligibility", questions: [

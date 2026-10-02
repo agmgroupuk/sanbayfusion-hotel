@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/seo";
 import { HomeHero } from "@/components/sections/home-hero";
 import { HeatSection } from "@/components/sections/heat-section";
 import { CraftSection } from "@/components/sections/craft-section";
@@ -6,6 +7,8 @@ import { AmbianceSection } from "@/components/sections/ambiance-section";
 import { ExperienceSection } from "@/components/sections/experience-section";
 import { ArrivalSection } from "@/components/sections/arrival-section";
 import { MembershipSection } from "@/components/sections/membership-section";
+
+export const metadata = pageMetadata("/");
 
 export default function Home() {
   return (

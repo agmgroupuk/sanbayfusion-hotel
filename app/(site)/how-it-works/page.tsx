@@ -1,10 +1,10 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { CalendarDays, ClipboardCheck, CreditCard, FileCheck2, MapPin, ShoppingBag, UserRound, UtensilsCrossed } from "lucide-react";
 import { MembershipEligibilityNotice } from "@/components/membership/eligibility-notice";
 import { PageHeader } from "@/components/site/page-header";
 
-export const metadata: Metadata = { title: "How It Works", description: "How eligible foreign visitors plan their Thailand stay: account setup, service months, meals, application review, approved payment and activation.", alternates: { canonical: "/how-it-works" } };
+export const metadata = pageMetadata("/how-it-works");
 
 const steps = [
   { title: "Start as an eligible foreign visitor", text: "This membership is for foreign visitors who normally live outside Thailand and travel temporarily for tourism, holidays, business or an extended visit. If eligible, create an account or sign in; an account alone does not create membership.", icon: UserRound, href: "/signup", action: "Create an account" },

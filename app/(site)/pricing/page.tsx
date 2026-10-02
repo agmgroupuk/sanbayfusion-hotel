@@ -1,10 +1,10 @@
 import { MembershipEligibilityNotice } from "@/components/membership/eligibility-notice";
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { membershipPlans } from "@/lib/membership-plans";
 import { PageHeader } from "@/components/site/page-header";
 
-export const metadata: Metadata = { title: "Pricing", description: "Current membership fees and Standard Meal allowances for eligible foreign visitors to Thailand.", alternates: { canonical: "/pricing" } };
+export const metadata = pageMetadata("/pricing");
 const baht = (amount: number) => "฿" + amount.toLocaleString("en-US", { maximumFractionDigits: 0 });
 
 export default function PricingPage() {

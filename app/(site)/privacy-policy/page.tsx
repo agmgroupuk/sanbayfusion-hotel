@@ -1,12 +1,8 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { LegalPage, LegalSection } from "@/components/site/legal-page";
 import { site } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy",
-  description: `How ${site.name} collects, uses, shares, and protects personal information.`,
-  alternates: { canonical: "/privacy-policy" },
-};
+export const metadata = pageMetadata("/privacy-policy");
 
 const privacyPrinciples = [
   ["Collect what we need", "We request information needed to review memberships, arrange service, deliver products, communicate, and meet legal obligations."],

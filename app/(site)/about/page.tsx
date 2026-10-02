@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -20,12 +20,7 @@ import { site } from "@/lib/site";
 import { Reveal } from "@/components/motion/reveal";
 import { KineticText } from "@/components/motion/kinetic-text";
 
-export const metadata: Metadata = {
-  title: "About Us",
-  description:
-    "Sanbay Fusion Foods Company Limited created this membership service exclusively for eligible foreign visitors who normally live outside Thailand and visit temporarily.",
-  alternates: { canonical: "/about" },
-};
+export const metadata = pageMetadata("/about");
 
 const journeySteps = [
   ["01", "Check visitor eligibility", "This membership is exclusively for foreign visitors who normally live outside Thailand and visit temporarily. Create your account and complete your profile, addresses and verified default card."],

@@ -1,5 +1,5 @@
 import { MembershipEligibilityNotice } from "@/components/membership/eligibility-notice";
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { getCurrentAccount } from "@/lib/auth";
 import { accountHasOngoingMembership } from "@/lib/membership-access";
 export const dynamic = "force-dynamic";
@@ -10,14 +10,7 @@ import { Reveal } from "@/components/motion/reveal";
 import { PlanCard } from "@/components/membership/plan-card";
 import { membershipPlans } from "@/lib/membership-plans";
 
-export const metadata: Metadata = {
-  title: "Membership",
-  description:
-    "Food memberships exclusively for eligible foreign visitors travelling temporarily to Thailand.",
-  alternates: {
-    canonical: "/membership",
-  },
-};
+export const metadata = pageMetadata("/membership");
 
 const membershipHighlights = [
   {

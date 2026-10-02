@@ -2,9 +2,11 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { fontVariables } from "@/lib/fonts";
 import { site } from "@/lib/site";
+import { pageMetadata } from "@/lib/seo";
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
+  ...pageMetadata("/"),
   metadataBase: new URL(site.url),
   title: {
     default: "Sanbay Fusion | Memberships for International Visitors",
@@ -15,21 +17,12 @@ export const metadata: Metadata = {
   // Let file metadata add all three content-versioned icon links. Setting an
   // explicit icons object here suppresses Next's PNG/Apple file discovery.
   description: site.description,
-  alternates: {
-    canonical: "/",
-  },
-  openGraph: {
-    type: "website",
-    title: "Sanbay Fusion | Memberships for International Visitors",
-    description: site.description,
-    siteName: "Sanbay Fusion",
-    url: `${site.url}/`,
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Sanbay Fusion | Memberships for International Visitors",
-    description: site.description,
-  },
+  // Public pages declare their own canonical; private routes must not inherit '/'.
+  alternates: undefined,
+  verification: process.env.GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.GOOGLE_SITE_VERIFICATION.trim() }
+    : undefined,
+
 };
 
 export const viewport: Viewport = {

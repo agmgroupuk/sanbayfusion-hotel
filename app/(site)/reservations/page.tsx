@@ -1,16 +1,10 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Image from "next/image";
 import { BookingForm } from "@/components/reservations/booking-form";
 import { Reveal } from "@/components/motion/reveal";
 import { site } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Schedule a Meeting",
-  description: "Schedule a meeting with the Sanbay Fusion team for memberships, events, catering, partnerships, and private gathering enquiries.",
-  alternates: {
-    canonical: "/reservations",
-  },
-};
+export const metadata = pageMetadata("/reservations");
 
 export default function ReservationsPage() {
   return (

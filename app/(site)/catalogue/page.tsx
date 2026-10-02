@@ -1,15 +1,11 @@
 import { MembershipEligibilityNotice } from "@/components/membership/eligibility-notice";
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { PageHeader } from "@/components/site/page-header";
 import { Reveal } from "@/components/motion/reveal";
 import { catalogueCategories, menuRotation, servicePeriods } from "@/lib/catalogue";
 
-export const metadata: Metadata = {
-  title: "Food & Drink Catalogue",
-  description: "Food and drink catalogue for Sanbay Fusion, with current membership eligibility explained.",
-  alternates: { canonical: "/catalogue" },
-};
+export const metadata = pageMetadata("/catalogue");
 
 const groupLabels = { food: "Food catalogue", drinks: "Drinks catalogue", alcohol: "Regulated alcohol catalogue" } as const;
 
