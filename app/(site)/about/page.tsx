@@ -103,6 +103,7 @@ export default function AboutPage() {
             <p>{site.name} is operated by {site.legalName}, based in {site.address.city}, {site.address.country}. Visit our <Link href="/contact" className="text-gold underline underline-offset-4">Contact page</Link> for our business address and contact details.</p>
             <p>Our business was established in 2018, with experience connected to restaurants, food service, food products, beverages, sourcing, and customer hospitality.</p>
             <p>Sanbay Fusion Foods Company Limited created this particular membership service in response to the needs of international customers visiting Thailand: tourists, holidaymakers, business travellers, returning visitors and people planning extended temporary visits.</p>
+            <p>For occasions during your stay, our separate <Link href="/events" className="text-gold underline underline-offset-4">Private Events &amp; Bespoke Hospitality</Link> service brings catering, beverages, staffing and entertainment requirements into one event brief. Begin planning before arrival; the team reviews your requirements and prepares a tailored proposal. An enquiry is not a confirmed booking or payment.</p>
             <p>Travellers often arrange hotels and transportation before leaving home. Sanbay Fusion lets eligible foreign visitors also plan applicable food and service requirements in advance, with selected service months and meal schedules shaped around their travel plans. Applications remain subject to review and approval.</p>
           </div>
         </Reveal>

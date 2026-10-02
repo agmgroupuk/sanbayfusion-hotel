@@ -74,8 +74,7 @@ export default function ContactPage() {
         <Reveal variant="up">
           <h2 className="text-eyebrow text-gold">Send a message</h2>
           <p className="lead mt-4 text-base text-foreground/80">
-            For private dining, press, partnerships, or any other enquiry, leave
-            us a note and we&apos;ll respond personally.
+            For general enquiries, press or partnerships, leave us a note and we&apos;ll respond personally. For a private dinner, celebration or business gathering, use our <Link href="/events" className="text-gold underline underline-offset-4">event brief builder</Link> to request a tailored hospitality proposal.
           </p>
         </Reveal>
         <Reveal variant="up" className="mt-10">

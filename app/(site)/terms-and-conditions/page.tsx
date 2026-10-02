@@ -233,6 +233,8 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
+      <LegalSection title="13. Private events and bespoke hospitality enquiries"><p>Event briefs are requests for a tailored proposal, separate from membership purchases. Submission does not confirm an event, guarantee availability, create a final quotation or authorize a charge. We review the proposed date, venue, guests, menu, staffing, entertainment, equipment, logistics and special requirements before preparing the applicable proposal and next steps.</p><p>Final pricing depends on the agreed scope, including duration, transport, taxes and applicable service charges. Any event-specific confirmation, payment, cancellation or refund terms must be set out and agreed separately; membership fee rules do not automatically apply to an event enquiry. Alcohol-related requirements are discussed separately with the events team and are subject to availability, applicable law, licensing requirements and event circumstances. No alcohol products are purchased or automatically invoiced through the event form.</p></LegalSection>
+
       <LegalSection title="Contact and complaints">
         <p>
           Contact us about membership, billing, delivery, food issues, substitutions,

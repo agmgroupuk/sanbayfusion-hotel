@@ -1,0 +1,38 @@
+﻿import { build } from "esbuild";
+import { chromium } from "playwright";
+import { createServer } from "node:http";
+import { readFile, readdir, mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
+import assert from "node:assert/strict";
+
+// Real production builder; the enquiry action is stubbed so no customer emails are sent.
+const folder=path.resolve('.next/event-builder-check');await mkdir(folder,{recursive:true});
+await build({stdin:{contents:`import React from 'react';import {createRoot} from 'react-dom/client';import {EventBookingForm} from './components/events/event-booking-form';createRoot(document.getElementById('app')).render(<EventBookingForm/>);`,resolveDir:process.cwd(),loader:'tsx'},bundle:true,platform:'browser',format:'esm',outdir:folder,entryNames:'form',jsx:'automatic',define:{'process.env.NODE_ENV':'"production"','process.env':'{}'},plugins:[{name:'offline-enquiry',setup(build){build.onResolve({filter:/events\/actions$/},()=>({path:'action',namespace:'fixture'}));build.onLoad({filter:/.*/,namespace:'fixture'},()=>({contents:`export async function requestEventProposal(data){window.__brief=data;return window.__fail?{ok:false,error:'Offline simulated delivery failure'}:{ok:true};}`}));}}]});
+const chunks=path.resolve('.next/static/chunks');const css=(await Promise.all((await readdir(chunks)).filter(f=>f.endsWith('.css')).map(f=>readFile(path.join(chunks,f),'utf8')))).join('\n');
+const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://localhost');if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end('<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/styles.css"></head><body><main id="app" style="max-width:1280px;padding:32px 20px;margin:auto"></main><script type="module" src="/form.js"></script></body></html>');return;}if(url.pathname==='/styles.css'){res.setHeader('Content-Type','text/css');res.end(css);return;}try{res.setHeader('Content-Type','text/javascript');res.end(await readFile(path.join(folder,path.basename(url.pathname))));}catch{res.statusCode=404;res.end();}});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));const browser=await chromium.launch({channel:'msedge',headless:true});let checks=0;const check=(value,label)=>{assert.ok(value,label);checks++;};
+try{const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+for(const width of [390,768,1440]){
+ await page.setViewportSize({width,height:900});await page.goto('http://127.0.0.1:'+server.address().port);await page.getByRole('heading',{name:'Your occasion',exact:true}).waitFor();
+ const next=page.getByRole('button',{name:'Continue',exact:true});const previous=page.getByRole('button',{name:'Previous',exact:true});const summary=page.getByRole('complementary',{name:'Your Event Brief'});
+ check((await summary.textContent()).includes('Your occasion'),'no hardcoded birthday example');check(!(await summary.textContent()).includes('50 guests'),'no fake guest count');
+ await next.click();check(await page.getByRole('heading',{name:'Your occasion',exact:true}).isVisible(),'required fields prevent proceeding');
+ await page.getByRole('combobox',{name:/^Event type/}).selectOption('Business dinner');await page.getByLabel('Event date *',{exact:true}).fill('2099-06-01');await page.getByLabel(/^Start time/).fill('19:30');await page.getByRole('combobox',{name:/^Approximate duration/}).selectOption('4 hours');await page.getByLabel('Expected number of guests *',{exact:true}).fill('18');
+ check((await summary.textContent()).includes('Business dinner'),'summary event updates');check((await summary.textContent()).includes('18'),'summary guest count updates');
+ if(width<1024){await summary.locator('summary').click();check(await summary.locator('details').getByText('Guest count',{exact:true}).isVisible(),'mobile brief expands');await summary.locator('summary').click();}
+ await next.click();await page.getByRole('combobox',{name:/^Location type/}).selectOption('Villa');await page.getByLabel('Venue, residence or area in Thailand *',{exact:true}).fill('Private villa in Bangkok');await next.click();
+ await page.getByLabel('Thai cuisine',{exact:true}).check();await page.getByLabel('Dietary or special requirements',{exact:false}).fill('One vegetarian guest');await next.click();
+ await page.getByLabel('Water',{exact:true}).check();await page.getByLabel('Custom beverage requirements',{exact:false}).fill('Sparkling water on arrival');
+ check(await page.getByRole('radio').count()===2,'only discussion/no-alcohol controls');check(await page.locator('select').count()===0,'no alcohol product selector');check(!/\u0e3f|THB|Stripe/.test(await page.getByRole('form').innerText()),'no prices or payment');
+ await page.getByLabel('I would like to discuss beverage requirements',{exact:true}).check();await next.click();await page.getByLabel('Music',{exact:true}).check();await page.getByLabel('Custom entertainment requirements',{exact:false}).fill('Quiet acoustic music');await next.click();await page.getByLabel('Anything else we should know?',{exact:false}).fill('Arriving two days before. Please discuss flowers and terrace access.');
+ await previous.click();check(await page.getByLabel('Music',{exact:true}).isChecked(),'previous retains entertainment');await next.click();check((await page.getByLabel('Anything else we should know?',{exact:false}).inputValue()).includes('Arriving two days'),'previous retains notes');await next.click();
+ await page.getByLabel('Full name *',{exact:true}).fill('International Guest');await page.getByLabel('Email *',{exact:true}).fill('guest@example.invalid');await page.getByLabel('Phone with country code *',{exact:true}).fill('+441234567890');await page.getByRole('combobox',{name:/^Preferred contact method/}).selectOption('WhatsApp');
+ check((await summary.textContent()).includes('Quiet acoustic music'),'production notes in brief');check((await summary.textContent()).includes('One vegetarian guest'),'dietary notes in brief');
+ check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'responsive page has no horizontal overflow');
+ await page.screenshot({path:path.join(folder,'final-step-'+width+'.png'),fullPage:true});
+ await page.evaluate(()=>{window.__fail=true;});await page.getByRole('button',{name:'Request My Event Proposal',exact:true}).click();await page.getByRole('alert').waitFor();check((await page.getByRole('alert').innerText()).includes('simulated delivery failure'),'server failure visible');check(await page.getByLabel('Full name *',{exact:true}).inputValue()==='International Guest','failure preserves details');
+ await page.evaluate(()=>{window.__fail=false;});await page.getByRole('button',{name:'Request My Event Proposal',exact:true}).click();await page.getByRole('heading',{name:'Your event brief has been received.'}).waitFor();const data=await page.evaluate(()=>window.__brief);
+ check(data.eventType==='Business dinner'&&data.guests===18&&data.preferredContact==='WhatsApp','submission carries actual fields');check(!('alcohol' in data)&&!('total' in data),'payload has no priced alcohol or total');check((await page.locator('body').innerText()).includes('No payment has been taken'),'success remains enquiry only');
+}
+check(errors.length===0,'no browser errors');await writeFile(path.join(folder,'results.json'),JSON.stringify({checks,result:'PASS',errors},null,2));console.log(JSON.stringify({checks,result:'PASS',evidence:folder}));
+}finally{await browser.close();await new Promise(r=>server.close(r));}

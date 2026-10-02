@@ -60,7 +60,7 @@ export default function PrivacyPolicyPage() {
           <li>Billing and delivery addresses, country, building or unit, district, province, postal code, delivery instructions and location information supplied for address checks.</li>
           <li>Membership eligibility declarations: your confirmation that you are a foreign visitor normally living outside Thailand and visiting temporarily, the declaration text and policy version, and acceptance time. We use this information for membership review; creating an account does not by itself confirm eligibility.</li>
           <li>Membership plan and price, selected service months, application status, configuration, food preferences, add-ons, Standard Meal allowances and schedules, cancellation correspondence and final agreement records.</li>
-          <li>Orders, product quantities, totals, payment and fulfilment status; meeting requests and private-event briefs, including dates, guest counts and service preferences.</li>
+          <li>Orders, product quantities, totals, payment and fulfilment status; meeting requests and private-event briefs, including event and travel dates you provide, times, duration, guest count, venue or area, dining and dietary preferences, beverage discussion preferences, entertainment, production and special requests, and preferred contact method.</li>
           <li>Stripe customer, payment-method, invoice, payment and refund references; amounts, currencies and statuses; card brand, last four digits, expiry, verification and default-card status. Card entry is handled through Stripe. Our application does not store complete card numbers, CVC or online-banking passwords.</li>
           <li>Allergy and dietary information that you choose to provide. Please share only what is reasonably necessary for the team to assess your request safely.</li>
           <li>Authentication and security records, including password hashes, session and reset-token hashes, email-change requests, two-factor settings, encrypted authenticator secrets, hashed recovery codes and account security events.</li>
@@ -87,7 +87,7 @@ export default function PrivacyPolicyPage() {
           We use information to receive and review membership applications and visitor eligibility, contact
           applicants, prepare configurations, issue invoices, confirm payments, create
           membership records, arrange orders and deliveries, communicate substitutions,
-          respond to support requests, prevent fraud, secure systems, maintain business
+          prepare tailored event proposals and contact you about your brief through your preferred method, respond to support requests, prevent fraud, secure systems, maintain business
           records, comply with law, and establish or defend legal claims.
         </p>
         <p>
