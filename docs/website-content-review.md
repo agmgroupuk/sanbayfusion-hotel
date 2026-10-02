@@ -54,4 +54,9 @@ Searched application pages, components, libraries, public assets, schema definit
 
 ## Validation
 
-Validation results are recorded here after the final build and rendered-page checks.
+- Production build and TypeScript checks passed. ESLint found no errors; four existing warnings remain in the Open Graph image, booking form and two homepage imports. Changed-file lint passed.
+- Browser checks passed for 20 public routes: HTTP 200, official footer details, Organization JSON-LD and absence of the audited stale wording. All 12 pricing rows matched the authoritative fee table; all 29 FAQ entries were present and keyboard expansion/collapse worked.
+- Responsive checks passed at 390, 768 and 1440 pixels on Contact, About, How It Works, FAQ, Pricing, Terms and Privacy (21 checks), with no page-width overflow. Contact loads no map iframe.
+- The browser run recorded one React hydration warning on the homepage under reduced-motion emulation. The content/layout assertions passed, but the run is not a zero-console-error result. Investigate the homepage animation/hydration separately; no animation behavior was changed in this content task.
+- Railway deployed commit `c3ac96b68a99bf222107e7be33e58f8dacc3f299` successfully as deployment `2467abe0-964e-466a-bc4c-22b2e23cc4cc`. The deployment contains the content changes; this validation addendum is local documentation.
+- Read-only checks inside the running production service returned HTTP 200 and the updated content for Contact, How It Works, FAQ, Pricing and Privacy. These checks verify the deployed application directly, not external CDN/browser caches.
