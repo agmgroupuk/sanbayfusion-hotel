@@ -11,6 +11,9 @@ export const metadata: Metadata = {
     template: "%s · Sanbay Fusion",
   },
   applicationName: site.name,
+  manifest: "/manifest.webmanifest",
+  // Let file metadata add all three content-versioned icon links. Setting an
+  // explicit icons object here suppresses Next's PNG/Apple file discovery.
   description: site.description,
   alternates: {
     canonical: "/",
