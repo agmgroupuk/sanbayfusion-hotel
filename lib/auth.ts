@@ -69,7 +69,8 @@ export async function createPasswordResetToken(accountId: string) {
 }
 
 export async function consumePasswordResetToken(token: string) {
-  if (!db) return null;
+  // Read-only lookup; resetPassword claims the token atomically with the password update.
+  if (!db || !/^[A-Za-z0-9_-]{43}$/.test(token)) return null;
   const result = await db.select().from(passwordResetTokens).where(and(eq(passwordResetTokens.tokenHash, hashToken(token)), isNull(passwordResetTokens.usedAt), gt(passwordResetTokens.expiresAt, new Date()))).limit(1);
   return result[0] ?? null;
 }

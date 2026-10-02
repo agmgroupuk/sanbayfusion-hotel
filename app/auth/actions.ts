@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt, isNull } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { consumePasswordResetToken, createCustomerSession, createPasswordResetToken, destroyCustomerSession, getCurrentAccount, hashPassword, normalizeEmail, verifyPassword } from "@/lib/auth";
@@ -12,11 +12,10 @@ import { AccountError } from "@/lib/account/types";
 import { customerSessions } from "@/lib/db/schema";
 import { isMembershipAdmin } from "@/lib/membership-admin";
 import { getSafeRedirectPath } from "@/lib/auth-redirect";
+import { passwordConfirmationSchema } from "@/lib/password-policy";
+import { signUpSchema } from "@/lib/signup-validation";
 
-const passwordSchema = z.string().min(10, "Use at least 10 characters").regex(/[a-z]/, "Include a lowercase letter").regex(/[A-Z]/, "Include an uppercase letter").regex(/[0-9]/, "Include a number");
-const phoneSchema = z.string().trim().regex(/^(?:\+66|0)[0-9\s().-]{8,18}$/, "Enter a valid Thailand mobile number");
-
-export type AuthResult = { ok: true; message?: string } | { ok: false; error: string };
+export type AuthResult = { ok: true; message?: string } | { ok: false; error: string; resetLinkInvalid?: boolean };
 
 export async function signUp(formData: FormData): Promise<AuthResult> {
   if (!db) return { ok: false, error: "Account services are not configured yet. Please try again later." };
@@ -26,11 +25,9 @@ export async function signUp(formData: FormData): Promise<AuthResult> {
   const password = String(formData.get("password") ?? "");
   const confirmation = String(formData.get("confirmation") ?? "");
   const next = getSafeRedirectPath(formData.get("next"));
-  const parsed = z.object({ fullName: z.string().min(2, "Enter your full name").max(120), email: z.string().email("Enter a valid email address").max(200), phone: phoneSchema, password: passwordSchema }).safeParse({ fullName, email, phone, password });
+  const parsed = signUpSchema.safeParse({ fullName, email, phone, password, confirmation, agreements: formData.get("agreements") === "on" });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Please check your details." };
   if (isMembershipAdmin(email)) return { ok: false, error: "Staff accounts cannot be created through customer registration." };
-  if (password !== confirmation) return { ok: false, error: "Passwords do not match." };
-  if (formData.get("agreements") !== "on") return { ok: false, error: "Please accept the Terms & Conditions and Privacy Policy." };
   const existing = await db.select({ id: customerAccounts.id }).from(customerAccounts).where(eq(customerAccounts.email, email)).limit(1);
   if (existing.length) return { ok: false, error: "An account with that email already exists." };
   try {
@@ -83,16 +80,22 @@ export async function resetPassword(formData: FormData): Promise<AuthResult> {
   const token = String(formData.get("token") ?? "");
   const password = String(formData.get("password") ?? "");
   const confirmation = String(formData.get("confirmation") ?? "");
-  const checked = passwordSchema.safeParse(password);
+  const checked = passwordConfirmationSchema.safeParse({ password, confirmation });
   if (!checked.success) return { ok: false, error: checked.error.issues[0]?.message ?? "Choose a stronger password." };
-  if (password !== confirmation) return { ok: false, error: "Passwords do not match." };
   const reset = await consumePasswordResetToken(token);
-  if (!reset) return { ok: false, error: "This reset link is invalid or has expired." };
-  await db.transaction(async (tx) => {
-    await tx.update(customerAccounts).set({ passwordHash: await hashPassword(password), updatedAt: new Date() }).where(eq(customerAccounts.id, reset.accountId));
+  if (!reset) return { ok: false, error: "This reset link is invalid or has expired.", resetLinkInvalid: true };
+  const passwordHash = await hashPassword(password);
+  const changed = await db.transaction(async (tx) => {
+    // Atomically claim an unexpired token, so two simultaneous submissions cannot both change the password.
+    const [claimed] = await tx.update(passwordResetTokens).set({ usedAt: new Date() })
+      .where(and(eq(passwordResetTokens.id, reset.id), eq(passwordResetTokens.accountId, reset.accountId), isNull(passwordResetTokens.usedAt), gt(passwordResetTokens.expiresAt, new Date())))
+      .returning({ id: passwordResetTokens.id });
+    if (!claimed) return false;
+    await tx.update(customerAccounts).set({ passwordHash, updatedAt: new Date() }).where(eq(customerAccounts.id, reset.accountId));
     await tx.delete(customerSessions).where(eq(customerSessions.accountId, reset.accountId));
-    await tx.update(passwordResetTokens).set({ usedAt: new Date() }).where(and(eq(passwordResetTokens.id, reset.id), eq(passwordResetTokens.accountId, reset.accountId)));
+    return true;
   });
+  if (!changed) return { ok: false, error: "This reset link is invalid or has expired.", resetLinkInvalid: true };
   redirect("/signin?reset=complete");
 }
 

@@ -79,9 +79,9 @@ suite("Account Center with Railway DB rollback and real Stripe Sandbox", () => {
   expect(await consumeSecondFactor(a.id,token)).toBe(false); expect(await consumeSecondFactor(a.id,"000000")).toBe(false);
   const now=Date.now(); vi.spyOn(Date,"now").mockReturnValue(now+31000); const next=totp(setup.secret).generate(); expect(await consumeSecondFactor(a.id,next)).toBe(true); expect(await consumeSecondFactor(a.id,next)).toBe(false); vi.restoreAllMocks();
   expect(await consumeSecondFactor(a.id,enabled.recoveryCodes[0])).toBe(true);expect(await consumeSecondFactor(a.id,enabled.recoveryCodes[0])).toBe(false);
-  await expect(changePassword(a.id,password,"NewFixturePassword123","")).rejects.toThrow("incorrect");
-  await changePassword(a.id,password,"NewFixturePassword123",enabled.recoveryCodes[1]); expect(await verifyPassword("NewFixturePassword123",(await getCurrentAccount())!.passwordHash)).toBe(true);
-  await disableTwoFactor(a.id,"NewFixturePassword123",enabled.recoveryCodes[2]);expect((await securityStatus(a.id)).enabled).toBe(false);
+  await expect(changePassword(a.id,password,"NewFixturePassword123!","")).rejects.toThrow("incorrect");
+  await changePassword(a.id,password,"NewFixturePassword123!",enabled.recoveryCodes[1]); expect(await verifyPassword("NewFixturePassword123!",(await getCurrentAccount())!.passwordHash)).toBe(true);
+  await disableTwoFactor(a.id,"NewFixturePassword123!",enabled.recoveryCodes[2]);expect((await securityStatus(a.id)).enabled).toBe(false);
  }),60000);
  it("enforces durable attempt limits", async()=>fixture(async(a)=>{ for(let i=0;i<3;i++) await rateLimit("fixture",a.id,3); await expect(rateLimit("fixture",a.id,3)).rejects.toThrow("Too many"); }),30000);
  it("verifies and refunds multiple cards, reuses one customer, changes defaults and removes safely", async()=>fixture(async(a,b)=>{
