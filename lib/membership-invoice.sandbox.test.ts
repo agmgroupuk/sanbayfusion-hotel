@@ -1,3 +1,4 @@
+import { membershipEligibilityVersion } from "@/lib/membership-eligibility";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
@@ -56,7 +57,7 @@ async function verifiedCard(account: CustomerAccount, method = "pm_card_visa", w
 async function application(account: CustomerAccount) {
   const prepared = await prepareInvoiceApplication(account, configuration);
   expect(prepared.review.complete).toBe(true);
-  const input = { applicationId: prepared.applicationId, quoteHash: prepared.quoteHash, reviewHash: prepared.reviewHash, paymentMethodId: prepared.review.cards.find(card => card.isDefault)!.id, authorizeCharge: true, acceptTerms: true, acceptPrivacy: true, consentVersion: applicationConsentVersion };
+  const input = { applicationId: prepared.applicationId, quoteHash: prepared.quoteHash, reviewHash: prepared.reviewHash, paymentMethodId: prepared.review.cards.find(card => card.isDefault)!.id, confirmInternationalVisitor: true, eligibilityVersion: membershipEligibilityVersion, authorizeCharge: true, acceptTerms: true, acceptPrivacy: true, consentVersion: applicationConsentVersion };
   const submissions = await Promise.all([submitInvoiceApplication(account, input), submitInvoiceApplication(account, input)]);
   expect(submissions[0].applicationId).toBe(submissions[1].applicationId);
   const [row] = await database.select().from(schema.membershipRequests).where(eq(schema.membershipRequests.id, submissions[0].applicationId));
@@ -174,7 +175,7 @@ describe.skipIf(!enabled)("real Stripe Sandbox Dashboard / invoice journey", () 
   it("recovers interrupted invoice creation and refuses activation for failed or out-of-band payments", async () => {
     const account = await fixture(); const verified = await verifiedCard(account);
     const prepared = await prepareInvoiceApplication(account, configuration);
-    const input = { applicationId: prepared.applicationId, quoteHash: prepared.quoteHash, reviewHash: prepared.reviewHash, paymentMethodId: verified.card.id, authorizeCharge: true, acceptTerms: true, acceptPrivacy: true, consentVersion: applicationConsentVersion };
+    const input = { applicationId: prepared.applicationId, quoteHash: prepared.quoteHash, reviewHash: prepared.reviewHash, paymentMethodId: verified.card.id, confirmInternationalVisitor: true, eligibilityVersion: membershipEligibilityVersion, authorizeCharge: true, acceptTerms: true, acceptPrivacy: true, consentVersion: applicationConsentVersion };
     await database.update(schema.customerAccounts).set({ fullName: "Updated Dashboard Name" }).where(eq(schema.customerAccounts.id, account.id));
     await expect(submitInvoiceApplication(account, input)).rejects.toThrow("Dashboard details changed");
     const refreshed = await prepareInvoiceApplication(account, configuration); input.reviewHash = refreshed.reviewHash;

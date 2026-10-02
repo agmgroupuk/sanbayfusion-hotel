@@ -19,6 +19,7 @@ import { activateMembershipRequest } from "@/lib/membership-activation";
 import { deliveryEligibility, declineApplication as declineLegacy } from "@/lib/membership-application";
 import { sendApplicationNotifications } from "@/lib/email/membership-application";
 import { containsMembershipAlcohol, membershipAlcoholMessage } from "@/lib/membership-food";
+import { membershipEligibilityInput, membershipEligibilityError, membershipEligibilityDeclaration, hasMembershipEligibilityDeclaration } from "@/lib/membership-eligibility";
 
 function services() { if (!db || !stripe) throw new ApplicationError("Membership services are currently unavailable.", 503); return { database: db, payments: stripe }; }
 type Reader = Pick<NonNullable<typeof db>, "select">;
@@ -74,6 +75,7 @@ export async function prepareInvoiceApplication(account: CustomerAccount, config
 }
 
 export async function submitInvoiceApplication(account: CustomerAccount, raw: unknown) {
+  if (!membershipEligibilityInput.safeParse(raw).success) throw new ApplicationError(membershipEligibilityError);
   const { database } = services();
   const input = submitApplicationSchema.extend({ paymentMethodId: z.string().regex(/^pm_[a-zA-Z0-9]+$/), reviewHash: z.string().length(64) }).safeParse(raw);
   if (!input.success) throw new ApplicationError("Review your account, select a verified card and accept all agreements.");
@@ -97,7 +99,7 @@ export async function submitInvoiceApplication(account: CustomerAccount, raw: un
     const eligibility = await deliveryEligibility(details.deliveryAddress);
     const now = new Date();
     const summary = { brand: card.brand, last4: card.last4, expMonth: card.expMonth, expYear: card.expYear };
-    const snapshot: ApplicationSnapshot = { version: 2, reference: row.requestNumber, accountId: account.id, accountCreatedAt: profile!.createdAt.toISOString(), customer: review.customer, purchase: quote.purchaseSnapshot, expectedAmount: quote.total, currency: "thb", billingAddress: details.billingAddress, deliveryAddress: details.deliveryAddress, deliveryEligibility: eligibility, stripeCustomerId: profile!.stripeCustomerId!, stripePaymentMethodId: card.id, paymentMethod: summary, submittedAt: now.toISOString(), consent: { version: applicationConsentVersion, acceptedAt: now.toISOString(), authorization: chargeAuthorization, amount: quote.total, currency: "thb", terms: true, privacy: true, reference: row.requestNumber } };
+    const snapshot: ApplicationSnapshot = { membershipEligibility: membershipEligibilityDeclaration(now), version: 2, reference: row.requestNumber, accountId: account.id, accountCreatedAt: profile!.createdAt.toISOString(), customer: review.customer, purchase: quote.purchaseSnapshot, expectedAmount: quote.total, currency: "thb", billingAddress: details.billingAddress, deliveryAddress: details.deliveryAddress, deliveryEligibility: eligibility, stripeCustomerId: profile!.stripeCustomerId!, stripePaymentMethodId: card.id, paymentMethod: summary, submittedAt: now.toISOString(), consent: { version: applicationConsentVersion, acceptedAt: now.toISOString(), authorization: chargeAuthorization, amount: quote.total, currency: "thb", terms: true, privacy: true, reference: row.requestNumber } };
     // Commit the immutable authorization before external invoice creation, so retries recover the same record.
     await tx.update(membershipRequests).set({ applicationSnapshot: snapshot, stripePaymentMethodId: card.id, paymentMethodSummary: summary, submittedAt: now, applicationState: "submitting", invoiceStatus: "awaiting_payment" }).where(eq(membershipRequests.id, row.id));
     return row.id;
@@ -135,6 +137,7 @@ export async function ensureDraftInvoice(id: string, accountId: string) {
     const { row } = await lockMembershipApplication(tx, id, accountId);
     if (row.applicationState !== "submitting") return row;
     const s = invoiceApplicationSnapshot(row);
+    if (!hasMembershipEligibilityDeclaration(s.membershipEligibility)) throw new ApplicationError("A new application with international-visitor eligibility confirmation is required before invoice creation or approval. Contact the team.", 409);
     if (containsMembershipAlcohol([...s.purchase.products, ...s.purchase.addOns])) throw new ApplicationError(membershipAlcoholMessage, 409);
     let invoice: Stripe.Invoice | null = row.stripeInvoiceId ? await payments.invoices.retrieve(row.stripeInvoiceId) : null;
     if (!invoice) for await (const candidate of payments.invoices.list({ customer: s.stripeCustomerId, limit: 100 })) {
@@ -172,6 +175,7 @@ export async function approveInvoiceApplication(id: string, actor: string) {
     if (row.status !== "pending_review" || !row.stripeInvoiceId) throw new ApplicationError("Only pending draft invoices can be approved.", 409);
     await assertMembershipPurchaseAllowed(tx, account!, row.id);
     const s = invoiceApplicationSnapshot(row);
+    if (!hasMembershipEligibilityDeclaration(s.membershipEligibility)) throw new ApplicationError("International-visitor eligibility confirmation is missing. Decline this pending application and ask the customer to reapply with the current eligibility declaration.", 409);
     if (containsMembershipAlcohol([...s.purchase.products, ...s.purchase.addOns])) throw new ApplicationError(membershipAlcoholMessage, 409);
     const monthError = validateServiceMonths(row.selectedServiceMonths, row.durationMonths, new Date());
     if (monthError) throw new ApplicationError(monthError, 409);

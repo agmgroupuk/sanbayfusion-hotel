@@ -36,8 +36,8 @@ export function ArrivalSection() {
         </Reveal>
         <Reveal variant="fade" duration={1.4} delay={0.2}>
           <p className="lead mt-5 max-w-md">
-            Join a seasonal food membership and receive carefully packed meals,
-            drinks, and products on a schedule that works for you.
+            Visiting Thailand from abroad? Eligible foreign visitors can plan meals,
+            drinks and products around their selected service months.
           </p>
         </Reveal>
         <Reveal variant="up" duration={1.2} delay={0.3}>

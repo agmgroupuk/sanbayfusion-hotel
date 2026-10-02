@@ -1,3 +1,4 @@
+import { MembershipEligibilityNotice } from "@/components/membership/eligibility-notice";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getMenu } from "@/lib/sanity/queries";
@@ -9,7 +10,7 @@ export const revalidate = 60;
 
 export default async function MenuPage() {
   const menu = await getMenu();
-  return <div className="pb-28"><PageHeader eyebrow="From the kitchen" title={menu.title} lead={menu.intro} /><div className="mx-auto max-w-5xl px-5 sm:px-8">
+  return <div className="pb-28"><PageHeader eyebrow="From the kitchen" title={menu.title} lead={menu.intro} /><div className="mx-auto max-w-5xl px-5 sm:px-8"><MembershipEligibilityNotice />
     {menu.priceNote && <p className="border-y border-border/60 py-5 text-sm leading-7 text-muted-foreground">{menu.priceNote}</p>}
     <div className="mt-12 grid gap-8 md:grid-cols-2">{menu.sections.map(section => <section key={section.name} className="border border-border/60 p-6 sm:p-8"><h2 className="font-display text-3xl">{section.name}</h2><ul className="mt-5 divide-y divide-border/50">{section.items.map(item => <li key={item.name} className="py-4"><h3 className="text-lg">{item.name}</h3>{item.description && <p className="mt-2 text-sm leading-7 text-foreground/75">{item.description}</p>}{item.dietary?.length ? <p className="mt-2 text-xs text-gold">{item.dietary.map(tag => dietaryLabels[tag]).join(" · ")}</p> : null}</li>)}</ul></section>)}</div>
     {menu.winePairing && <section className="mt-10 border border-border/60 p-7"><h2 className="font-display text-3xl">{menu.winePairing.title}</h2><p className="mt-4 text-sm leading-7">{menu.winePairing.description}</p></section>}

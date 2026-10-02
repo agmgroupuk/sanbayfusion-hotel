@@ -11,5 +11,5 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
   const params = await searchParams;
   const next = getSafeRedirectPath(params.next);
   if (await getCurrentAccount()) redirect(next);
-  return <><PageHeader eyebrow="Customer account" title="Create Your Account" lead="Create your Sanbay Fusion account to manage your membership, invoices, delivery benefits and account information." /><SignUpForm next={next} /></>;
+  return <><PageHeader eyebrow="Customer account" title="Create Your Account" lead="Create an account to manage your details and requests. Membership is exclusively for eligible foreign visitors who normally live outside Thailand and visit temporarily; it is not available to domestic Thai customers. Creating an account does not grant membership or guarantee approval." /><SignUpForm next={next} /></>;
 }

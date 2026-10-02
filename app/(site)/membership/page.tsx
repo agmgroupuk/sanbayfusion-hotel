@@ -1,3 +1,4 @@
+import { MembershipEligibilityNotice } from "@/components/membership/eligibility-notice";
 import type { Metadata } from "next";
 import { getCurrentAccount } from "@/lib/auth";
 import { accountHasOngoingMembership } from "@/lib/membership-access";
@@ -12,7 +13,7 @@ import { membershipPlans } from "@/lib/membership-plans";
 export const metadata: Metadata = {
   title: "Membership",
   description:
-    "Choose a Sanbay Fusion food delivery membership with scheduled seasonal meals, drinks, and products in Thailand.",
+    "Food memberships exclusively for eligible foreign visitors travelling temporarily to Thailand.",
   alternates: {
     canonical: "/membership",
   },
@@ -48,10 +49,10 @@ export default async function MembershipPage() {
       <PageHeader
         eyebrow="Membership"
         title="Food that keeps its promise"
-        lead="Sanbay Fusion membership turns seasonal cooking into a dependable delivery rhythm for households, teams, and returning guests."
+        lead="Created for foreign visitors who normally live outside Thailand: plan meals and eligible services around your temporary stay, before travelling or while visiting."
       />
 
-      <div className="mx-auto max-w-7xl px-5 sm:px-8">
+      <div className="mx-auto max-w-7xl px-5 sm:px-8"><MembershipEligibilityNotice />
         <div className="grid gap-8 lg:grid-cols-2">
           {membershipHighlights.map(({ title, description, icon: Icon }, index) => (
             <Reveal key={title} variant="up" delay={0.06 * index}>

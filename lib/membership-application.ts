@@ -1,3 +1,4 @@
+import { membershipEligibilityInput, membershipEligibilityError, membershipEligibilityDeclaration, hasMembershipEligibilityDeclaration } from "@/lib/membership-eligibility";
 import "server-only";
 import Stripe from "stripe";
 import { and, eq } from "drizzle-orm";
@@ -133,6 +134,7 @@ export async function changeApplicationPaymentMethod(id: string, accountId: stri
 }
 
 export async function submitApplication(account: CustomerAccount, raw: unknown) {
+  if (!membershipEligibilityInput.safeParse(raw).success) throw new ApplicationError(membershipEligibilityError);
   const { database, payments } = services();
   const input = submitApplicationSchema.safeParse(raw);
   if (!input.success) throw new ApplicationError("Accept the displayed charge authorization, terms and privacy policy.");
@@ -151,6 +153,7 @@ export async function submitApplication(account: CustomerAccount, raw: unknown) 
     const method = await verifiedMethod(row, payments);
     const now = new Date();
     const snapshot: ApplicationSnapshot = {
+      membershipEligibility: membershipEligibilityDeclaration(now),
       version: 1, reference: row.requestNumber, accountId: account.id, accountCreatedAt: account.createdAt.toISOString(),
       customer: { fullName: row.fullName, email: account.email, phone: row.phone }, purchase, expectedAmount: row.estimatedTotal, currency: "thb",
       billingAddress: address.billing, deliveryAddress: address.delivery, deliveryEligibility: eligibility,
@@ -179,6 +182,7 @@ export async function approveApplication(id: string, actor: string) {
     if (account) await assertMembershipPurchaseAllowed(tx, account, row.id);
     if (row.invoiceStatus === "paid" || row.stripePaymentIntentId) throw new ApplicationError("This application already has a payment.", 409);
     const snapshot = approvedSnapshot(row);
+    if (!hasMembershipEligibilityDeclaration(snapshot.membershipEligibility)) throw new ApplicationError("International-visitor eligibility confirmation is required. Ask the customer to submit a new application.", 409);
     if (snapshot.purchase.version === 4) {
       const monthError = validateServiceMonths(row.selectedServiceMonths, row.durationMonths, new Date());
       if (monthError) throw new ApplicationError(`${monthError} Ask the customer to submit a new selection; no charge has been made.`, 409);

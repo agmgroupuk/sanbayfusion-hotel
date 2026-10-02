@@ -36,7 +36,7 @@ export function MembershipSection() {
         <div className="mt-6 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <Reveal variant="up" className="max-w-2xl">
               <h2 className="font-display text-h2 font-light leading-none text-foreground">
-                Food that arrives on your rhythm.
+                Food planned around your Thailand visit.
             </h2>
           </Reveal>
 

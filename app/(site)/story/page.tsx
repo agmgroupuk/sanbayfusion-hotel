@@ -10,7 +10,7 @@ import { Parallax } from "@/components/motion/parallax";
 export const metadata: Metadata = {
   title: "Our Story",
   description:
-    "The Sanbay Fusion approach to food memberships, selected service months and advance planning in Thailand.",
+    "The Sanbay Fusion approach to food memberships and travel planning for eligible foreign visitors who normally live outside Thailand.",
   alternates: {
     canonical: "/story",
   },

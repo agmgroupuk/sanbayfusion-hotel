@@ -24,7 +24,8 @@ export function RestaurantJsonLd() {
     areaServed: { "@type": "Country", name: "Thailand" },
     hasOfferCatalog: {
       "@type": "OfferCatalog",
-      name: "Food delivery memberships",
+      name: "Food memberships for eligible international visitors",
+      description: "For foreign visitors normally living outside Thailand and visiting temporarily; not available to domestic Thai customers.",
       itemListElement: membershipPlans.map((plan) => ({
         "@type": "Offer",
         name: plan.name,

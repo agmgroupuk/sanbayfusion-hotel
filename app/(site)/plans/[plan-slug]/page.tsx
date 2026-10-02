@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: PlanPageProps): Promise<Metad
   const plan = membershipPlans.find((item) => item.slug === slug);
   return {
     title: plan ? `${plan.name} · Membership` : "Membership detail",
-    description: plan ? `${plan.name}: ฿${plan.price.toLocaleString("en-US")} for ${plan.durationMonths} selected service months with an included monthly member meal.` : "Membership details.",
+    description: plan ? `${plan.name}: ฿${plan.price.toLocaleString("en-US")} for ${plan.durationMonths} selected service months for eligible foreign visitors normally living outside Thailand, with an included Standard Meal allowance.` : "Membership details.",
   };
 }
 

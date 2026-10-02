@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LegalPage, LegalSection } from "@/components/site/legal-page";
+import { membershipEligibilityNotice } from "@/lib/membership-eligibility";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
 };
 
 const keyRules = [
+  ["International visitors only", membershipEligibilityNotice],
   ["1 to 12 month membership", "Choose exactly 1 to 12 eligible calendar service months, not necessarily consecutive."],
   ["Apply before payment", "Submit without a membership charge. Approval makes the authorized invoice ready for staff collection; verified successful payment activates membership."],
   ["Non-refundable fee", "Membership fees are non-refundable after payment and activation except where required by law."],
@@ -37,7 +39,10 @@ export default function TermsPage() {
         </div>
       </div>
 
-      <LegalSection title="1. Applying for membership">
+      <LegalSection title="1. Eligibility and applying for membership">
+        <p>{membershipEligibilityNotice} Eligible applicants are foreign customers normally resident outside Thailand who travel here temporarily for tourism, holidays, business trips, extended visits or similar purposes. Foreign nationality alone does not establish eligibility if the customer normally lives in Thailand.</p>
+        <p>This particular program allows eligible visitors to plan applicable food and service requirements around their travel schedule, before or during their visit. Domestic Thai customers may not apply for or purchase this membership through the website. These membership eligibility rules do not impose additional restrictions on separate meeting, private-event or support enquiries.</p>
+        <p>Applicants must confirm eligibility truthfully before submitting. We retain the declaration with the application and review it before approval; we may contact you to clarify your circumstances. An account, a saved payment method or a submitted application does not guarantee approval or activate membership. If you do not meet the requirements, do not submit a membership application. Existing agreements retain their recorded terms.</p>
         <p>
           Selecting a plan does not activate membership. Complete your personal information, billing and eligible delivery addresses in Account Center, verify a saved payment method and set a default card before applying. Application checkout records your authorization
           for the displayed membership and package amount. Submission places the application

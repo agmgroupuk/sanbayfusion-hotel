@@ -12,7 +12,7 @@ import { accountHasOngoingMembership } from "@/lib/membership-access";
 
 export const metadata: Metadata = {
   title: "Membership Application",
-  description: "Apply for membership. Your authorized charge is processed only after approval.",
+  description: "Membership application for eligible foreign visitors to Thailand. Eligibility confirmation and review are required before approved payment.",
   robots: { index: false, follow: false },
 };
 
@@ -36,7 +36,7 @@ export default async function MembershipCheckoutPage({ searchParams }: { searchP
       <PageHeader
         eyebrow="Membership application"
         title="Apply for your membership"
-        lead="Review your saved Dashboard details and membership selection. Submitting sends your request for review; your membership amount is not charged."
+        lead="Confirm that you meet international-visitor eligibility and review your Account Center details and selections. Submission does not guarantee approval or collect the membership fee."
       />
       <MembershipCheckoutForm
         plan={plan}

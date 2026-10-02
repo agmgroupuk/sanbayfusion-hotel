@@ -1,3 +1,4 @@
+import { membershipEligibilityVersion } from "@/lib/membership-eligibility";
 ﻿import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
@@ -45,7 +46,7 @@ async function prepared(account: CustomerAccount, pm = "pm_card_visa") {
   const setup = await stripe.setupIntents.confirm(row.stripeSetupIntentId!, { payment_method: pm });
   expect(setup.livemode).toBe(false); expect(setup.status).toBe("succeeded");
   await checkApplicationSetup(row.id, account.id);
-  const consent = { applicationId: row.id, quoteHash: draft.quoteHash, authorizeCharge: true, acceptTerms: true, acceptPrivacy: true, consentVersion: applicationConsentVersion };
+  const consent = { applicationId: row.id, quoteHash: draft.quoteHash, confirmInternationalVisitor: true, eligibilityVersion: membershipEligibilityVersion, authorizeCharge: true, acceptTerms: true, acceptPrivacy: true, consentVersion: applicationConsentVersion };
   await submitApplication(account, consent);
   const pending = await getApplicationForAccount(row.id, account.id);
   expect(pending.status).toBe("pending_review"); expect(pending.stripePaymentIntentId).toBeNull(); expect(pending.memberId).toBeNull();
@@ -89,7 +90,7 @@ suite("historical Stripe Sandbox application lifecycle with rolled-back database
  }), 120000);
  it("rejects incomplete setup, altered quote, missing consent, and another account", async () => fixture(async account => {
    const draft = await prepareApplication(account, configuration, details);
-   const input = { applicationId: draft.applicationId, quoteHash: draft.quoteHash, authorizeCharge: true, acceptTerms: true, acceptPrivacy: true, consentVersion: applicationConsentVersion };
+   const input = { applicationId: draft.applicationId, quoteHash: draft.quoteHash, confirmInternationalVisitor: true, eligibilityVersion: membershipEligibilityVersion, authorizeCharge: true, acceptTerms: true, acceptPrivacy: true, consentVersion: applicationConsentVersion };
    await expect(submitApplication(account, input)).rejects.toThrow("Complete Stripe");
    await expect(submitApplication(account, { ...input, quoteHash: "0".repeat(64) })).rejects.toThrow("quote changed");
    await expect(submitApplication(account, { ...input, authorizeCharge: false })).rejects.toThrow("Accept");

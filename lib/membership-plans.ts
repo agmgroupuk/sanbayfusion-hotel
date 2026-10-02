@@ -31,7 +31,7 @@ export const membershipPlans: MembershipPlan[] = [6000, 11000, 15000, 18000, 205
     id: `duration-${durationMonths}`,
     slug: `${durationMonths}-month-membership`,
     name: `${durationMonths}-Month Membership`,
-    description: `Choose ${durationMonths} eligible service ${durationMonths === 1 ? "month" : "months"} in your selected calendar year. Months do not have to be consecutive.`,
+    description: `For eligible foreign visitors normally living outside Thailand. Choose ${durationMonths} eligible service ${durationMonths === 1 ? "month" : "months"} in your selected calendar year. Months do not have to be consecutive.`,
     price,
     durationMonths,
     includedBenefit: {

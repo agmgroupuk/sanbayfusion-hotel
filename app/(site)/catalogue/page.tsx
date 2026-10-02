@@ -1,3 +1,4 @@
+import { MembershipEligibilityNotice } from "@/components/membership/eligibility-notice";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/site/page-header";
@@ -16,7 +17,7 @@ export default function CataloguePage() {
   return (
     <div className="pb-28">
       <PageHeader eyebrow="The catalogue" title="Your food. Your drinks. Your membership." lead="A Thailand-focused catalogue across Thai, international, Western, Asian, vegetarian, seafood, meat, drinks, and legally permitted beverage categories. Memberships deliver predefined packages, not one-off shopping lists." />
-      <div className="mx-auto max-w-7xl px-5 sm:px-8">
+      <div className="mx-auto max-w-7xl px-5 sm:px-8"><MembershipEligibilityNotice />
         <Reveal variant="up" className="grid gap-5 border-y border-border/60 py-6 sm:grid-cols-2 lg:grid-cols-4"><div><p className="text-eyebrow text-gold">Service periods</p><p className="mt-3 text-sm text-foreground/75">{servicePeriods.join(" · ")}</p></div><div><p className="text-eyebrow text-gold">Indicative food prices</p><p className="mt-3 text-sm text-foreground/75">From ฿60 per item</p></div><div><p className="text-eyebrow text-gold">Package model</p><p className="mt-3 text-sm text-foreground/75">Membership only or optional prepaid quantities</p></div><div><p className="text-eyebrow text-gold">Currency</p><p className="mt-3 text-sm text-foreground/75">Thai Baht (THB)</p></div></Reveal>
 
         {(["food", "drinks", "alcohol"] as const).map((group) => {

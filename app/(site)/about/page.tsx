@@ -23,12 +23,12 @@ import { KineticText } from "@/components/motion/kinetic-text";
 export const metadata: Metadata = {
   title: "About Us",
   description:
-    "Discover Sanbay Fusion, a Thailand-focused membership and advance hospitality planning service built from an established food-service business background.",
+    "Sanbay Fusion Foods Company Limited created this membership service exclusively for eligible foreign visitors who normally live outside Thailand and visit temporarily.",
   alternates: { canonical: "/about" },
 };
 
 const journeySteps = [
-  ["01", "Complete your account", "Sign in and save personal information, billing and delivery addresses, and a verified default card."],
+  ["01", "Check visitor eligibility", "This membership is exclusively for foreign visitors who normally live outside Thailand and visit temporarily. Create your account and complete your profile, addresses and verified default card."],
   ["02", "Choose your service months", "Select a 1 to 12 month plan and the same number of eligible months in one calendar year."],
   ["03", "Configure and schedule", "Choose membership only or an eligible prepaid package. Schedule Standard Meals now or later."],
   ["04", "Apply for review", "Review your selections and authorize the agreed amount. Submission does not collect the membership fee."],
@@ -69,14 +69,14 @@ export default function AboutPage() {
             <Reveal variant="fade" className="text-eyebrow text-gold">Sanbay Fusion · About Us</Reveal>
             <KineticText
               as="h1"
-              text="YOUR THAILAND STAY, PLANNED BEFORE YOU ARRIVE"
+              text="CREATED FOR INTERNATIONAL VISITORS TO THAILAND"
               delay={0.1}
               stagger={0.07}
               className="text-h1 mt-6 max-w-4xl font-display font-light capitalize"
             />
             <Reveal variant="up" delay={0.3}>
               <p className="lead mt-8 max-w-2xl">
-                Sanbay Fusion is designed to help international visitors arrange their food, beverage, and eligible hospitality requirements before and during their stay in Thailand.
+                This membership service is exclusively for foreign visitors who normally live outside Thailand and travel here temporarily. Arrange eligible food and service requirements before travelling or during your visit. This program is not offered to domestic Thai customers.
               </p>
             </Reveal>
             <Reveal variant="up" delay={0.42} className="mt-9 flex flex-wrap gap-3">
@@ -102,8 +102,8 @@ export default function AboutPage() {
           <div className="mt-8 max-w-2xl space-y-5 text-base leading-relaxed text-foreground/75">
             <p>{site.name} is operated by {site.legalName}, based in {site.address.city}, {site.address.country}. Visit our <Link href="/contact" className="text-gold underline underline-offset-4">Contact page</Link> for our business address and contact details.</p>
             <p>Our business was established in 2018, with experience connected to restaurants, food service, food products, beverages, sourcing, and customer hospitality.</p>
-            <p>Today, we are developing that experience into a membership-based service focused on helping international visitors prepare their food, beverage, and related hospitality requirements around their time in Thailand.</p>
-            <p>Rather than waiting until arrival to begin organizing everything, members can plan with us in advance.</p>
+            <p>Sanbay Fusion Foods Company Limited created this particular membership service in response to the needs of international customers visiting Thailand: tourists, holidaymakers, business travellers, returning visitors and people planning extended temporary visits.</p>
+            <p>Travellers often arrange hotels and transportation before leaving home. Sanbay Fusion lets eligible foreign visitors also plan applicable food and service requirements in advance, with selected service months and meal schedules shaped around their travel plans. Applications remain subject to review and approval.</p>
           </div>
         </Reveal>
 

@@ -30,7 +30,7 @@ export function ExperienceSection() {
         />
         <Reveal variant="up" delay={0.15}>
           <p className="lead mx-auto mt-6 max-w-xl">
-            Choose your plan and service months, then apply for review.
+            Eligible international visitors choose a plan and service months, then apply for review.
             After approval and payment, enjoy your included Standard Meal allowance
             and eligible member ordering during those months.
           </p>

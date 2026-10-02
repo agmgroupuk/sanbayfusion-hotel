@@ -1,9 +1,9 @@
 export const site = {
   name: "Sanbay Fusion",
   legalName: "Sanbay Fusion Foods Company Limited",
-  tagline: "Seasonal food memberships & delivery",
+  tagline: "Food memberships for international visitors",
   description:
-    "Sanbay Fusion is a membership-based food and beverage service in Thailand, offering member ordering, scheduled deliveries, membership plans, and a wide selection of food and beverages.",
+    "Sanbay Fusion memberships are exclusively for eligible foreign visitors who normally live outside Thailand and travel temporarily to Thailand. Plan selected service months, meals and deliveries before or during your visit; applications require review and approval.",
   url: (process.env.NEXT_PUBLIC_SITE_URL || "https://sanbayfusion.com").replace(/\/+$/, ""),
   address: {
     line1: "395/2 Sathu Pradit Rd",

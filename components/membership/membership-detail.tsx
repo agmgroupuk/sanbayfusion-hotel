@@ -1,5 +1,6 @@
 "use client";
 
+import { MembershipEligibilityNotice } from "./eligibility-notice";
 import { startTransition, useEffect, useState } from "react";
 import { ActiveMembershipNotice } from "./active-membership-notice";
 import { ServiceMonthPicker } from "./service-month-picker";
@@ -185,6 +186,7 @@ export function MembershipDetail({ plan, activeMembership = false, today }: { pl
 
   return <div className="pb-28">
     <header className="mx-auto max-w-7xl px-5 pb-16 pt-36 sm:px-8 sm:pt-52"><p className="text-eyebrow text-gold">Membership {plan.durationMonths} {plan.durationMonths === 1 ? "Month" : "Months"}</p><div className="mt-6 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between"><div><h1 className="font-display text-h1 font-light">{plan.name}</h1><p className="lead mt-6 max-w-xl">{plan.description}</p></div><div className="shrink-0 lg:text-right"><p className="text-4xl text-gold">฿{plan.price.toLocaleString("en-US")} one time</p><p className="mt-2 text-sm text-muted-foreground">Membership Duration: {plan.durationMonths} {plan.durationMonths === 1 ? "Month" : "Months"}</p></div></div></header>
+    <div className="mx-auto max-w-7xl px-5 sm:px-8"><MembershipEligibilityNotice /></div>
     <main className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="space-y-20">
         <section><p className="text-eyebrow text-gold">Your membership</p><div className="mt-6 grid gap-4 sm:grid-cols-2">{[["Membership fee", `฿${plan.price.toLocaleString("en-US")}`], ["Service months", `Choose exactly ${plan.durationMonths} eligible months`]].map(([label, value]) => <div key={label} className="border-t border-border/60 pt-4"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-2 text-lg text-foreground/90">{value}</p></div>)}</div></section>

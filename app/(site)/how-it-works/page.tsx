@@ -1,25 +1,26 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarDays, ClipboardCheck, CreditCard, FileCheck2, MapPin, ShoppingBag, UserRound, UtensilsCrossed } from "lucide-react";
+import { MembershipEligibilityNotice } from "@/components/membership/eligibility-notice";
 import { PageHeader } from "@/components/site/page-header";
 
-export const metadata: Metadata = { title: "How It Works", description: "From your account and selected service months to application review, payment, Standard Meals and member orders.", alternates: { canonical: "/how-it-works" } };
+export const metadata: Metadata = { title: "How It Works", description: "How eligible foreign visitors plan their Thailand stay: account setup, service months, meals, application review, approved payment and activation.", alternates: { canonical: "/how-it-works" } };
 
 const steps = [
-  { title: "Create your account", text: "Sign up or sign in. Your Account Center keeps personal details, addresses, payment methods, applications and orders together.", icon: UserRound, href: "/signup", action: "Create an account" },
+  { title: "Start as an eligible foreign visitor", text: "This membership is for foreign visitors who normally live outside Thailand and travel temporarily for tourism, holidays, business or an extended visit. If eligible, create an account or sign in; an account alone does not create membership.", icon: UserRound, href: "/signup", action: "Create an account" },
   { title: "Complete Account Center", text: "Save your personal information, billing address and delivery address. Check delivery eligibility, verify a saved card and choose a default payment method before applying.", icon: MapPin, href: "/dashboard", action: "Open Account Center" },
   { title: "Choose your service months", text: "Choose a 1–12 month plan, then select exactly that many eligible months within one calendar year. Choose the current or next year; months may be non-consecutive. Past months are unavailable.", icon: CalendarDays, href: "/plans", action: "Compare plans" },
   { title: "Make it yours", text: "Choose membership only or add an eligible prepaid food and non-alcoholic beverage package. Review quantities, preferences and your plan's included Standard Meal allowance.", icon: ShoppingBag },
   { title: "Schedule your Standard Meals", text: "Choose a date and time in each selected month now, or select Schedule later and return through Account Center. Allow at least three calendar days. Times run from 11:00 AM to midnight in Bangkok time, in half-hour steps. Scheduling alone does not place a meal order.", icon: UtensilsCrossed },
-  { title: "Review and submit", text: "Check the final amount, selected months, addresses and saved card. Accept the terms and payment authorization. Submission creates an application and draft invoice for review, without collecting the membership fee.", icon: ClipboardCheck },
-  { title: "Team review and payment", text: "The team reviews your account, delivery information and selections and may contact you for clarification. Approval makes the agreed invoice ready for staff collection. Further bank authentication may be needed; approval alone does not activate membership.", icon: CreditCard },
+  { title: "Review and submit", text: "Confirm international-visitor eligibility and check the final amount, selected months, addresses and saved card. Accept the terms and payment authorization. Submission creates an application and draft invoice for review, without collecting the membership fee.", icon: ClipboardCheck },
+  { title: "Team review and payment", text: "The team reviews your visitor eligibility, account, delivery information and selections and may contact you for clarification. Submission does not guarantee approval. Approval makes the agreed invoice ready for staff collection. Further bank authentication may be needed; approval alone does not activate membership.", icon: CreditCard },
   { title: "Use your membership", text: "After approval and verified successful payment, your membership activates and your Member ID is issued. During each selected service month, place your eligible Standard Meal order or separately paid additional orders. Track status in Account Center.", icon: FileCheck2, href: "/dashboard", action: "View your membership" },
 ];
 
 export default function HowItWorksPage() {
   return <div className="pb-28">
-    <PageHeader eyebrow="The membership process" title="Your months. Your table. Your plan." lead="Prepare your account, choose your service months and let us review the details before your membership payment is collected." />
-    <div className="mx-auto max-w-7xl px-5 sm:px-8">
+    <PageHeader eyebrow="The membership process" title="Your months. Your table. Your plan." lead="Plan before travelling or during your temporary Thailand visit. Complete your account, choose service months around your trip and submit for review. An application does not guarantee approval." />
+    <div className="mx-auto max-w-7xl px-5 sm:px-8"><MembershipEligibilityNotice />
       <ol className="grid gap-5 md:grid-cols-2 xl:grid-cols-4" aria-label="Membership journey">
         {steps.map(({ title, text, icon: Icon, href, action }, index) => <li key={title} className="flex flex-col border border-border/60 bg-card/20 p-6 sm:p-7">
           <div className="flex items-center justify-between text-gold"><span className="text-eyebrow">Step {String(index + 1).padStart(2, "0")}</span><Icon className="size-6" aria-hidden="true" /></div>

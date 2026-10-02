@@ -58,6 +58,7 @@ export default function PrivacyPolicyPage() {
         <ul className="list-disc space-y-2 pl-6">
           <li>Account and contact details such as name, phone, email, profile information and enquiry messages.</li>
           <li>Billing and delivery addresses, country, building or unit, district, province, postal code, delivery instructions and location information supplied for address checks.</li>
+          <li>Membership eligibility declarations: your confirmation that you are a foreign visitor normally living outside Thailand and visiting temporarily, the declaration text and policy version, and acceptance time. We use this information for membership review; creating an account does not by itself confirm eligibility.</li>
           <li>Membership plan and price, selected service months, application status, configuration, food preferences, add-ons, Standard Meal allowances and schedules, cancellation correspondence and final agreement records.</li>
           <li>Orders, product quantities, totals, payment and fulfilment status; meeting requests and private-event briefs, including dates, guest counts and service preferences.</li>
           <li>Stripe customer, payment-method, invoice, payment and refund references; amounts, currencies and statuses; card brand, last four digits, expiry, verification and default-card status. Card entry is handled through Stripe. Our application does not store complete card numbers, CVC or online-banking passwords.</li>
@@ -83,7 +84,7 @@ export default function PrivacyPolicyPage() {
 
       <LegalSection title="5. Why we use personal information">
         <p>
-          We use information to receive and review membership applications, contact
+          We use information to receive and review membership applications and visitor eligibility, contact
           applicants, prepare configurations, issue invoices, confirm payments, create
           membership records, arrange orders and deliveries, communicate substitutions,
           respond to support requests, prevent fraud, secure systems, maintain business
@@ -100,7 +101,7 @@ export default function PrivacyPolicyPage() {
       <LegalSection title="6. Membership records and acceptance">
         <p>
           A membership request may create a record containing the application number,
-          selected plan, submitted configuration, customer and delivery details, terms
+          selected plan, submitted configuration, international-visitor eligibility declaration, customer and delivery details, terms
           and privacy acknowledgement, status, and submission time. We may also retain
           the terms and privacy policy versions accepted with the request.
         </p>

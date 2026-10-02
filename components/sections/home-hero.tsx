@@ -105,12 +105,12 @@ export function HomeHero() {
           transition={{ duration: 0.9, ease: EASE, delay: 0.2 }}
           className="text-eyebrow text-gold"
         >
-          Seasonal food memberships · Thailand
+          For international visitors to Thailand
         </motion.p>
 
         <KineticText
           as="h1"
-          text="Your Food. Your Drinks. Your Membership."
+          text="Your Thailand Visit. Your Meals. Planned Ahead."
           delay={0.35}
           stagger={0.12}
           className="text-display mt-5 font-display font-light"
@@ -122,8 +122,7 @@ export function HomeHero() {
           transition={{ duration: 1, ease: EASE, delay: 0.9 }}
           className="lead measure mt-7 text-foreground/90"
         >
-          Choose a membership that fits your lifestyle and enjoy delicious meals,
-          drinks, and products delivered to your door on your scheduled days.
+          Exclusively for foreign visitors who normally live outside Thailand and visit temporarily. Plan selected service months and meals before travelling or during your stay. This program is not available to domestic Thai customers.
         </motion.p>
 
         <motion.div

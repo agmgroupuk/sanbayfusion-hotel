@@ -1,3 +1,4 @@
+import { membershipEligibilityVersion } from "@/lib/membership-eligibility";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
@@ -14,6 +15,7 @@ vi.mock("@/lib/auth", () => ({ getCurrentAccount: async () => state.account, nor
 vi.mock("@/lib/email/membership-request", () => ({ sendMembershipPaymentReviewEmail: vi.fn() }));
 vi.mock("@/lib/membership-checkout", () => ({ saveMembershipCheckoutSelection: vi.fn() }));
 import { prepareApplication, submitApplication, approveApplication, getApplicationForAccount } from "@/lib/membership-application";
+import { approveInvoiceApplication, ensureDraftInvoice } from "@/lib/membership-invoice";
 import { activateMembershipRequest } from "@/lib/membership-activation";
 import { redeemMemberBenefit } from "@/lib/membership-benefits";
 import { POST as benefitApi } from "@/app/api/membership/benefits/route";
@@ -39,7 +41,7 @@ async function member(overrides: Partial<typeof schema.membershipRequests.$infer
 }
 async function submitted() {
   const prepared = await prepareApplication(account, configuration, details);
-  const input = { applicationId: prepared.applicationId, quoteHash: prepared.quoteHash, authorizeCharge: true, acceptTerms: true, acceptPrivacy: true, consentVersion: applicationConsentVersion };
+  const input = { applicationId: prepared.applicationId, quoteHash: prepared.quoteHash, confirmInternationalVisitor: true, eligibilityVersion: membershipEligibilityVersion, authorizeCharge: true, acceptTerms: true, acceptPrivacy: true, consentVersion: applicationConsentVersion };
   await submitApplication(account, input);
   return { prepared, input };
 }
@@ -73,10 +75,33 @@ describe("membership calendar database enforcement (isolated Postgres engine, si
     const drafts = await Promise.all([prepareApplication(account, configuration, details), prepareApplication(account, configuration, details)]);
     expect(drafts[0].applicationId).toBe(drafts[1].applicationId);
     expect(state.payments.customers.create).toHaveBeenCalledTimes(1);
-    const input = { applicationId: drafts[0].applicationId, quoteHash: drafts[0].quoteHash, authorizeCharge: true, acceptTerms: true, acceptPrivacy: true, consentVersion: applicationConsentVersion };
+    const input = { applicationId: drafts[0].applicationId, quoteHash: drafts[0].quoteHash, confirmInternationalVisitor: true, eligibilityVersion: membershipEligibilityVersion, authorizeCharge: true, acceptTerms: true, acceptPrivacy: true, consentVersion: applicationConsentVersion };
     await Promise.all([submitApplication(account, input), submitApplication(account, input)]);
     expect(await database.select().from(schema.membershipRequests)).toHaveLength(1);
+    const submitted = (await database.select().from(schema.membershipRequests))[0];
+    expect(submitted.applicationSnapshot).toMatchObject({ membershipEligibility: { confirmed: true, version: membershipEligibilityVersion } });
     expect(state.payments.paymentIntents.create).not.toHaveBeenCalled();
+  });
+  it("blocks staff approval without saved visitor eligibility and creates no payment", async () => {
+    const { prepared } = await submitted();
+    const [row] = await database.select().from(schema.membershipRequests);
+    const snapshot = { ...(row.applicationSnapshot as Record<string, unknown>) };
+    delete snapshot.membershipEligibility;
+    await database.update(schema.membershipRequests).set({ applicationSnapshot: snapshot }).where(eq(schema.membershipRequests.id, row.id));
+    await expect(approveApplication(prepared.applicationId, "staff")).rejects.toThrow("International-visitor eligibility confirmation");
+    expect(state.payments.paymentIntents.create).not.toHaveBeenCalled();
+    expect((await getApplicationForAccount(row.id, account.id)).status).toBe("pending_review");
+  });
+  it("blocks current invoice creation and approval for an agreement lacking the declaration", async () => {
+    const { prepared } = await submitted();
+    const [row] = await database.select().from(schema.membershipRequests);
+    const snapshot = { ...(row.applicationSnapshot as Record<string, unknown>), version: 2 } as Record<string, unknown>;
+    delete snapshot.membershipEligibility;
+    await database.update(schema.membershipRequests).set({ applicationSnapshot: snapshot, applicationState: "submitting" }).where(eq(schema.membershipRequests.id, row.id));
+    await expect(ensureDraftInvoice(prepared.applicationId, account.id)).rejects.toThrow("international-visitor eligibility confirmation");
+    await database.update(schema.membershipRequests).set({ applicationState: "pending_review", stripeInvoiceId: "in_fixture" }).where(eq(schema.membershipRequests.id, row.id));
+    await expect(approveInvoiceApplication(prepared.applicationId, "staff")).rejects.toThrow("International-visitor eligibility confirmation");
+    expect((await getApplicationForAccount(row.id, account.id)).approvedAt).toBeNull();
   });
   it("finds an older ongoing membership even behind a newer declined record", async () => {
     await member({ createdAt: new Date("2026-09-01") });
@@ -97,7 +122,7 @@ describe("membership calendar database enforcement (isolated Postgres engine, si
   it("blocks a previously open draft at submission if another membership became active", async () => {
     const draft = await prepareApplication(account, configuration, details);
     await member();
-    await expect(submitApplication(account, { applicationId: draft.applicationId, quoteHash: draft.quoteHash, authorizeCharge: true, acceptTerms: true, acceptPrivacy: true, consentVersion: applicationConsentVersion })).rejects.toThrow("already active or scheduled");
+    await expect(submitApplication(account, { applicationId: draft.applicationId, quoteHash: draft.quoteHash, confirmInternationalVisitor: true, eligibilityVersion: membershipEligibilityVersion, authorizeCharge: true, acceptTerms: true, acceptPrivacy: true, consentVersion: applicationConsentVersion })).rejects.toThrow("already active or scheduled");
   });
   it("blocks approval and activation if a separate membership became active", async () => {
     const { prepared } = await submitted();
@@ -126,7 +151,7 @@ describe("membership calendar database enforcement (isolated Postgres engine, si
   it("rejects stale months before submission and before any approval charge", async () => {
     const draft = await prepareApplication(account, configuration, details);
     vi.setSystemTime(new Date("2027-03-01T12:00:00+07:00"));
-    await expect(submitApplication(account, { applicationId: draft.applicationId, quoteHash: draft.quoteHash, authorizeCharge: true, acceptTerms: true, acceptPrivacy: true, consentVersion: applicationConsentVersion })).rejects.toThrow("no longer eligible");
+    await expect(submitApplication(account, { applicationId: draft.applicationId, quoteHash: draft.quoteHash, confirmInternationalVisitor: true, eligibilityVersion: membershipEligibilityVersion, authorizeCharge: true, acceptTerms: true, acceptPrivacy: true, consentVersion: applicationConsentVersion })).rejects.toThrow("no longer eligible");
     vi.setSystemTime(new Date("2026-10-02T12:00:00+07:00"));
     const { prepared } = await submitted();
     vi.setSystemTime(new Date("2027-03-01T12:00:00+07:00"));
