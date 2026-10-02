@@ -12,7 +12,7 @@ const state = vi.hoisted(() => ({ db: null as typeof import("@/lib/db").db, cook
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/db", () => ({ get db() { return state.db; } }));
 vi.mock("next/headers", () => ({ cookies: async () => ({ get: (key: string) => state.cookies.has(key) ? { value: state.cookies.get(key)! } : undefined, set: (key: string, value: string) => state.cookies.set(key,value), delete: (key: string) => state.cookies.delete(key) }) }));
-vi.mock("@/lib/email/client", () => ({ FROM_EMAIL: "test@example.invalid", resend: { emails: { send: async (email: { to: string; text: string }) => { state.emails.push(email); return { data: { id: "fixture" }, error: null }; } } } }));
+vi.mock("@/lib/email/client", () => ({ ACCOUNT_FROM_EMAIL: "test@example.invalid", FROM_EMAIL: "test@example.invalid", resend: { emails: { send: async (email: { to: string; text: string }) => { state.emails.push(email); return { data: { id: "fixture" }, error: null }; } } } }));
 import { hashPassword, verifyPassword, createCustomerSession, getCurrentAccount } from "@/lib/auth";
 import { decryptSecret, totp, beginTwoFactor, enableTwoFactor, consumeSecondFactor, disableTwoFactor, changePassword, securityStatus, rateLimit } from "@/lib/account/security";
 import { addresses, saveAddress, changeAddress, addCardSetup, completeCardSetup, listCards, changeCard, accountMemberships, accountPayments, requestEmailChange, confirmEmailChange, accountDefaults } from "@/lib/account/service";

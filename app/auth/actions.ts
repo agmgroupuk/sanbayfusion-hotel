@@ -70,9 +70,9 @@ export async function requestPasswordReset(formData: FormData): Promise<AuthResu
   const account = (await db.select().from(customerAccounts).where(eq(customerAccounts.email, email)).limit(1))[0];
   if (account) {
     const token = await createPasswordResetToken(account.id);
-    const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sanbayfusion.com";
     if (token) {
-      void sendPasswordResetEmail(account.email, `${origin}/reset-password?token=${encodeURIComponent(token)}`).catch((error) => console.error("[auth] password reset email failed", error));
+      await sendPasswordResetEmail(account.email, `${origin}/reset-password?token=${encodeURIComponent(token)}`).catch(() => console.error("[auth] password reset email failed"));
     }
   }
   redirect("/signin?reset=requested");

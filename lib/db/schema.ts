@@ -15,6 +15,25 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
+/** Durable transactional notifications. Token-bearing reset/verification mail is sent directly. */
+export const emailOutbox = pgTable("email_outbox", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  eventKey: text("event_key").notNull().unique(),
+  template: varchar("template", { length: 80 }).notNull(),
+  recipient: varchar("recipient", { length: 200 }).notNull(),
+  variables: jsonb("variables").$type<Record<string, string>>().notNull(),
+  replyTo: varchar("reply_to", { length: 200 }),
+  status: varchar("status", { length: 20 }).notNull().default("pending"),
+  attempts: integer("attempts").notNull().default(0),
+  availableAt: timestamp("available_at", { withTimezone: true }).notNull().defaultNow(),
+  firstAttemptAt: timestamp("first_attempt_at", { withTimezone: true }),
+  lockedAt: timestamp("locked_at", { withTimezone: true }),
+  providerId: varchar("provider_id", { length: 80 }),
+  lastError: varchar("last_error", { length: 100 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`clock_timestamp()`),
+  sentAt: timestamp("sent_at", { withTimezone: true }),
+}, t => [index("email_outbox_due_idx").on(t.status, t.availableAt)]);
+
 export const customerAccounts = pgTable(
   "customer_accounts",
   {

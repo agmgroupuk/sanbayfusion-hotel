@@ -6,7 +6,9 @@ import { customerAccounts, accountAddresses, accountEmailChanges, customerSessio
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { startCardVerification, reconcileCardVerification, verificationRecords } from "./card-verification";
-import { resend, FROM_EMAIL } from "@/lib/email/client";
+import { resend, ACCOUNT_FROM_EMAIL } from "@/lib/email/client";
+import { inlineEmailLogo } from "@/lib/email/logo";
+import { renderManagedEmail } from "@/lib/email/managed-templates";
 import { AccountError, addressSchema, profileSchema, type SavedAddress, type SafeCard } from "./types";
 import { audit, digest, rateLimit, reauthenticate } from "./security";
 import { isMembershipAdmin } from "@/lib/membership-admin";
@@ -147,7 +149,8 @@ export async function requestEmailChange(accountId: string, rawEmail: string, pa
   const change = { newEmail: parsed.data, tokenHash: digest(token), expiresAt: new Date(Date.now() + 30 * 60_000) };
   await db!.insert(accountEmailChanges).values({ accountId, ...change }).onConflictDoUpdate({ target: accountEmailChanges.accountId, set: change });
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sanbayfusion.com";
-  const result = await resend.emails.send({ from: FROM_EMAIL, to: parsed.data, subject: "Confirm your Sanbay Fusion email change", text: `Confirm your new email while signed in to your existing Sanbay Fusion account: ${origin}/dashboard/personal?emailToken=${encodeURIComponent(token)}\nThis link expires in 30 minutes. If you did not request this change, ignore it. Your current email remains unchanged.` });
+  const message = renderManagedEmail("sanbay-email-verification", { SECURE_URL: `${origin}/dashboard/personal?emailToken=${encodeURIComponent(token)}` });
+  const result = await resend.emails.send({ from: ACCOUNT_FROM_EMAIL, to: parsed.data, ...message, ...inlineEmailLogo(message.html) });
   if (result.error) throw new AccountError("Verification email could not be sent. Your email has not changed.", 503);
   await audit(accountId, "email_change_requested");
 }

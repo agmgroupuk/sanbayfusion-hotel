@@ -1,7 +1,7 @@
 "use server";
 
 import { contactSchema } from "@/lib/validations/contact";
-import { sendContactEmail } from "@/lib/email/contact";
+import { queueContact } from "@/lib/email/outbox";
 
 export type ContactResult =
   | { ok: true; message: string; demo?: boolean }
@@ -19,7 +19,7 @@ export async function sendContactMessageAction(
 
   let sent = false;
   try {
-    const result = await sendContactEmail({
+    const result = await queueContact({
       name: data.name,
       email: data.email,
       phone: data.phone || undefined,

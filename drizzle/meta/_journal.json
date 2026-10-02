@@ -99,6 +99,13 @@
       "when": 1790970000001,
       "tag": "0013_standard_meal_entitlements",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790970000002,
+      "tag": "0014_transactional_email_outbox",
+      "breakpoints": true
     }
   ]
 }

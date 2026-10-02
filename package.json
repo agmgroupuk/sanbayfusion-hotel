@@ -10,8 +10,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "build": "next build && esbuild scripts/email-worker.mts --bundle --platform=node --format=esm --packages=external --outfile=.next/email-worker.mjs",
+    "start": "node scripts/start.mjs",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

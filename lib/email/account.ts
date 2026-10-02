@@ -1,12 +1,15 @@
-import { resend, FROM_EMAIL } from "./client";
+import { resend, ACCOUNT_FROM_EMAIL } from "./client";
+import { renderManagedEmail } from "./managed-templates";
+import { inlineEmailLogo } from "./logo";
 
 export async function sendPasswordResetEmail(email: string, resetUrl: string) {
   if (!resend) return { sent: false as const };
-  await resend.emails.send({
-    from: FROM_EMAIL,
+  const message = renderManagedEmail("sanbay-password-reset", { SECURE_URL: resetUrl });
+  const result = await resend.emails.send({
+    from: ACCOUNT_FROM_EMAIL,
     to: email,
-    subject: "Reset your Sanbay Fusion password",
-    text: `Use this link to reset your Sanbay Fusion password. It expires in one hour and can only be used once: ${resetUrl}`,
+    ...message, ...inlineEmailLogo(message.html),
   });
+  if (result.error) throw new Error("Password reset email delivery failed");
   return { sent: true as const };
 }

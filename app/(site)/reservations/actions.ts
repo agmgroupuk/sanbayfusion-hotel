@@ -9,7 +9,6 @@ import {
 import { formatDateLong } from "@/lib/reservations/format";
 import { db } from "@/lib/db";
 import { reservations } from "@/lib/db/schema";
-import { sendReservationEmails } from "@/lib/email/reservation";
 
 export type ReservationResult =
   | { ok: true; message: string; reference?: string; demo?: boolean }
@@ -65,7 +64,7 @@ export async function createReservationAction(
           partySize: data.partySize,
           date: data.date,
           timeSlot: data.timeSlot,
-          specialRequests: data.specialRequests || null,
+          specialRequests: meetingNotes || null,
         })
         .returning({ id: reservations.id });
       reference = row?.id.slice(0, 8).toUpperCase();
@@ -78,18 +77,7 @@ export async function createReservationAction(
     };
   }
 
-  // Email is best-effort — never block a successful booking on it.
-  try {
-    await sendReservationEmails({
-      ...data,
-      meetingPurpose: data.meetingPurpose,
-      specialRequests: meetingNotes || undefined,
-      dateLong: formatDateLong(data.date),
-      reference,
-    });
-  } catch (err) {
-    console.error("[meeting] email failed", err);
-  }
+  // Database triggers queue customer and staff acknowledgements atomically with the request.
 
   return {
     ok: true,
