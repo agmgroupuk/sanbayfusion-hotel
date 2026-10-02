@@ -78,7 +78,7 @@ export default async function NotFound() {
           </div>
         </section>
       </main>
-      <SiteFooter />
+      <SiteFooter authenticated={Boolean(account)} />
     </>
   );
 }

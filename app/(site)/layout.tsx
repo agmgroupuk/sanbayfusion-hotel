@@ -24,7 +24,7 @@ export default async function SiteLayout({
       <main id="main" className="flex-1">
         {children}
       </main>
-      <SiteFooter />
+      <SiteFooter authenticated={Boolean(account)} />
     </SmoothScroll>
   );
 }

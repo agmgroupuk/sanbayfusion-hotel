@@ -1,9 +1,6 @@
-"use client";
-
 import Link from "next/link";
 import Image from "next/image";
-import { useSession } from "next-auth/react";
-import { site, navLinks } from "@/lib/site";
+import { site } from "@/lib/site";
 
 const socialProfiles = [
   { id: "facebook", name: "Facebook", url: site.social.facebookUrl, icon: "facebook" },
@@ -23,11 +20,8 @@ const quickLinks = [
   { href: "/how-it-works", label: "How It Works", icon: "◌" },
 ];
 
-export function SiteFooter() {
-  const { data: session } = useSession();
-  const isAuthed = !!session?.user;
-
-  const joinOrDashboard = isAuthed
+export function SiteFooter({ authenticated }: { authenticated: boolean }) {
+  const joinOrDashboard = authenticated
     ? { href: "/dashboard", label: "Dashboard" }
     : { href: "/join", label: "Join Now" };
 
