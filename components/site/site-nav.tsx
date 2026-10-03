@@ -1,16 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { navLinks, site } from "@/lib/site";
 
 export function SiteNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [authError, setAuthError] = useState("");
+
+  const refreshSession = useCallback(async () => {
+    try {
+      const response = await fetch("/api/auth/verify", {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error("Could not verify the current session.");
+      const result = await response.json();
+      setUserEmail(result.valid ? result.user?.email ?? null : null);
+    } catch (error) {
+      console.error("Navigation session check failed:", error);
+      setAuthError("Account status could not be checked.");
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshSession();
+  }, [refreshSession]);
 
   useEffect(() => {
     if (!open) return;
@@ -20,6 +42,26 @@ export function SiteNav() {
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [open]);
+
+  const signOut = async () => {
+    setAuthError("");
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Sign out failed. Please try again.");
+      setUserEmail(null);
+      setOpen(false);
+      router.push("/");
+      router.refresh();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Sign out failed.";
+      setAuthError(message);
+      console.error("Sign out failed:", error);
+    }
+  };
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-gold/20 bg-background/90 text-foreground shadow-[0_8px_30px_rgba(0,0,0,0.18)] backdrop-blur-md">
@@ -66,11 +108,27 @@ export function SiteNav() {
             </Link>
           ))}
           <Link
-            href="/apps"
+            href={userEmail ? "/agents" : "/auth/signin"}
             className="inline-flex rounded-full bg-gold px-5 py-2 text-eyebrow text-gold-foreground shadow-sm shadow-background/40 transition-all hover:-translate-y-0.5 hover:bg-gold/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            Open platform
+            {userEmail ? "Open platform" : "Sign in"}
           </Link>
+          {userEmail ? (
+            <button
+              type="button"
+              onClick={signOut}
+              className="whitespace-nowrap text-sm text-foreground/70 transition-colors hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+            >
+              Sign out
+            </button>
+          ) : (
+            <Link
+              href="/auth/signup"
+              className="whitespace-nowrap text-sm text-foreground/70 transition-colors hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+            >
+              Sign up
+            </Link>
+          )}
         </div>
 
         <button
@@ -107,15 +165,41 @@ export function SiteNav() {
               {link.label}
             </Link>
           ))}
-          <Link
-            href="/apps"
-            onClick={() => setOpen(false)}
-            className="mt-5 inline-flex items-center justify-center rounded-full bg-gold px-6 py-3 text-eyebrow text-gold-foreground transition-colors hover:bg-gold/85"
-          >
-            Open platform
-          </Link>
+          <div className="flex flex-col gap-3 pt-5">
+            {userEmail ? (
+              <button
+                type="button"
+                onClick={signOut}
+                className="inline-flex items-center justify-center rounded-full bg-gold px-6 py-3 text-eyebrow text-gold-foreground transition-colors hover:bg-gold/85"
+              >
+                Sign out
+              </button>
+            ) : (
+              <>
+                <Link
+                  href="/auth/signin"
+                  onClick={() => setOpen(false)}
+                  className="inline-flex items-center justify-center rounded-full bg-gold px-6 py-3 text-eyebrow text-gold-foreground transition-colors hover:bg-gold/85"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  onClick={() => setOpen(false)}
+                  className="inline-flex items-center justify-center rounded-full border border-gold/40 px-6 py-3 text-eyebrow text-gold transition-colors hover:bg-gold/10"
+                >
+                  Create account
+                </Link>
+              </>
+            )}
+          </div>
         </nav>
       </div>
+      {authError ? (
+        <p role="status" className="sr-only" aria-live="polite">
+          {authError}
+        </p>
+      ) : null}
     </header>
   );
 }

@@ -1,6 +1,6 @@
 # Sanbay Fusion Platform
 
-A clean Next.js shell for Sanbay Fusion, LLC. The existing black-and-gold visual language is retained; application functionality will be added only after the existing app projects are provided and reviewed.
+The Next.js platform for Sanbay Fusion, LLC, using the shared black-and-gold design system. Platform authentication, Agents chat, browser-based developer tools, and selected text-based Labs experiments are integrated.
 
 ## Run locally
 
@@ -20,8 +20,12 @@ npm start
 
 ## Current routes
 
-- `/` — neutral platform landing page
-- `/apps` — empty application directory until the supplied apps are integrated
+- `/` and `/apps` — platform landing and application directory
+- `/agents` and `/agents/[agentId]` — authenticated agent directory and chat
+- `/tools` and `/tools/[slug]` — local browser utilities
+- `/labs` and `/labs/[experiment]` — provider-backed text experiments
+- `/auth/*` — sign-in, sign-up, and password recovery
+- `/api/realtime/session` — authenticated OpenAI Realtime ephemeral-session creation
 
 ## Shared visual foundation
 
@@ -30,6 +34,12 @@ npm start
 - `components/ui/` contains generic styled controls.
 - `components/site/` contains the shared platform header and footer.
 
-## Future application folders
+## Configuration
 
-When the existing projects are ready for review, place their untouched source folders at the repository root under `apps/`, for example `apps/app-1/` through `apps/app-4/`. Keep each project's backend, dependencies, configuration, and environment files with that project until its integration architecture is assessed. No application code is integrated by this shell.
+- `DATABASE_URL` must point to the intended Railway PostgreSQL database. The initial Prisma migration is generated but has not been applied; verify the target before running `npm start`, whose prestart hook applies pending migrations.
+- At least one supported provider key is required for text-based agent chat. Realtime voice specifically requires `OPENAI_API_KEY`.
+- `OPENAI_REALTIME_MODEL` is optional and defaults to `gpt-realtime-2.1`.
+
+## Supplied applications
+
+The supplied `frontend/` and `backend/` trees remain intact as source references; the root platform does not depend on the legacy Express services. Selected Tools were integrated as browser-local utilities. Text-based Labs use the platform's configured provider keys and the root Prisma models for run and vote data. Port scanning, arbitrary-target API testing, simulated speed results, mocked threat data, and image/music/voice Labs remain excluded until their security and provider requirements are verified.

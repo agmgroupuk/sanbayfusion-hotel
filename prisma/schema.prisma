@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model PlatformUser {
+  id           String               @id @default(cuid())
+  email        String               @unique @db.VarChar(254)
+  name         String               @db.VarChar(100)
+  passwordHash String
+  role         String               @default("user") @db.VarChar(20)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  sessions     PlatformSession[]
+  resetTokens  PasswordResetToken[]
+  chats        AgentChatSession[]
+  feedback     AgentChatFeedback[]
+  memories     AgentMemory[]
+  labRuns      LabRun[]
+  labVotes     LabVote[]
+
+  @@map("platform_users")
+}
+
+model PlatformSession {
+  id        String      @id @default(cuid())
+  tokenHash String      @unique @db.VarChar(64)
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime    @default(now())
+  user      PlatformUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@map("platform_sessions")
+}
+
+model PasswordResetToken {
+  id        String      @id @default(cuid())
+  tokenHash String      @unique @db.VarChar(64)
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime    @default(now())
+  user      PlatformUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@map("password_reset_tokens")
+}
+
+model AgentChatSession {
+  id          String             @id
+  ownerId     String
+  agentId     String             @db.VarChar(100)
+  title       String             @db.VarChar(160)
+  active      Boolean            @default(false)
+  settings    Json?
+  projectFiles Json?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  owner       PlatformUser       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  messages    AgentChatMessage[]
+  files       AgentChatFile[]
+  stats       AgentChatStats?
+
+  @@index([ownerId, agentId, updatedAt])
+  @@map("agent_chat_sessions")
+}
+
+model AgentChatMessage {
+  id        String              @id @default(cuid())
+  sessionId String
+  sender    String              @db.VarChar(16)
+  text      String              @db.Text
+  createdAt DateTime            @default(now())
+  session   AgentChatSession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  feedback  AgentChatFeedback[]
+
+  @@index([sessionId, createdAt])
+  @@map("agent_chat_messages")
+}
+
+model AgentChatFile {
+  id        String           @id @default(cuid())
+  sessionId String
+  filePath  String           @db.VarChar(500)
+  content   String           @db.Text
+  updatedAt DateTime         @updatedAt
+  session   AgentChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, filePath])
+  @@map("agent_chat_files")
+}
+
+model AgentChatFeedback {
+  id        String           @id @default(cuid())
+  userId    String
+  messageId String
+  value     String           @db.VarChar(16)
+  createdAt DateTime         @default(now())
+  user      PlatformUser     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   AgentChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, messageId])
+  @@map("agent_chat_feedback")
+}
+
+model AgentChatStats {
+  id        String           @id @default(cuid())
+  sessionId String           @unique
+  stats     Json
+  updatedAt DateTime         @updatedAt
+  session   AgentChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("agent_chat_stats")
+}
+
+model AgentMemory {
+  id        String       @id @default(cuid())
+  userId    String
+  agentId   String       @db.VarChar(100)
+  profile   Json?
+  memories  Json         @default("[]")
+  enabled   Boolean      @default(true)
+  updatedAt DateTime     @updatedAt
+  user      PlatformUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, agentId])
+  @@map("agent_memories")
+}
+
+model LabRun {
+  id        String       @id @default(cuid())
+  userId    String?
+  labId     String       @db.VarChar(80)
+  input     Json
+  output    Json
+  provider  String       @db.VarChar(40)
+  createdAt DateTime     @default(now())
+  user      PlatformUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([labId, createdAt])
+  @@map("platform_lab_runs")
+}
+
+model LabVote {
+  id        String       @id @default(cuid())
+  userId    String
+  battleId  String       @db.VarChar(160)
+  choice    String       @db.VarChar(16)
+  createdAt DateTime     @default(now())
+  user      PlatformUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, battleId])
+  @@index([battleId])
+  @@map("platform_lab_votes")
+}
