@@ -125,32 +125,6 @@ export function enumValue<T extends string>(
   return value as T;
 }
 
-export async function checkRunLimit(userId: string): Promise<void> {
-  const since = new Date(Date.now() - 60 * 60 * 1000);
-  const count = await prisma.labRun.count({
-    where: { userId, createdAt: { gte: since } },
-  });
-  if (count >= 10) {
-    throw new LabApiError(
-      "You have reached the limit of 10 Lab runs per hour. Please try again later.",
-      429,
-    );
-  }
-}
-
-export async function checkVoteLimit(userId: string): Promise<void> {
-  const since = new Date(Date.now() - 60 * 60 * 1000);
-  const count = await prisma.labVote.count({
-    where: { userId, createdAt: { gte: since } },
-  });
-  if (count >= 30) {
-    throw new LabApiError(
-      "You have reached the limit of 30 Lab votes per hour. Please try again later.",
-      429,
-    );
-  }
-}
-
 export function errorResponse(error: unknown): Response {
   if (error instanceof LabApiError) {
     return Response.json({ error: error.message }, { status: error.status });
@@ -200,65 +174,91 @@ export async function requestLabCompletion(
 }
 
 export async function createLabRun(
-  userId: string,
+  userId: string | null,
   labId: string,
   input: Record<string, string>,
   provider: string,
-) {
-  await checkRunLimit(userId);
-  return prisma.labRun.create({
-    data: {
-      userId,
-      labId,
-      input: input as Prisma.InputJsonObject,
-      output: { status: "processing" },
-      provider,
-    },
-  });
+): Promise<{ id: string | null; warning?: string }> {
+  if (!process.env.DATABASE_URL) {
+    return {
+      id: null,
+      warning: "Database is not configured; this run will not be saved.",
+    };
+  }
+
+  try {
+    const run = await prisma.labRun.create({
+      data: {
+        ...(userId ? { userId } : {}),
+        labId,
+        input: input as Prisma.InputJsonObject,
+        output: { status: "processing" },
+        provider,
+      },
+    });
+    return { id: run.id };
+  } catch (error) {
+    console.error(
+      "[lab] Run persistence failed:",
+      error instanceof Error ? error.name : "Unknown error",
+    );
+    return {
+      id: null,
+      warning: "Lab run history could not be saved; the provider result will still be returned.",
+    };
+  }
 }
 
 export async function completeLabRun(
-  runId: string,
+  runId: string | null,
   output: Record<string, unknown>,
-) {
-  return prisma.labRun.update({
-    where: { id: runId },
-    data: { output: output as Prisma.InputJsonObject },
-  });
+): Promise<boolean> {
+  if (!runId || !process.env.DATABASE_URL) return false;
+  try {
+    await prisma.labRun.update({
+      where: { id: runId },
+      data: { output: output as Prisma.InputJsonObject },
+    });
+    return true;
+  } catch (error) {
+    console.error(
+      "[lab] Run result persistence failed:",
+      error instanceof Error ? error.name : "Unknown error",
+    );
+    return false;
+  }
 }
 
-export async function markLabRunFailed(runId: string, message: string) {
-  await prisma.labRun
-    .update({
+export async function markLabRunFailed(runId: string | null, message: string) {
+  if (!runId || !process.env.DATABASE_URL) return;
+  try {
+    await prisma.labRun.update({
       where: { id: runId },
       data: { output: { status: "failed", error: message } },
-    })
-    .catch(() => undefined);
+    });
+  } catch (error) {
+    console.error(
+      "[lab] Failed to record unsuccessful run:",
+      error instanceof Error ? error.name : "Unknown error",
+    );
+  }
 }
 
 export async function updateVote(
-  userId: string,
+  userId: string | null,
   battleId: string,
   choice: string,
   expectedLabId: "battle-arena" | "debate-arena",
 ) {
-  const run = await prisma.labRun.findFirst({
-    where: { id: battleId, labId: expectedLabId },
-    select: { id: true, labId: true },
-  });
-  if (!run) throw new LabApiError("That Lab run was not found.", 404);
-
-  const existingVote = await prisma.labVote.findUnique({
-    where: { userId_battleId: { userId, battleId } },
-    select: { id: true, choice: true },
-  });
-  if (!existingVote) await checkVoteLimit(userId);
-
-  await prisma.labVote.upsert({
-    where: { userId_battleId: { userId, battleId } },
-    update: { choice },
-    create: { userId, battleId, choice },
-  });
+  if (userId) {
+    await prisma.labVote.upsert({
+      where: { userId_battleId: { userId, battleId } },
+      update: { choice },
+      create: { userId, battleId, choice },
+    });
+  } else {
+    await prisma.labVote.create({ data: { battleId, choice } });
+  }
 
   const rows = await prisma.labVote.groupBy({
     by: ["choice"],
@@ -267,12 +267,12 @@ export async function updateVote(
   });
   const votes: Record<string, number> = {};
   for (const row of rows) votes[row.choice] = row._count._all;
-  return { votes, labId: run.labId };
+  return { votes, labId: expectedLabId };
 }
 
 export async function votesForLab(labId: "battle-arena" | "debate-arena") {
   const runs = await prisma.labRun.findMany({
-    where: { labId },
+    where: { labId, userId: null },
     orderBy: { createdAt: "desc" },
     take: 1_000,
     select: { id: true },

@@ -25,6 +25,7 @@ type Output = {
   provider?: string;
   runId?: string;
   battleKey?: string;
+  warning?: string;
   response1?: string;
   response2?: string;
   modelLabel1?: string;
@@ -51,7 +52,6 @@ export function LabWorkbench({
   const experimentId = experiment as ExperimentId;
   const [providers, setProviders] = useState<Provider[]>([]);
   const [loadingProviders, setLoadingProviders] = useState(true);
-  const [authRequired, setAuthRequired] = useState(false);
   const [providerError, setProviderError] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -81,7 +81,6 @@ export function LabWorkbench({
           error?: string;
         };
         if (!response.ok) {
-          if (response.status === 401) setAuthRequired(true);
           throw new Error(data.error ?? "Could not load configured providers.");
         }
         return data.providers ?? [];
@@ -125,7 +124,7 @@ export function LabWorkbench({
   );
 
   const canSubmit = useMemo(() => {
-    if (busy || !hasProviders || authRequired) return false;
+    if (busy || !hasProviders) return false;
     if (isBattle) {
       return Boolean(form.prompt.trim() && form.model1 && form.model2 && form.model1 !== form.model2);
     }
@@ -134,7 +133,7 @@ export function LabWorkbench({
     if (experimentId === "future-predictor" || isDebate) return Boolean(form.topic.trim());
     if (experimentId === "personality-mirror") return form.text.trim().length >= 50;
     return Boolean(form.text.trim());
-  }, [authRequired, busy, experimentId, form, hasProviders, isBattle, isDebate]);
+  }, [busy, experimentId, form, hasProviders, isBattle, isDebate]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -212,6 +211,7 @@ export function LabWorkbench({
         text: textValue,
         provider: typeof data.provider === "string" ? data.provider : undefined,
         runId: typeof data.runId === "string" ? data.runId : undefined,
+        warning: typeof data.warning === "string" ? data.warning : undefined,
         battleKey:
           typeof data.battleKey === "string" ? data.battleKey : undefined,
         response1:
@@ -277,30 +277,14 @@ export function LabWorkbench({
         </p>
         <h1 className="mt-3 font-display text-h1 font-light leading-tight">{title}</h1>
         <p className="mt-4 text-muted-foreground">
-          Submit an experiment to a configured AI provider. Successful and
-          failed attempts are recorded to your authenticated account.
+          Submit an experiment to a configured AI provider. No sign-in or
+          subscription is required.
         </p>
       </header>
 
       <div className="mt-9 grid items-start gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <Card className="p-5 sm:p-7">
-          {authRequired ? (
-            <div className="rounded-lg border border-gold/30 bg-background/70 p-5">
-              <h2 className="font-display text-2xl">Sign in to continue</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Labs use your Sanbay account for access, rate limits, votes, and
-                saved runs.
-              </p>
-              <Link
-                href="/auth/signin?next=%2Flabs"
-                className="mt-5 inline-flex rounded-md bg-gold px-4 py-2.5 text-sm font-semibold text-background transition-opacity hover:opacity-90"
-              >
-                Sign in
-              </Link>
-            </div>
-          ) : (
-            <>
-              <div className="mb-6 flex items-center justify-between gap-3">
+          <div className="mb-6 flex items-center justify-between gap-3">
                 <h2 className="font-display text-2xl">Set up the experiment</h2>
                 {loadingProviders && (
                   <LoaderCircle
@@ -501,9 +485,7 @@ export function LabWorkbench({
                       ? "Continue story"
                       : "Run experiment"}
                 </button>
-              </form>
-            </>
-          )}
+          </form>
         </Card>
 
         <Card className="min-h-64 p-5 sm:p-7">
@@ -526,12 +508,17 @@ export function LabWorkbench({
           )}
           {!output && !error && (
             <p className="mt-6 text-sm text-muted-foreground">
-              Your provider-backed output will appear here. Runs are limited to
-              10 per hour per account.
+              Your provider-backed output will appear here. No simulated
+              results are shown.
             </p>
           )}
           {output && (
             <div className="mt-6 space-y-5">
+              {output.warning && (
+                <p className="rounded-lg border border-gold/30 bg-background/70 p-3 text-sm text-muted-foreground">
+                  {output.warning}
+                </p>
+              )}
               {isBattle ? (
                 <div className="grid gap-4 md:grid-cols-2">
                   <BattleResponse

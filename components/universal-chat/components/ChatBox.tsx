@@ -647,6 +647,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({
   useEffect(() => {
     if (statsLoadedRef.current) return;
     statsLoadedRef.current = true;
+    if (!getUser()?.id) return;
 
     const sid = sessionIdRef.current;
     if (!sid) return;
@@ -999,6 +1000,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({
 
   // Persist stats to database
   const persistStats = useCallback(async (stats: typeof sessionStats) => {
+    if (!getUser()?.id) return;
     try {
       await statsService.save({
         sessionId: sessionIdRef.current,

@@ -1,10 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { ArrowRight, FlaskConical, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { verifySession } from "@/lib/session-client";
 
 const experiments = [
   {
@@ -51,45 +49,7 @@ const experiments = [
   },
 ];
 
-type Activity = {
-  totalRuns: number;
-  recentRuns: Array<{ id: string; labId: string; createdAt: string }>;
-};
-
 export function LabsLanding() {
-  const [activity, setActivity] = useState<Activity | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadActivity() {
-      const session = await verifySession();
-      if (!session.valid || cancelled) return;
-      setIsAuthenticated(true);
-
-      const response = await fetch("/api/lab/analytics", {
-        credentials: "include",
-        cache: "no-store",
-      });
-      if (response.status === 401) {
-        setIsAuthenticated(false);
-        return;
-      }
-      if (!response.ok) {
-        throw new Error("Lab activity could not be loaded.");
-      }
-
-      const result = (await response.json()) as Activity;
-      if (!cancelled) setActivity(result);
-    }
-    void loadActivity().catch((error: unknown) => {
-      if (!cancelled) console.error("Unable to load Lab activity.", error);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   return (
     <main className="mx-auto w-full max-w-7xl px-5 py-14 sm:px-8 sm:py-20 lg:px-12">
       <section className="relative overflow-hidden rounded-3xl border border-gold/25 bg-card/70 px-6 py-10 sm:px-10 sm:py-14">
@@ -104,22 +64,14 @@ export function LabsLanding() {
           </h1>
           <p className="mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
             Hands-on text experiments powered by the AI providers configured for
-            this platform. Provider runs are made on the server and saved to
-            your account.
+            this platform. Runs are made by the configured provider; no account
+            is required.
           </p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-2 rounded-full border border-gold/25 bg-background/70 px-4 py-2 text-sm text-foreground/80">
               <Sparkles size={15} className="text-gold" aria-hidden="true" />
-              {activity ? `${activity.totalRuns} saved runs` : "Account activity"}
+              Direct access
             </span>
-            {!isAuthenticated && (
-              <Link
-                href="/auth/signin?redirect=%2Flabs"
-                className="text-sm text-muted-foreground underline decoration-gold/50 underline-offset-4 transition-colors hover:text-gold"
-              >
-                Sign in to run an experiment
-              </Link>
-            )}
           </div>
         </div>
       </section>
@@ -131,7 +83,7 @@ export function LabsLanding() {
             <h2 className="mt-2 font-display text-h3">Choose a Lab</h2>
           </div>
           <p className="hidden text-sm text-muted-foreground sm:block">
-            Text-based experiments · authenticated · provider-backed
+            Text-based experiments · provider-backed
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

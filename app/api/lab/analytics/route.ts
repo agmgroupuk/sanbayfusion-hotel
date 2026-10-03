@@ -1,25 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const user = await getCurrentUser(request);
-    if (!user) {
-      return NextResponse.json({ error: "Sign in to view Lab activity." }, { status: 401 });
-    }
-
     const [totalRuns, recentRuns, groupedRuns] = await Promise.all([
-      prisma.labRun.count({ where: { userId: user.id } }),
+      prisma.labRun.count({ where: { userId: null } }),
       prisma.labRun.findMany({
-        where: { userId: user.id },
+        where: { userId: null },
         orderBy: { createdAt: "desc" },
         take: 8,
         select: { id: true, labId: true, provider: true, createdAt: true },
       }),
       prisma.labRun.groupBy({
         by: ["labId"],
-        where: { userId: user.id },
+        where: { userId: null },
         _count: { _all: true },
       }),
     ]);

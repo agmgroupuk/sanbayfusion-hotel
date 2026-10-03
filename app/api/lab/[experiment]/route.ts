@@ -1,5 +1,5 @@
+import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
 import {
   BATTLE_MODELS,
   completeLabRun,
@@ -70,14 +70,6 @@ export async function POST(
   context: { params: Promise<{ experiment: string }> },
 ) {
   try {
-    const user = await getCurrentUser(request);
-    if (!user) {
-      return NextResponse.json(
-        { error: "Sign in to use Labs." },
-        { status: 401 },
-      );
-    }
-
     const { experiment } = await context.params;
     if (!isExperiment(experiment)) {
       return NextResponse.json({ error: "Unknown Lab experiment." }, { status: 404 });
@@ -125,7 +117,7 @@ export async function POST(
         prompt2: `${topic ? `Topic: ${topic}\n` : ""}${requestedPrompt2 ?? prompt}`,
       };
       const run = await createLabRun(
-        user.id,
+        null,
         "battle-arena",
         input,
         `${model1},${model2}`,
@@ -149,13 +141,16 @@ export async function POST(
           provider1: first.provider,
           provider2: second.provider,
         };
-        await completeLabRun(run.id, output);
+        const saved = await completeLabRun(run.id, output);
         return NextResponse.json({
           success: true,
           ...output,
           modelLabel1: providerDisplay(model1),
           modelLabel2: providerDisplay(model2),
-          battleKey: run.id,
+          battleKey: run.id ?? randomUUID(),
+          ...(run.warning || !saved
+            ? { warning: run.warning ?? "Lab run history could not be saved." }
+            : {}),
         });
       } catch (error) {
         const message =
@@ -181,7 +176,7 @@ export async function POST(
           503,
         );
       }
-      const run = await createLabRun(user.id, "debate-arena", input, provider);
+      const run = await createLabRun(null, "debate-arena", input, provider);
       try {
         const [argument1, argument2] = await Promise.all([
           requestLabCompletion(
@@ -208,14 +203,18 @@ export async function POST(
           },
         ];
         const debate = `## ${position1}\n${argument1.text}\n\n## ${position2}\n${argument2.text}`;
-        await completeLabRun(run.id, { debate, responses, provider });
+        const saved = await completeLabRun(run.id, { debate, responses, provider });
+        const runId = run.id ?? randomUUID();
         return NextResponse.json({
           success: true,
           debate,
           provider: argument1.provider,
-          runId: run.id,
-          topicId: run.id,
+          runId,
+          topicId: runId,
           responses,
+          ...(run.warning || !saved
+            ? { warning: run.warning ?? "Lab run history could not be saved." }
+            : {}),
         });
       } catch (error) {
         const message =
@@ -320,13 +319,13 @@ export async function POST(
         return NextResponse.json({ error: "Unknown Lab experiment." }, { status: 404 });
     }
 
-    const run = await createLabRun(user.id, labId, input, provider);
+    const run = await createLabRun(null, labId, input, provider);
     try {
       const result = await requestLabCompletion(prompt, systemPrompt, {
         provider,
         maxTokens: responseField === "story" ? 2400 : 1600,
       });
-      await completeLabRun(run.id, {
+      const saved = await completeLabRun(run.id, {
         [responseField]: result.text,
         provider: result.provider,
       });
@@ -334,7 +333,10 @@ export async function POST(
         success: true,
         [responseField]: result.text,
         provider: result.provider,
-        runId: run.id,
+        runId: run.id ?? randomUUID(),
+        ...(run.warning || !saved
+          ? { warning: run.warning ?? "Lab run history could not be saved." }
+          : {}),
       });
     } catch (error) {
       const message =

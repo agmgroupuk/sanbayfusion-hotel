@@ -28,31 +28,43 @@ async function persistConversation(
   ) {
     return;
   }
-  const session = await prisma.agentChatSession.findFirst({
-    where: { id: sessionId, ownerId },
-  });
-  if (!session) return;
-  await prisma.$transaction([
-    prisma.agentChatMessage.create({
-      data: { sessionId: session.id, sender: "YOU", text: userText },
-    }),
-    prisma.agentChatMessage.create({
-      data: { sessionId: session.id, sender: "AGENT", text: assistantText },
-    }),
-    prisma.agentChatSession.update({
-      where: { id: session.id },
-      data: {
-        title: session.title.startsWith("PROTOCOL_LOG_")
-          ? userText.slice(0, 120)
-          : session.title,
-      },
-    }),
-  ]);
+  try {
+    const session = await prisma.agentChatSession.findFirst({
+      where: { id: sessionId, ownerId },
+    });
+    if (!session) return;
+    await prisma.$transaction([
+      prisma.agentChatMessage.create({
+        data: { sessionId: session.id, sender: "YOU", text: userText },
+      }),
+      prisma.agentChatMessage.create({
+        data: { sessionId: session.id, sender: "AGENT", text: assistantText },
+      }),
+      prisma.agentChatSession.update({
+        where: { id: session.id },
+        data: {
+          title: session.title.startsWith("PROTOCOL_LOG_")
+            ? userText.slice(0, 120)
+            : session.title,
+        },
+      }),
+    ]);
+  } catch (error) {
+    console.error(
+      "Agent conversation could not be saved:",
+      error instanceof Error ? error.name : "Unknown error",
+    );
+  }
 }
 
 export async function POST(request: NextRequest) {
-  const user = await getCurrentUser(request);
-  if (!user) return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+  const user = await getCurrentUser(request).catch((error: unknown) => {
+    console.error(
+      "Optional agent session lookup failed:",
+      error instanceof Error ? error.name : "Unknown error",
+    );
+    return null;
+  });
 
   let body: unknown;
   try {
@@ -81,7 +93,9 @@ export async function POST(request: NextRequest) {
         const persist = async () => {
           if (saved) return;
           saved = true;
-          await persistConversation(user.id, values.sessionId, input.message, fullText);
+          if (user) {
+            await persistConversation(user.id, values.sessionId, input.message, fullText);
+          }
         };
 
         try {

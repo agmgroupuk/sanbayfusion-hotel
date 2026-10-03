@@ -1,10 +1,6 @@
-import { cookies } from "next/headers";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import App from "@/components/universal-chat/App";
 import { AGENTS } from "@/components/universal-chat/agentRegistry";
-import { getCurrentUserFromToken, SESSION_COOKIE } from "@/lib/auth";
-
-export const runtime = "nodejs";
 
 export default async function AgentChatPage({
   params,
@@ -14,14 +10,6 @@ export default async function AgentChatPage({
   const { agentId } = await params;
   const agent = AGENTS[agentId];
   if (!agent) notFound();
-
-  const cookieStore = await cookies();
-  const user = await getCurrentUserFromToken(
-    cookieStore.get(SESSION_COOKIE)?.value,
-  );
-  if (!user) {
-    redirect(`/auth/signin?redirect=${encodeURIComponent(`/agents/${agentId}`)}`);
-  }
 
   return (
     <App

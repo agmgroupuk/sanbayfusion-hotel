@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AGENTS } from "@/components/universal-chat/agentRegistry";
-import { getCurrentUser, hashToken } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -16,9 +15,6 @@ const voices = new Set([
 ]);
 
 export async function POST(request: NextRequest) {
-  const user = await getCurrentUser(request);
-  if (!user) return NextResponse.json({ error: "Sign in required." }, { status: 401 });
-
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
@@ -55,7 +51,6 @@ export async function POST(request: NextRequest) {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "OpenAI-Safety-Identifier": hashToken(user.id),
       },
       body: JSON.stringify({
         expires_after: { seconds: 600 },

@@ -13,7 +13,7 @@ export default function AgentsPage() {
         <div>
           <h1 className="font-display text-h1">Agents</h1>
           <p className="mt-3 max-w-2xl text-muted-foreground">
-            Choose an agent to start a conversation. Sign in to save your sessions.
+            Choose an agent to start a conversation directly.
           </p>
         </div>
         <Link className="text-sm text-gold transition-colors hover:text-gold/75" href="/apps">

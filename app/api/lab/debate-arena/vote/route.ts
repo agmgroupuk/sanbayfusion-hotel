@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
 import {
   errorResponse,
   LabApiError,
@@ -9,10 +8,6 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser(request);
-    if (!user) {
-      return NextResponse.json({ error: "Sign in to vote." }, { status: 401 });
-    }
     const body = await readJsonBody(request, 2_000);
     const topicId =
       typeof body.topicId === "string" ? body.topicId.trim() : "";
@@ -24,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await updateVote(
-      user.id,
+      null,
       topicId,
       body.position,
       "debate-arena",

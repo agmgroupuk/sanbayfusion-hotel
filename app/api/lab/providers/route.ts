@@ -1,20 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { NextResponse } from "next/server";
 import { configuredLabProviders, errorResponse, LabApiError } from "@/app/api/lab/_lib";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const user = await getCurrentUser(request);
-    if (!user) {
-      return NextResponse.json({ error: "Sign in to use Labs." }, { status: 401 });
-    }
     return NextResponse.json({
       providers: configuredLabProviders().map(({ id, label }) => ({ id, label })),
     });
   } catch (error) {
     if (error instanceof LabApiError) return errorResponse(error);
     return NextResponse.json(
-      { error: "Unable to verify your platform session." },
+      { error: "Unable to load configured AI providers." },
       { status: 503 },
     );
   }

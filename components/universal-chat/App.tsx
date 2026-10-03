@@ -102,30 +102,6 @@ const App: React.FC<AppProps> = ({
   const [projectFiles, setProjectFiles] = useState<Record<string, string>>({});
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
-
-  // ── RESTORE AUTH ON PAGE REFRESH ───────────────────────────────────────────
-  // HttpOnly session cookie persists across refreshes, but in-memory user is lost.
-  // Call verifySession() FIRST so getUserId() works for DB session loading.
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const result = await sessionClient.verifySession();
-        if (!cancelled && result.valid && result.user) {
-          sessionClient.setUser(result.user);
-          setIsLoggedIn(true);
-        } else if (!cancelled) {
-          sessionClient.setUser(null);
-        }
-      } catch (e) {
-        console.error('[App] Auth restore failed:', e);
-      }
-      if (!cancelled) setAuthChecked(true);
-    })();
-    return () => { cancelled = true; };
-  }, []);
 
   // STT refs
   const recognitionRef = useRef<any>(null);
@@ -164,8 +140,7 @@ const App: React.FC<AppProps> = ({
 
   // App Data State - SSR safe
   const [sessions, setSessions] = useState<ChatSession[]>(defaultSessions);
-  const [sessionsReady, setSessionsReady] = useState(false);
-  const [sessionLoadError, setSessionLoadError] = useState('');
+  const [sessionsReady, setSessionsReady] = useState(true);
 
   // Helper to get userId from in-memory auth storage (NO localStorage)
   const getUserId = useCallback((): string | null => {
@@ -179,21 +154,12 @@ const App: React.FC<AppProps> = ({
     return null;
   }, []);
 
-  // Get user-specific storage key (used for in-memory cache keying)
-  const getStorageKey = () => {
-    if (typeof window === 'undefined') return 'neural_sessions_guest';
-    const userId = getUserId();
-    if (userId) return `neural_sessions_${userId}_${initialAgentId}`;
-    return `neural_sessions_guest_${initialAgentId}`;
-  };
-
   // ── DB-FIRST SESSION LOADING ──────────────────────────────────────────────
   const dbLoadDoneRef = useRef(false);
   const clientTimestampRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || dbLoadDoneRef.current || !authChecked) return;
-    console.log('[App] DB session loading: authChecked=true');
+    if (typeof window === 'undefined' || dbLoadDoneRef.current) return;
 
     // Generate timestamp once to avoid hydration mismatch
     if (!clientTimestampRef.current) {
@@ -202,10 +168,8 @@ const App: React.FC<AppProps> = ({
     const currentTimestamp = clientTimestampRef.current;
 
     const userId = getUserId();
-    console.log('[App] DB session loading: userId=', userId, 'agentId=', initialAgentId);
 
     if (userId) {
-      // LOGGED-IN USER: Load sessions from DB (DB is source of truth — NO localStorage)
       setIsLoggedIn(true);
       dbLoadDoneRef.current = true;
 
@@ -286,14 +250,23 @@ const App: React.FC<AppProps> = ({
           setSessionsReady(true);
         } catch (error) {
           console.error('[App] Could not create the first session:', error);
-          setSessionLoadError('Saved sessions are unavailable. Check the database configuration, then refresh.');
+          toast.error('Saved sessions are unavailable; this conversation will remain in memory.');
+          setSessions([firstSession]);
         }
       })();
+    } else {
+      dbLoadDoneRef.current = true;
+      setSessions(defaultSessions.map((session) => ({
+        ...session,
+        messages: session.messages.map((message) => ({
+          ...message,
+          timestamp: currentTimestamp,
+        })),
+      })));
     }
-  }, [initialAgentId, authChecked]);
+  }, [initialAgentId, getUserId]);
 
-  // Sessions are DB-backed for logged-in users, in-memory for guests
-  // NO localStorage cache needed
+  // Account-owned sessions sync to the database; otherwise, chat state stays in memory.
 
   // ── SYNC ACTIVE SESSION TO DB ─────────────────────────────────────────────
   const lastActiveRef = useRef<string | null>(null);
@@ -1292,65 +1265,6 @@ const App: React.FC<AppProps> = ({
         .catch((error) => console.error('[App] Could not save session settings:', error));
     }
   };
-
-  if (!authChecked || (isLoggedIn && !sessionsReady)) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#080808] px-6 text-center text-gray-300">
-        <div className="max-w-md">
-          <p className="text-sm uppercase tracking-[0.24em] text-amber-300">Sanbay Fusion</p>
-          <p className="mt-5 text-lg" role={sessionLoadError ? 'alert' : 'status'}>
-            {sessionLoadError || 'Loading your saved sessions…'}
-          </p>
-          {sessionLoadError ? (
-            <button
-              className="mt-5 rounded-full border border-amber-300/40 px-5 py-2 text-sm text-amber-200 hover:bg-amber-300/10"
-              onClick={() => window.location.reload()}
-            >
-              Refresh
-            </button>
-          ) : null}
-        </div>
-      </main>
-    );
-  }
-
-  // ── AUTH GATE: Require login for agent pages (not studio demo) ──
-  if (authChecked && !isLoggedIn) {
-    const currentPath = typeof window !== 'undefined'
-      ? `${window.location.pathname}${window.location.search}`
-      : '/agents';
-    const loginUrl = `/auth/signin?redirect=${encodeURIComponent(currentPath)}`;
-    const signupUrl = `/auth/signup?redirect=${encodeURIComponent(currentPath)}`;
-
-    return (
-      <div className="text-gray-300 h-screen flex flex-col items-center justify-center overflow-hidden relative font-mono" style={{ background: 'radial-gradient(circle at 20% 50%, rgba(74, 222, 128, 0.08) 0%, transparent 40%), radial-gradient(circle at 80% 20%, rgba(34, 211, 238, 0.08) 0%, transparent 40%), linear-gradient(135deg, #0A0A0A 0%, #111111 100%)' }}>
-        <div className="bg-gradient-to-b from-[#1a1a2e] to-[#16162a] rounded-2xl p-8 max-w-md mx-4 border border-cyan-500/30 shadow-2xl text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-cyan-500/20 flex items-center justify-center">
-            <span className="text-3xl">🔒</span>
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Sign in to Chat</h2>
-          <p className="text-gray-400 mb-6 text-sm leading-relaxed">
-            Sign in to chat with <span className="text-cyan-400 font-semibold">{initialAgentName}</span>. Your conversations and settings will be saved.
-          </p>
-          <div className="space-y-3">
-            <a
-              href={signupUrl}
-              className="block w-full py-3 px-6 bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-semibold rounded-xl hover:from-cyan-600 hover:to-purple-600 transition-all text-center"
-            >
-              Create account
-            </a>
-            <a
-              href={loginUrl}
-              className="block w-full py-3 px-6 bg-white/10 text-white font-semibold rounded-xl hover:bg-white/20 transition-all text-center"
-            >
-              Already have an account? Sign in
-            </a>
-          </div>
-          <p className="text-gray-600 text-[11px] mt-5">Your account uses the Sanbay Fusion platform session.</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="text-gray-300 h-screen flex flex-col overflow-hidden relative selection:bg-green-500/30 selection:text-white font-mono" style={{ background: 'radial-gradient(circle at 20% 50%, rgba(74, 222, 128, 0.08) 0%, transparent 40%), radial-gradient(circle at 80% 20%, rgba(34, 211, 238, 0.08) 0%, transparent 40%), linear-gradient(135deg, #0A0A0A 0%, #111111 100%)' }}>

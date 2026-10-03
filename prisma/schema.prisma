@@ -148,11 +148,11 @@ model LabRun {
 
 model LabVote {
   id        String       @id @default(cuid())
-  userId    String
+  userId    String?
   battleId  String       @db.VarChar(160)
   choice    String       @db.VarChar(16)
   createdAt DateTime     @default(now())
-  user      PlatformUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      PlatformUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@unique([userId, battleId])
   @@index([battleId])
