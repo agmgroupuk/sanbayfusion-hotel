@@ -41,8 +41,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# sanity (studio dev runtime / build output)
-.sanity/
 /dist
 
 # local-only files

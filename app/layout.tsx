@@ -2,32 +2,23 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { fontVariables } from "@/lib/fonts";
 import { site } from "@/lib/site";
-import { pageMetadata } from "@/lib/seo";
 import { Toaster } from "@/components/ui/sonner";
+import { SiteFooter } from "@/components/site/site-footer";
+import { SiteNav } from "@/components/site/site-nav";
 
 export const metadata: Metadata = {
-  ...pageMetadata("/"),
-  metadataBase: new URL(site.url),
   title: {
-    default: "Sanbay Fusion | Memberships for International Visitors",
-    template: "%s · Sanbay Fusion",
+    default: site.name,
+    template: `%s · ${site.name}`,
   },
   applicationName: site.name,
   manifest: "/manifest.webmanifest",
-  // Let file metadata add all three content-versioned icon links. Setting an
-  // explicit icons object here suppresses Next's PNG/Apple file discovery.
   description: site.description,
-  // Public pages declare their own canonical; private routes must not inherit '/'.
-  alternates: undefined,
-  robots: site.canonicalUrl ? undefined : { index: false, follow: false },
-  verification: process.env.GOOGLE_SITE_VERIFICATION
-    ? { google: process.env.GOOGLE_SITE_VERIFICATION.trim() }
-    : undefined,
-
+  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1a1712",
+  themeColor: "#211e18",
   colorScheme: "dark",
 };
 
@@ -37,7 +28,17 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${fontVariables} dark h-full`}>
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        {children}
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-gold focus:px-4 focus:py-2 focus:text-eyebrow focus:text-gold-foreground"
+        >
+          Skip to content
+        </a>
+        <SiteNav />
+        <main id="main" className="flex-1 pt-16 sm:pt-20">
+          {children}
+        </main>
+        <SiteFooter />
         <Toaster position="top-center" richColors />
       </body>
     </html>
