@@ -155,7 +155,7 @@ describe.skipIf(!enabled)("real Stripe Sandbox Dashboard / invoice journey", () 
     expect((await database.select().from(schema.membershipRequests).where(eq(schema.membershipRequests.id, row.id)))[0].memberId).toBe(active.memberId);
     expect((await stripe.invoices.list({ customer: first.intent.customer as string })).data).toHaveLength(1);
     expect(received.some(event => event.objectId === invoice.id && event.type === "invoice.payment_succeeded" && event.status === 200)).toBe(true);
-    await expect(prepareInvoiceApplication(account, configuration)).rejects.toThrow("already active or scheduled");
+    await expect(prepareInvoiceApplication(account, configuration)).rejects.toThrow("already active on your account");
     (evidence.fixtures as unknown[]).push({ purpose: "approved-membership", customer: first.intent.customer, application: row.requestNumber, invoice: invoice.id, membershipPayment: active.stripePaymentIntentId, amountTHB: row.estimatedTotal, memberId: active.memberId });
   }, 180000);
 

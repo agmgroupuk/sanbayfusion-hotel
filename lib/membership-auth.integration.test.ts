@@ -69,6 +69,7 @@ describe("membership authentication journey with real sessions and isolated Post
     expect(state.options.get(sharedCheckoutCookie)).toMatchObject({ httpOnly: true, secure: true, sameSite: "lax", path: "/", domain:"sanbayfusion.com" });
     expect(await database.select().from(schema.membershipRequests)).toHaveLength(0);
     expect((await apply(request({ action: "prepare" }))).status).toBe(401);
+    expect((await apply(request({ action: "submit", applicationId: crypto.randomUUID() }))).status).toBe(401);
     await expect(signIn(credentials())).rejects.toThrow("REDIRECT:/membership/checkout");
     expect(await getCurrentAccount()).toMatchObject({ email: "flow@example.invalid" });
     expect(state.options.get(sharedSessionCookie)).toMatchObject({domain:"sanbayfusion.com",httpOnly:true,secure:true,sameSite:"lax"});

@@ -47,8 +47,8 @@ export async function prepareApplication(account: CustomerAccount, configuration
   const eligibility = await deliveryEligibility(details.deliveryAddress);
   return database.transaction(async tx => {
     const profile = await lockMembershipAccount(tx, account.id);
-    await assertMembershipPurchaseAllowed(tx, profile);
-    let application = (await membershipsForAccount(profile, tx)).find(row => row.status === "application_draft");
+    await assertMembershipPurchaseAllowed(tx, profile, quote.plan.id);
+    let application = (await membershipsForAccount(profile, tx)).find(row => row.status === "application_draft" && row.planId === quote.plan.id);
     const newTerm = !application;
     let stripeCustomerId = profile.stripeCustomerId;
     const billing = details.billingAddress;
@@ -118,7 +118,7 @@ export async function changeApplicationPaymentMethod(id: string, accountId: stri
   const { database, payments } = services();
   return database.transaction(async tx => {
     const { row, account } = await lockMembershipApplication(tx, id, accountId);
-    if (account) await assertMembershipPurchaseAllowed(tx, account, row.id);
+    if (account) await assertMembershipPurchaseAllowed(tx, account, row.planId, row.id);
     if (!row || !row.stripeCustomerId || !["application_draft", "approved_payment_failed", "approved_payment_action_required"].includes(row.status)) throw new ApplicationError("Payment method cannot be changed in this state.", 409);
     // A succeeded/processing payment must not be replaced just because the webhook is delayed.
     if (row.stripePaymentIntentId) {
@@ -141,7 +141,7 @@ export async function submitApplication(account: CustomerAccount, raw: unknown) 
   return database.transaction(async tx => {
     const { row, account: profile } = await lockMembershipApplication(tx, input.data.applicationId, account.id);
     if (row.applicationSnapshot && row.status !== "application_draft") return { applicationId: row.id, requestNumber: row.requestNumber };
-    await assertMembershipPurchaseAllowed(tx, profile!, row.id);
+    await assertMembershipPurchaseAllowed(tx, profile!, row.planId, row.id);
     if (row.status !== "application_draft" || row.stripePaymentIntentId) throw new ApplicationError("This application cannot be submitted.", 409);
     const purchase = row.purchaseSnapshot as MembershipPurchaseSnapshot;
     if (!validSavedQuote(purchase) || purchase.version !== 4 || JSON.stringify(row.selectedServiceMonths) !== JSON.stringify(purchase.selectedServiceMonths)) throw new ApplicationError("Review your membership and selected months again.", 409);
@@ -179,7 +179,7 @@ export async function approveApplication(id: string, actor: string) {
   const shouldCharge = await database.transaction(async tx => {
     const { row, account } = await lockMembershipApplication(tx, id);
     if (row.status !== "pending_review") return row.status === "approved_payment_pending";
-    if (account) await assertMembershipPurchaseAllowed(tx, account, row.id);
+    if (account) await assertMembershipPurchaseAllowed(tx, account, row.planId, row.id);
     if (row.invoiceStatus === "paid" || row.stripePaymentIntentId) throw new ApplicationError("This application already has a payment.", 409);
     const snapshot = approvedSnapshot(row);
     if (!hasMembershipEligibilityDeclaration(snapshot.membershipEligibility)) throw new ApplicationError("International-visitor eligibility confirmation is required. Ask the customer to submit a new application.", 409);
@@ -211,7 +211,7 @@ export async function chargeApprovedApplication(id: string, retry: boolean, acco
   await database.transaction(async tx => {
     const { row, account } = await lockMembershipApplication(tx, id, accountId);
     if (!approvedStatuses.has(row.status) || !row.approvedAt || !row.stripePaymentIntentId) return;
-    if (account) await assertMembershipPurchaseAllowed(tx, account, row.id);
+    if (account) await assertMembershipPurchaseAllowed(tx, account, row.planId, row.id);
     approvedSnapshot(row);
     let intent = await payments.paymentIntents.retrieve(row.stripePaymentIntentId);
     if (["succeeded", "processing", "canceled"].includes(intent.status) || (intent.status === "requires_action" && !retry)) return;

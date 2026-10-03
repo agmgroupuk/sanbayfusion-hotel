@@ -1,9 +1,10 @@
 import "server-only";
 import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { customerAccounts, membershipRequests, type CustomerAccount, type MembershipRequest } from "@/lib/db/schema";
-import { hasActiveMembership, hasOngoingMembership, membershipHasExpired } from "@/lib/membership-term";
+import { customerAccounts, membershipRequests, type CustomerAccount } from "@/lib/db/schema";
+import { hasActiveMembership, hasOngoingMembership } from "@/lib/membership-term";
 import { ApplicationError } from "@/lib/membership-errors";
+import { membershipPlanBlockState, preferredMembershipPlanBlockState } from "@/lib/membership-plan-state";
 
 type Database = NonNullable<typeof db>;
 export type MembershipTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
@@ -25,6 +26,28 @@ export async function activeMembershipForAccount(account: CustomerAccount) {
 
 export async function accountHasOngoingMembership(account: CustomerAccount | null) {
   return account ? (await membershipsForAccount(account)).some(row => hasOngoingMembership(row)) : false;
+}
+
+export async function membershipPlanStatus(account: CustomerAccount | null, planId: string) {
+  if (!account) return null;
+  const rows = await membershipsForAccount(account);
+  return preferredMembershipPlanBlockState(
+    rows.filter(row => row.planId === planId).map(membershipPlanBlockState),
+  );
+}
+
+export async function membershipPlanStatuses(account: CustomerAccount | null) {
+  if (!account) return {};
+  const rows = await membershipsForAccount(account);
+  const states = new Map<string, ReturnType<typeof membershipPlanBlockState>[]>();
+  for (const row of rows) {
+    const current = states.get(row.planId) ?? [];
+    current.push(membershipPlanBlockState(row));
+    states.set(row.planId, current);
+  }
+  return Object.fromEntries(
+    [...states].map(([planId, values]) => [planId, preferredMembershipPlanBlockState(values)]),
+  );
 }
 
 /** Lock the same owner before any draft, submission, charge or activation mutation. */
@@ -50,10 +73,25 @@ export async function lockMembershipApplication(tx: MembershipTransaction, id: s
   return { row, account };
 }
 
-export async function assertMembershipPurchaseAllowed(tx: MembershipTransaction, account: CustomerAccount, exceptId?: string) {
+export async function assertMembershipPurchaseAllowed(
+  tx: MembershipTransaction,
+  account: CustomerAccount,
+  planId: string,
+  exceptId?: string,
+) {
   const rows = await membershipsForAccount(account, tx);
-  const other = rows.filter(row => row.id !== exceptId);
-  if (other.some(row => hasOngoingMembership(row))) throw new ApplicationError("Your Sanbay Fusion membership is already active or scheduled. You cannot purchase another membership until your current membership has ended. View your Customer Dashboard.", 409);
-  const closed = new Set<MembershipRequest["status"]>(["application_draft", "expired", "cancelled", "declined", "rejected"]);
-  if (other.some(row => !closed.has(row.status) && !(["active", "cancellation_requested"].includes(row.status) && membershipHasExpired(row)))) throw new ApplicationError("You already have a submitted application or membership. Check your dashboard.", 409);
+  const existing = rows.find(row =>
+    row.planId === planId &&
+    row.id !== exceptId &&
+    membershipPlanBlockState(row) !== null,
+  );
+  if (!existing) return;
+  const state = membershipPlanBlockState(existing);
+  if (state === "active") {
+    throw new ApplicationError("This membership plan is already active on your account. View your Customer Dashboard.", 409);
+  }
+  if (state === "under_review") {
+    throw new ApplicationError("You already have an application in progress for this membership plan.", 409);
+  }
+  throw new ApplicationError("This membership plan already has an application in progress. Check your Customer Dashboard.", 409);
 }

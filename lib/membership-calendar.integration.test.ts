@@ -7,7 +7,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import * as schema from "@/lib/db/schema";
 import type { CustomerAccount } from "@/lib/db/schema";
 
-const state = vi.hoisted(() => ({ db: null as typeof import("@/lib/db").db, account: null as CustomerAccount | null, payments: { customers: { create: vi.fn(), retrieve: vi.fn(), update: vi.fn() }, setupIntents: { create: vi.fn(), retrieve: vi.fn() }, paymentMethods: { retrieve: vi.fn() }, paymentIntents: { create: vi.fn(), retrieve: vi.fn(), confirm: vi.fn() } } }));
+const state = vi.hoisted(() => ({ db: null as typeof import("@/lib/db").db, account: null as CustomerAccount | null, payments: { customers: { create: vi.fn(), retrieve: vi.fn(), update: vi.fn() }, setupIntents: { create: vi.fn(), retrieve: vi.fn() }, paymentMethods: { list: vi.fn(), retrieve: vi.fn() }, paymentIntents: { create: vi.fn(), retrieve: vi.fn(), confirm: vi.fn() } } }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/db", () => ({ get db() { return state.db; } }));
 vi.mock("@/lib/stripe", () => ({ stripe: state.payments }));
@@ -15,7 +15,7 @@ vi.mock("@/lib/auth", () => ({ getCurrentAccount: async () => state.account, nor
 vi.mock("@/lib/email/membership-request", () => ({ sendMembershipPaymentReviewEmail: vi.fn() }));
 vi.mock("@/lib/membership-checkout", () => ({ saveMembershipCheckoutSelection: vi.fn() }));
 import { prepareApplication, submitApplication, approveApplication, getApplicationForAccount } from "@/lib/membership-application";
-import { approveInvoiceApplication, ensureDraftInvoice } from "@/lib/membership-invoice";
+import { approveInvoiceApplication, ensureDraftInvoice, prepareInvoiceApplication, submitInvoiceApplication } from "@/lib/membership-invoice";
 import { activateMembershipRequest } from "@/lib/membership-activation";
 import { redeemMemberBenefit } from "@/lib/membership-benefits";
 import { POST as benefitApi } from "@/app/api/membership/benefits/route";
@@ -31,13 +31,35 @@ let account: CustomerAccount;
 let setup: Record<string, unknown>;
 let intent: Record<string, unknown>;
 const configuration = { planSlug: "3-month-membership", selectedServiceMonths: ["2027-02", "2027-07", "2027-11"], purchaseMode: "membership_with_package" as const, foodPreferences: [], deliveryArea: "Bangkok" as const, preferredDay: "Monday" as const, preferredTime: membershipPreferredTimes[0], alcoholEnabled: false, selectedProducts: [{ category: "Thai soups", name: "Tom Yum Goong", quantity: 4 }], selectedAddOns: [] };
+const differentPlanConfiguration = { ...configuration, planSlug: "1-month-membership", selectedServiceMonths: ["2027-02"] };
 const details = { customer: { fullName: "Calendar Test", phone: "+66812345678" }, billingAddress: { country: "GB", line1: "10 Test Street", line2: "", city: "London", state: "", postalCode: "SW1A 1AA" }, deliveryAddress: { country: "Thailand", line1: "999 Rama I Road", line2: "", subdistrict: "Pathum Wan", district: "Pathum Wan", province: "Bangkok", postalCode: "10330" } };
 
-async function member(overrides: Partial<typeof schema.membershipRequests.$inferInsert> = {}) {
-  const purchase = calculateMembershipQuote(configuration, membershipPlans[2]).purchaseSnapshot;
-  const bounds = serviceMonthBounds(configuration.selectedServiceMonths);
-  const [row] = await database.insert(schema.membershipRequests).values({ customerAccountId: account.id, requestNumber: crypto.randomUUID().slice(0, 24), planId: membershipPlans[2].id, planName: membershipPlans[2].name, planSnapshot: {}, annualFee: 15000, estimatedTotal: 18840, durationMonths: 3, deliveryDays: 0, annualDeliveryDays: 0, fullName: details.customer.fullName, email: account.email, phone: details.customer.phone, address: {}, contactPreferences: {}, configuration, selectedServiceMonths: configuration.selectedServiceMonths, purchaseSnapshot: purchase, status: "active", invoiceStatus: "paid", membershipStartDate: bounds.startDate, membershipExpiryDate: bounds.expiryDate, ...overrides }).returning();
+async function member(
+  overrides: Partial<typeof schema.membershipRequests.$inferInsert> = {},
+  plan = membershipPlans[2],
+  selectedServiceMonths = plan === membershipPlans[2] ? configuration.selectedServiceMonths : ["2027-02"],
+) {
+  const planConfiguration = { ...configuration, planSlug: plan.slug, selectedServiceMonths };
+  const purchase = calculateMembershipQuote(planConfiguration, plan).purchaseSnapshot;
+  const bounds = serviceMonthBounds(selectedServiceMonths);
+  const [row] = await database.insert(schema.membershipRequests).values({ customerAccountId: account.id, requestNumber: crypto.randomUUID().slice(0, 24), planId: plan.id, planName: plan.name, planSnapshot: {}, annualFee: plan.price, estimatedTotal: purchase.total, durationMonths: plan.durationMonths, deliveryDays: 0, annualDeliveryDays: 0, fullName: details.customer.fullName, email: account.email, phone: details.customer.phone, address: {}, contactPreferences: {}, configuration: planConfiguration, selectedServiceMonths, purchaseSnapshot: purchase, status: "active", invoiceStatus: "paid", membershipStartDate: bounds.startDate, membershipExpiryDate: bounds.expiryDate, ...overrides }).returning();
   return row;
+}
+async function completeInvoiceAccount() {
+  await database.update(schema.customerAccounts).set({ fullName: "Calendar Test", phone: "+66812345678", stripeCustomerId: "cus_calendar" }).where(eq(schema.customerAccounts.id, account.id));
+  const billingAddress = { name: "Calendar Test", phone: "+66812345678", country: "GB", line1: "10 Test Street", line2: "", city: "London", state: "", postalCode: "SW1A 1AA" };
+  const deliveryAddress = { name: "Calendar Test", phone: "+66812345678", country: "TH", line1: "999 Rama I Road", line2: "", city: "Bangkok", state: "Bangkok", subdistrict: "Pathum Wan", district: "Pathum Wan", province: "Bangkok", postalCode: "10330" };
+  await database.insert(schema.accountAddresses).values([
+    { accountId: account.id, kind: "billing", details: billingAddress, isDefault: true },
+    { accountId: account.id, kind: "delivery", details: deliveryAddress, isDefault: true },
+  ]);
+  await database.insert(schema.cardVerifications).values({ id: crypto.randomUUID(), accountId: account.id, stripeCustomerId: "cus_calendar", paymentIntentId: "pi_calendar_verified", paymentMethodId: "pm_calendar", status: "verified" });
+  state.payments.customers.retrieve.mockResolvedValue({ id: "cus_calendar", livemode: false, deleted: false, invoice_settings: { default_payment_method: "pm_calendar" } });
+  state.payments.paymentMethods.list.mockReturnValue({
+    async *[Symbol.asyncIterator]() {
+      yield { id: "pm_calendar", customer: "cus_calendar", livemode: false, card: { brand: "visa", last4: "4242", exp_month: 12, exp_year: 2030 } };
+    },
+  });
 }
 async function submitted() {
   const prepared = await prepareApplication(account, configuration, details);
@@ -103,14 +125,59 @@ describe("membership calendar database enforcement (isolated Postgres engine, si
     await expect(approveInvoiceApplication(prepared.applicationId, "staff")).rejects.toThrow("International-visitor eligibility confirmation");
     expect((await getApplicationForAccount(row.id, account.id)).approvedAt).toBeNull();
   });
-  it("finds an older ongoing membership even behind a newer declined record", async () => {
+  it("blocks a duplicate active plan but keeps a different plan selectable", async () => {
     await member({ createdAt: new Date("2026-09-01") });
     await member({ status: "declined", createdAt: new Date("2026-10-01") });
-    await expect(prepareApplication(account, configuration, details)).rejects.toThrow("already active or scheduled");
+    await expect(prepareApplication(account, configuration, details)).rejects.toThrow("already active on your account");
     expect(state.payments.customers.create).not.toHaveBeenCalled();
     const response = await selectionApi(new Request("http://localhost/api/membership/checkout-selection", { method: "POST", body: JSON.stringify({ planSlug: configuration.planSlug, configuration }) }));
     expect(response.status).toBe(409);
-    expect(await response.json()).toMatchObject({ code: "ACTIVE_MEMBERSHIP" });
+    expect(await response.json()).toMatchObject({ code: "PLAN_ALREADY_REQUESTED", planStatus: "active" });
+    const otherPlanResponse = await selectionApi(new Request("http://localhost/api/membership/checkout-selection", { method: "POST", body: JSON.stringify({ planSlug: differentPlanConfiguration.planSlug, configuration: differentPlanConfiguration }) }));
+    expect(otherPlanResponse.status).toBe(200);
+    const before = (await database.select().from(schema.membershipRequests)).find(row => row.planId === membershipPlans[2].id && row.status === "active");
+    const draft = await prepareApplication(account, differentPlanConfiguration, details);
+    const submittedResult = await submitApplication(account, { applicationId: draft.applicationId, quoteHash: draft.quoteHash, confirmInternationalVisitor: true, eligibilityVersion: membershipEligibilityVersion, authorizeCharge: true, acceptTerms: true, acceptPrivacy: true, consentVersion: applicationConsentVersion });
+    const rows = await database.select().from(schema.membershipRequests);
+    expect(rows.find(row => row.id === before?.id)).toMatchObject({ status: "active", planId: membershipPlans[2].id });
+    expect(rows.find(row => row.id === submittedResult.applicationId)).toMatchObject({ status: "pending_review", planId: membershipPlans[0].id });
+  });
+  it("blocks a plan under review but allows and preserves another plan", async () => {
+    const underReview = await member({ status: "pending_review", invoiceStatus: null, membershipExpiryDate: null });
+    await expect(prepareApplication(account, configuration, details)).rejects.toThrow("application in progress for this membership plan");
+    const draft = await prepareApplication(account, differentPlanConfiguration, details);
+    const submittedResult = await submitApplication(account, { applicationId: draft.applicationId, quoteHash: draft.quoteHash, confirmInternationalVisitor: true, eligibilityVersion: membershipEligibilityVersion, authorizeCharge: true, acceptTerms: true, acceptPrivacy: true, consentVersion: applicationConsentVersion });
+    const rows = await database.select().from(schema.membershipRequests);
+    expect(rows.find(row => row.id === underReview.id)).toMatchObject({ status: "pending_review", planId: membershipPlans[2].id });
+    expect(rows.find(row => row.id === submittedResult.applicationId)).toMatchObject({ status: "pending_review", planId: membershipPlans[0].id });
+  });
+  it("applies the plan-specific rule to invoice drafts and submissions", async () => {
+    const underReview = await member({ status: "pending_review", invoiceStatus: null, membershipExpiryDate: null });
+    const duplicateDraft = await member({ status: "application_draft", invoiceStatus: null, membershipExpiryDate: null });
+    const duplicateInput = {
+      applicationId: duplicateDraft.id,
+      quoteHash: "a".repeat(64),
+      reviewHash: "b".repeat(64),
+      paymentMethodId: "pm_calendar",
+      confirmInternationalVisitor: true,
+      eligibilityVersion: membershipEligibilityVersion,
+      authorizeCharge: true,
+      acceptTerms: true,
+      acceptPrivacy: true,
+      consentVersion: applicationConsentVersion,
+    };
+    await expect(submitInvoiceApplication(account, duplicateInput)).rejects.toThrow("application in progress for this membership plan");
+    await completeInvoiceAccount();
+    await expect(prepareInvoiceApplication(account, configuration)).rejects.toThrow("application in progress for this membership plan");
+    const prepared = await prepareInvoiceApplication(account, differentPlanConfiguration);
+    const preparedRetry = await prepareInvoiceApplication(account, differentPlanConfiguration);
+    expect(preparedRetry.applicationId).toBe(prepared.applicationId);
+    expect(prepared.applicationId).toBeTruthy();
+    const rows = await database.select().from(schema.membershipRequests);
+    expect(rows).toHaveLength(3);
+    expect(rows.find(row => row.id === underReview.id)).toMatchObject({ status: "pending_review", planId: membershipPlans[2].id });
+    expect(rows.find(row => row.id === duplicateDraft.id)).toMatchObject({ status: "application_draft", planId: membershipPlans[2].id });
+    expect(rows.find(row => row.id === prepared.applicationId)).toMatchObject({ status: "application_draft", planId: membershipPlans[0].id });
   });
   it("does not use a different account's matching email as ownership", async () => {
     const [other] = await database.insert(schema.customerAccounts).values({ email: "other@example.invalid", passwordHash: "TEST_ONLY" }).returning();
@@ -122,21 +189,23 @@ describe("membership calendar database enforcement (isolated Postgres engine, si
   it("blocks a previously open draft at submission if another membership became active", async () => {
     const draft = await prepareApplication(account, configuration, details);
     await member();
-    await expect(submitApplication(account, { applicationId: draft.applicationId, quoteHash: draft.quoteHash, confirmInternationalVisitor: true, eligibilityVersion: membershipEligibilityVersion, authorizeCharge: true, acceptTerms: true, acceptPrivacy: true, consentVersion: applicationConsentVersion })).rejects.toThrow("already active or scheduled");
+    await expect(submitApplication(account, { applicationId: draft.applicationId, quoteHash: draft.quoteHash, confirmInternationalVisitor: true, eligibilityVersion: membershipEligibilityVersion, authorizeCharge: true, acceptTerms: true, acceptPrivacy: true, consentVersion: applicationConsentVersion })).rejects.toThrow("already active on your account");
   });
-  it("blocks approval and activation if a separate membership became active", async () => {
+  it("blocks same-plan approval while allowing activation of a different plan", async () => {
     const { prepared } = await submitted();
     await member();
-    await expect(approveApplication(prepared.applicationId, "test-admin")).rejects.toThrow("already active or scheduled");
+    await expect(approveApplication(prepared.applicationId, "test-admin")).rejects.toThrow("already active on your account");
     expect(state.payments.paymentIntents.create).not.toHaveBeenCalled();
-    const paid = await member({ status: "payment_received" });
-    await expect(activateMembershipRequest({ id: paid.id, actor: "test-admin" })).rejects.toThrow("already active or scheduled");
+    const paid = await member({ status: "payment_received" }, membershipPlans[0]);
+    const activated = await activateMembershipRequest({ id: paid.id, actor: "test-admin" });
+    expect(activated).toMatchObject({ status: "active", planId: membershipPlans[0].id });
+    expect((await database.select().from(schema.membershipRequests)).filter(row => row.status === "active")).toHaveLength(2);
   });
   it("also serializes historical activation through the existing Stripe owner mapping", async () => {
     await database.update(schema.customerAccounts).set({ stripeCustomerId: "cus_calendar" }).where(eq(schema.customerAccounts.id, account.id));
     await member();
     const paid = await member({ customerAccountId: null, stripeCustomerId: "cus_calendar", status: "payment_received", selectedServiceMonths: null, purchaseSnapshot: { version: 3 } });
-    await expect(activateMembershipRequest({ id: paid.id, actor: "test-admin" })).rejects.toThrow("already active or scheduled");
+    await expect(activateMembershipRequest({ id: paid.id, actor: "test-admin" })).rejects.toThrow("already active on your account");
   });
   it("approves the saved months and exact price once; SQL prevents later month edits", async () => {
     const { prepared } = await submitted();

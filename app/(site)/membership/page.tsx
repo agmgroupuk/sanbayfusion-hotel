@@ -1,7 +1,7 @@
 import { MembershipEligibilityNotice } from "@/components/membership/eligibility-notice";
 import { pageMetadata } from "@/lib/seo";
 import { getCurrentAccount } from "@/lib/auth";
-import { accountHasOngoingMembership } from "@/lib/membership-access";
+import { membershipPlanStatuses } from "@/lib/membership-access";
 export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { Crown, Sparkles, Users, ShieldCheck } from "lucide-react";
@@ -36,7 +36,7 @@ const membershipHighlights = [
 ];
 
 export default async function MembershipPage() {
-  const activeMembership = await accountHasOngoingMembership(await getCurrentAccount());
+  const statuses = await membershipPlanStatuses(await getCurrentAccount());
   return (
     <div className="pb-28">
       <PageHeader
@@ -67,7 +67,7 @@ export default async function MembershipPage() {
         <Reveal variant="up" className="mt-20">
           <p className="text-eyebrow text-gold">Choose your service months</p>
           <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {membershipPlans.map((plan) => <PlanCard key={plan.slug} plan={plan} activeMembership={activeMembership} />)}
+            {membershipPlans.map((plan) => <PlanCard key={plan.slug} plan={plan} blockedStatus={statuses[plan.id] ?? null} />)}
           </div>
         </Reveal>
 

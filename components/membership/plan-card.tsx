@@ -4,15 +4,28 @@ import { useState } from "react";
 import Link from "next/link";
 import { Info, UtensilsCrossed } from "lucide-react";
 import type { MembershipPlan } from "@/lib/membership-plans";
+import type { MembershipPlanBlockState } from "@/lib/membership-plan-state";
 import { complimentaryBenefitConditions } from "@/lib/membership-service-months";
-import { ActiveMembershipNotice } from "./active-membership-notice";
 import { MembershipDialog } from "./membership-dialog";
 
 const money = (value: number) => `฿${value.toLocaleString("en-US")}`;
 
-export function PlanCard({ plan, activeMembership = false }: { plan: MembershipPlan; activeMembership?: boolean }) {
+function PlanStatusNotice({ state }: { state: MembershipPlanBlockState }) {
+  const message = state === "active"
+    ? "This membership plan is already active on your account."
+    : state === "under_review"
+      ? "You already have an application in progress for this membership plan."
+      : "This membership plan already has an application in progress.";
+  return <div role="status" className="w-full rounded-sm border border-gold/35 bg-gold/5 px-4 py-3 text-center">
+    <p className="text-eyebrow text-gold">{state === "active" ? "ACTIVE MEMBERSHIP" : state === "under_review" ? "UNDER REVIEW" : "APPLICATION IN PROGRESS"}</p>
+    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{message}</p>
+    {state === "active" && <Link href="/dashboard/membership" className="mt-2 inline-block text-xs text-gold underline underline-offset-4">View membership</Link>}
+  </div>;
+}
+
+export function PlanCard({ plan, blockedStatus = null }: { plan: MembershipPlan; blockedStatus?: MembershipPlanBlockState | null }) {
   const [open, setOpen] = useState(false);
-  const action = (label: string) => activeMembership ? <ActiveMembershipNotice /> : <Link href={`/plans/${plan.slug}`} className="inline-flex w-full justify-center rounded-full bg-gold px-6 py-3 text-eyebrow leading-relaxed text-gold-foreground transition-colors hover:bg-gold/85">{label}</Link>;
+  const action = (label: string) => blockedStatus ? <PlanStatusNotice state={blockedStatus} /> : <Link href={`/plans/${plan.slug}`} className="inline-flex w-full justify-center rounded-full bg-gold px-6 py-3 text-eyebrow leading-relaxed text-gold-foreground transition-colors hover:bg-gold/85">{label}</Link>;
   return <article className="flex h-full flex-col rounded-sm border border-border/60 bg-card/30 p-7 sm:p-8">
     <p className="text-eyebrow text-gold">Plan {String(plan.durationMonths).padStart(2, "0")}</p>
     <h2 className="mt-4 font-display text-3xl font-light italic">{plan.name}</h2>

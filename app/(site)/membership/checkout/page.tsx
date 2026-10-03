@@ -8,7 +8,7 @@ import { membershipPlans } from "@/lib/membership-plans";
 import { readMembershipCheckoutSelection } from "@/lib/membership-checkout";
 import { validateMembershipConfiguration } from "@/lib/membership-request";
 import { getApplicationForAccount } from "@/lib/membership-application";
-import { accountHasOngoingMembership } from "@/lib/membership-access";
+import { membershipPlanStatus } from "@/lib/membership-access";
 
 export const metadata: Metadata = {
   title: "Membership Application",
@@ -20,7 +20,6 @@ export default async function MembershipCheckoutPage({ searchParams }: { searchP
   const { application } = await searchParams;
   const account = await getCurrentAccount();
   if (!account) redirect(`/signin?next=${encodeURIComponent(`/membership/checkout${application ? `?application=${application}` : ""}`)}`);
-  if (await accountHasOngoingMembership(account)) redirect("/dashboard/membership");
 
   const draft = application && /^[0-9a-f-]{36}$/i.test(application) ? await getApplicationForAccount(application, account.id).catch(() => null) : null;
   if (draft && draft.status !== "application_draft") redirect(`/membership/request-received?id=${draft.id}`);
@@ -29,6 +28,7 @@ export default async function MembershipCheckoutPage({ searchParams }: { searchP
   if (!configuration) redirect("/plans");
   const checked = validateMembershipConfiguration(configuration);
   if (!checked.ok) redirect("/plans");
+  if (await membershipPlanStatus(account, checked.plan.id)) redirect(`/plans/${checked.plan.slug}`);
   const plan = membershipPlans.find(item => item.id === checked.plan.id)!;
 
   return (

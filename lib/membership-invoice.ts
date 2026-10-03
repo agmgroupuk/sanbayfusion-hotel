@@ -56,8 +56,8 @@ export async function prepareInvoiceApplication(account: CustomerAccount, config
   if (!quote.ok) throw new ApplicationError(quote.error);
   return database.transaction(async tx => {
     const profile = await lockMembershipAccount(tx, account.id);
-    await assertMembershipPurchaseAllowed(tx, profile);
-    let draft = (await membershipsForAccount(profile, tx)).find(item => item.status === "application_draft");
+    await assertMembershipPurchaseAllowed(tx, profile, quote.plan.id);
+    let draft = (await membershipsForAccount(profile, tx)).find(item => item.status === "application_draft" && item.planId === quote.plan.id);
     if (draft?.submittedAt) {
       const snapshot = invoiceApplicationSnapshot(draft);
       const review: MembershipAccountReview = { customer: snapshot.customer, billingAddress: snapshot.billingAddress, deliveryAddress: snapshot.deliveryAddress, cards: [{ ...snapshot.paymentMethod, id: snapshot.stripePaymentMethodId, isDefault: true, verificationStatus: "verified" }], requirements: [], complete: true };
@@ -86,7 +86,7 @@ export async function submitInvoiceApplication(account: CustomerAccount, raw: un
       if (input.data.paymentMethodId !== row.stripePaymentMethodId || input.data.quoteHash !== hashPurchaseSnapshot(row.purchaseSnapshot)) throw new ApplicationError("This submitted agreement is fixed. Reload its saved review to finish creating the invoice.", 409);
       return row.id;
     }
-    await assertMembershipPurchaseAllowed(tx, profile!, row.id);
+    await assertMembershipPurchaseAllowed(tx, profile!, row.planId, row.id);
     if (row.status !== "application_draft" || row.stripePaymentIntentId) throw new ApplicationError("Application cannot be submitted.", 409);
     const quote = validateMembershipConfiguration(row.configuration);
     if (!quote.ok || hashPurchaseSnapshot(quote.purchaseSnapshot) !== input.data.quoteHash || hashPurchaseSnapshot(row.purchaseSnapshot) !== input.data.quoteHash) throw new ApplicationError("Your quote changed. Review and accept the latest total.", 409);
@@ -173,7 +173,7 @@ export async function approveInvoiceApplication(id: string, actor: string) {
     const { row, account } = await lockMembershipApplication(tx, id);
     if (row.applicationState === "approved" || row.applicationState === "completed") return row;
     if (row.status !== "pending_review" || !row.stripeInvoiceId) throw new ApplicationError("Only pending draft invoices can be approved.", 409);
-    await assertMembershipPurchaseAllowed(tx, account!, row.id);
+    await assertMembershipPurchaseAllowed(tx, account!, row.planId, row.id);
     const s = invoiceApplicationSnapshot(row);
     if (!hasMembershipEligibilityDeclaration(s.membershipEligibility)) throw new ApplicationError("International-visitor eligibility confirmation is missing. Decline this pending application and ask the customer to reapply with the current eligibility declaration.", 409);
     if (containsMembershipAlcohol([...s.purchase.products, ...s.purchase.addOns])) throw new ApplicationError(membershipAlcoholMessage, 409);

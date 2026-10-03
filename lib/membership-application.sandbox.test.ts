@@ -67,7 +67,10 @@ suite("historical Stripe Sandbox application lifecycle with rolled-back database
    expect(pending.estimatedTotal).toBe(18840);
    const immutable = pending.applicationSnapshot;
    await submitApplication(account, consent);
-   await expect(prepareApplication(account, { ...configuration, planSlug: "1-month-membership", selectedServiceMonths: configuration.selectedServiceMonths.slice(0, 1) }, details)).rejects.toThrow("already have");
+   await expect(prepareApplication(account, configuration, details)).rejects.toThrow("application in progress for this membership plan");
+   const otherPlan = await prepareApplication(account, { ...configuration, planSlug: "1-month-membership", selectedServiceMonths: configuration.selectedServiceMonths.slice(0, 1) }, details);
+   expect(otherPlan.applicationId).not.toBe(pending.id);
+   expect((await getApplicationForAccount(pending.id, account.id)).applicationSnapshot).toEqual(immutable);
    const active = await approveApplication(pending.id, "sandbox-test-admin");
    expect(active.status).toBe("active"); expect(active.invoiceStatus).toBe("paid"); expect(active.memberId).toMatch(/^SBF-M-/); expect(active.membershipStartDate).toBeTruthy(); expect(active.membershipExpiryDate).toBeTruthy();
    const again = await approveApplication(pending.id, "sandbox-test-admin");

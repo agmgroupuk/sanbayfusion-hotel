@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { MembershipDetail } from "@/components/membership/membership-detail";
 import { membershipPlans } from "@/lib/membership-plans";
 import { getCurrentAccount } from "@/lib/auth";
-import { accountHasOngoingMembership } from "@/lib/membership-access";
+import { membershipPlanStatus } from "@/lib/membership-access";
 export const dynamic = "force-dynamic";
 
 type PlanPageProps = {
@@ -22,6 +22,6 @@ export default async function PlanDetailPage({ params }: PlanPageProps) {
   const { "plan-slug": slug } = await params;
   const plan = membershipPlans.find((item) => item.slug === slug);
   if (!plan) notFound();
-  const activeMembership = await accountHasOngoingMembership(await getCurrentAccount());
-  return <MembershipDetail plan={plan} activeMembership={activeMembership} today={new Date().toISOString()} />;
+  const blockedStatus = await membershipPlanStatus(await getCurrentAccount(), plan.id);
+  return <MembershipDetail plan={plan} blockedStatus={blockedStatus} today={new Date().toISOString()} />;
 }

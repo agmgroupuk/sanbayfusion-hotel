@@ -120,7 +120,7 @@ export async function activateMembershipRequest({ id, actor }: { id: string; act
     if (membership.status === "active") { await ensureStandardMealEntitlements(tx, membership); return membership; }
     if (membership.status !== "payment_received" || membership.invoiceStatus !== "paid") return null;
     if (membership.applicationSnapshot && !membership.approvedAt) return null;
-    if (account) await assertMembershipPurchaseAllowed(tx, account, id);
+    if (account) await assertMembershipPurchaseAllowed(tx, account, membership.planId, id);
     const purchase = membership.purchaseSnapshot as MembershipPurchaseSnapshot | null;
     if (purchase?.version === 4 && (!validSavedQuote(purchase) || validateServiceMonths(membership.selectedServiceMonths, membership.durationMonths) || JSON.stringify(purchase.selectedServiceMonths) !== JSON.stringify(membership.selectedServiceMonths))) throw new ApplicationError("The saved service months or benefit are invalid.", 409);
 

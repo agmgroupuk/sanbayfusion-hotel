@@ -28,7 +28,7 @@ export function SiteFooter({ authenticated }: { authenticated: boolean }) {
   return (
     <footer className="border-t border-gold/30 bg-[#090807] text-gold">
       <div className="mx-auto max-w-[1320px] px-5 py-10 sm:px-8 lg:px-8 lg:py-12">
-        <div className="grid gap-y-8 lg:grid-cols-[42%_58%] lg:gap-x-10 xl:gap-x-14">
+        <div className="grid gap-y-8 lg:grid-cols-[minmax(0,42fr)_minmax(0,58fr)] lg:gap-x-10 xl:gap-x-14">
           <div className="lg:border-r lg:border-gold/20 lg:pr-10 xl:pr-14">
             <div className="mb-5 flex items-center justify-start">
               <Image
