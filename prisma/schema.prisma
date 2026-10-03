@@ -47,7 +47,7 @@ model PasswordResetToken {
   user      PlatformUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, expiresAt])
-  @@map("password_reset_tokens")
+  @@map("platform_password_reset_tokens")
 }
 
 model AgentChatSession {

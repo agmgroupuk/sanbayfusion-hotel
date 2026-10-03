@@ -1,0 +1,1 @@
+-- Marks pre-existing database tables as the baseline; this migration applies no DDL.

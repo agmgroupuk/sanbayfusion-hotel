@@ -26,14 +26,14 @@ CREATE TABLE "platform_sessions" (
 );
 
 -- CreateTable
-CREATE TABLE "password_reset_tokens" (
+CREATE TABLE "platform_password_reset_tokens" (
     "id" TEXT NOT NULL,
     "tokenHash" VARCHAR(64) NOT NULL,
     "userId" TEXT NOT NULL,
     "expiresAt" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "password_reset_tokens_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "platform_password_reset_tokens_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -141,10 +141,10 @@ CREATE UNIQUE INDEX "platform_sessions_tokenHash_key" ON "platform_sessions"("to
 CREATE INDEX "platform_sessions_userId_expiresAt_idx" ON "platform_sessions"("userId", "expiresAt");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "password_reset_tokens_tokenHash_key" ON "password_reset_tokens"("tokenHash");
+CREATE UNIQUE INDEX "platform_password_reset_tokens_tokenHash_key" ON "platform_password_reset_tokens"("tokenHash");
 
 -- CreateIndex
-CREATE INDEX "password_reset_tokens_userId_expiresAt_idx" ON "password_reset_tokens"("userId", "expiresAt");
+CREATE INDEX "platform_password_reset_tokens_userId_expiresAt_idx" ON "platform_password_reset_tokens"("userId", "expiresAt");
 
 -- CreateIndex
 CREATE INDEX "agent_chat_sessions_ownerId_agentId_updatedAt_idx" ON "agent_chat_sessions"("ownerId", "agentId", "updatedAt");
@@ -180,7 +180,7 @@ CREATE UNIQUE INDEX "platform_lab_votes_userId_battleId_key" ON "platform_lab_vo
 ALTER TABLE "platform_sessions" ADD CONSTRAINT "platform_sessions_userId_fkey" FOREIGN KEY ("userId") REFERENCES "platform_users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "password_reset_tokens" ADD CONSTRAINT "password_reset_tokens_userId_fkey" FOREIGN KEY ("userId") REFERENCES "platform_users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "platform_password_reset_tokens" ADD CONSTRAINT "platform_password_reset_tokens_userId_fkey" FOREIGN KEY ("userId") REFERENCES "platform_users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "agent_chat_sessions" ADD CONSTRAINT "agent_chat_sessions_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "platform_users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

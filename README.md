@@ -42,7 +42,7 @@ accordingly.
 
 ## Configuration
 
-- `DATABASE_URL` must point to the intended Railway PostgreSQL database. The Prisma migrations are generated but have not been applied; verify the target before running `npm start`, whose prestart hook applies pending migrations.
+- `DATABASE_URL` must point to the intended Railway PostgreSQL database. `npm run db:migrate` records a no-op baseline for an existing schema before applying platform migrations; it preserves pre-existing tables. `npm start` also applies pending Prisma migrations.
 - At least one supported provider key is required for text-based agent chat. Realtime voice specifically requires `OPENAI_API_KEY`.
 - `OPENAI_REALTIME_MODEL` is optional and defaults to `gpt-realtime-2.1`.
 
