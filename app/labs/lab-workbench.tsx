@@ -45,9 +45,11 @@ const apiRoutes: Record<ExperimentId, string> = {
 export function LabWorkbench({
   experiment,
   title,
+  embedded = false,
 }: {
   experiment: string;
   title: string;
+  embedded?: boolean;
 }) {
   const experimentId = experiment as ExperimentId;
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -261,28 +263,32 @@ export function LabWorkbench({
   }
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 sm:py-16">
-      <Link
-        href="/labs"
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-gold"
-      >
-        <ArrowLeft size={16} aria-hidden="true" />
-        All Labs
-      </Link>
+    <section className={embedded ? "w-full min-w-0" : "mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 sm:py-16"}>
+      {!embedded && (
+        <>
+          <Link
+            href="/labs"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-gold"
+          >
+            <ArrowLeft size={16} aria-hidden="true" />
+            All Labs
+          </Link>
 
-      <header className="mt-8 max-w-3xl">
-        <p className="flex items-center gap-2 text-sm uppercase tracking-[0.2em] text-gold">
-          <Sparkles size={16} aria-hidden="true" />
-          Sanbay Fusion Labs
-        </p>
-        <h1 className="mt-3 font-display text-h1 font-light leading-tight">{title}</h1>
-        <p className="mt-4 text-muted-foreground">
-          Submit an experiment to a configured AI provider. No sign-in or
-          subscription is required.
-        </p>
-      </header>
+          <header className="mt-8 max-w-3xl">
+            <p className="flex items-center gap-2 text-sm uppercase tracking-[0.2em] text-gold">
+              <Sparkles size={16} aria-hidden="true" />
+              Sanbay Fusion Labs
+            </p>
+            <h1 className="mt-3 font-display text-h1 font-light leading-tight">{title}</h1>
+            <p className="mt-4 text-muted-foreground">
+              Submit an experiment to a configured AI provider. No sign-in or
+              subscription is required.
+            </p>
+          </header>
+        </>
+      )}
 
-      <div className="mt-9 grid items-start gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+      <div className={embedded ? "grid min-w-0 items-start gap-4" : "mt-9 grid items-start gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]"}>
         <Card className="p-5 sm:p-7">
           <div className="mb-6 flex items-center justify-between gap-3">
                 <h2 className="font-display text-2xl">Set up the experiment</h2>
@@ -572,14 +578,16 @@ export function LabWorkbench({
                   Your vote has been saved.
                 </p>
               )}
-              <p className="border-t border-border pt-4 text-xs text-muted-foreground">
-                Saved to your account · run {output.runId ?? output.battleKey}
-              </p>
+              {(output.runId || output.battleKey) && (
+                <p className="border-t border-border pt-4 text-xs text-muted-foreground">
+                  Run reference · {output.runId ?? output.battleKey}
+                </p>
+              )}
             </div>
           )}
         </Card>
       </div>
-    </main>
+    </section>
   );
 }
 

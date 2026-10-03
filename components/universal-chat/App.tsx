@@ -20,6 +20,7 @@ import { sessionApiService } from './services/sessionApiService';
 import * as sessionClient from '../../lib/session-client';
 
 interface AppProps {
+  standalone?: boolean;
   initialAgentId?: string;
   initialAgentName?: string;
   initialSystemPrompt?: string;
@@ -75,6 +76,7 @@ const sanitizeErrorMessage = (error: any): string => {
 };
 
 const App: React.FC<AppProps> = ({
+  standalone = false,
   initialAgentId = '',
   initialAgentName = 'AI Assistant',
   initialSystemPrompt,
@@ -87,7 +89,7 @@ const App: React.FC<AppProps> = ({
   agentFallbacks = []
 }) => {
   // UI State
-  const [isOverlayActive, setIsOverlayActive] = useState(true);
+  const [isOverlayActive, setIsOverlayActive] = useState(!standalone);
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(false);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
   const [isHelpPanelOpen, setIsHelpPanelOpen] = useState(false);
@@ -1267,12 +1269,12 @@ const App: React.FC<AppProps> = ({
   };
 
   return (
-    <div className="text-gray-300 h-screen flex flex-col overflow-hidden relative selection:bg-green-500/30 selection:text-white font-mono" style={{ background: 'radial-gradient(circle at 20% 50%, rgba(74, 222, 128, 0.08) 0%, transparent 40%), radial-gradient(circle at 80% 20%, rgba(34, 211, 238, 0.08) 0%, transparent 40%), linear-gradient(135deg, #0A0A0A 0%, #111111 100%)' }}>
+    <div className={`text-gray-300 ${standalone ? 'h-dvh w-full' : 'h-screen'} flex flex-col overflow-hidden relative selection:bg-gold/30 selection:text-white font-mono`} style={{ background: standalone ? 'radial-gradient(circle at 50% 0%, rgba(216, 179, 98, 0.07) 0%, transparent 42%), #211e18' : 'radial-gradient(circle at 20% 50%, rgba(74, 222, 128, 0.08) 0%, transparent 40%), radial-gradient(circle at 80% 20%, rgba(34, 211, 238, 0.08) 0%, transparent 40%), linear-gradient(135deg, #0A0A0A 0%, #111111 100%)' }}>
       <ToastContainer />
 
       <Overlay active={isOverlayActive} onActivate={() => setIsOverlayActive(false)} agentName={initialAgentName} />
       <div className={`flex flex-col h-full transition-opacity duration-300 ${isNavDrawerOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-        <Header
+        {!standalone && <Header
           onToggleLeft={() => setIsLeftPanelOpen(!isLeftPanelOpen)}
           onToggleRight={() => setIsRightPanelOpen(!isRightPanelOpen)}
           onToggleNav={() => setIsNavDrawerOpen(!isNavDrawerOpen)}
@@ -1290,19 +1292,19 @@ const App: React.FC<AppProps> = ({
           }}
           onLock={() => setIsOverlayActive(true)}
           leftOpen={isLeftPanelOpen} rightOpen={isRightPanelOpen} helpOpen={isHelpPanelOpen}
-        />
-        <div className="flex-grow flex relative overflow-hidden z-10">
-          {(isLeftPanelOpen || isRightPanelOpen || isHelpPanelOpen) && (
+        />}
+        <div className="flex flex-1 min-h-0 min-w-0 relative overflow-hidden z-10">
+          {!standalone && (isLeftPanelOpen || isRightPanelOpen || isHelpPanelOpen) && (
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] z-[50] transition-opacity animate-in fade-in duration-300" onClick={() => { setIsLeftPanelOpen(false); setIsRightPanelOpen(false); setIsHelpPanelOpen(false); }}></div>
           )}
-          <Sidebar
+          {!standalone && <Sidebar
             sessions={sessions}
             onSelect={selectSession}
             onCreate={createNewSession}
             onDelete={deleteSession}
             onRename={renameSession}
             isOpen={isLeftPanelOpen}
-          />
+          />}
           <ChatBox
             messages={activeSession.messages} isThinking={isThinking || !sessionsReady}
             isRecordingSTT={isRecordingSTT}
@@ -1333,12 +1335,12 @@ const App: React.FC<AppProps> = ({
             }}
             pinnedMessageIds={activeSession.settings.pinnedMessageIds || []}
           />
-          <SettingsPanel settings={activeSession.settings} onChange={updateActiveSettings} onApplyPreset={handleApplyPreset} onReset={() => updateActiveSettings({ ...activeSession.settings, ...DEFAULT_SETTINGS })} isOpen={isRightPanelOpen} />
-          <HelpPanel isOpen={isHelpPanelOpen} onClose={() => setIsHelpPanelOpen(false)} />
+          {!standalone && <SettingsPanel settings={activeSession.settings} onChange={updateActiveSettings} onApplyPreset={handleApplyPreset} onReset={() => updateActiveSettings({ ...activeSession.settings, ...DEFAULT_SETTINGS })} isOpen={isRightPanelOpen} />}
+          {!standalone && <HelpPanel isOpen={isHelpPanelOpen} onClose={() => setIsHelpPanelOpen(false)} />}
         </div>
-        <Footer />
+        {!standalone && <Footer />}
       </div>
-      <NavigationDrawer
+      {!standalone && <NavigationDrawer
         isOpen={isNavDrawerOpen}
         onClose={() => setIsNavDrawerOpen(false)}
         currentSettings={activeSession.settings}
@@ -1360,9 +1362,9 @@ const App: React.FC<AppProps> = ({
           else if (item.tool === 'canvas') mode = 'CANVAS';
           updateActiveSettings({ ...activeSession.settings, activeTool: item.tool, workspaceMode: mode });
           setIsNavDrawerOpen(false);
-        }} />
+        }} />}
 
-      <FilePanel
+      {!standalone && <FilePanel
         files={projectFiles}
         isOpen={isFilePanelOpen}
         onClose={() => setIsFilePanelOpen(false)}
@@ -1379,7 +1381,7 @@ const App: React.FC<AppProps> = ({
             sessionApiService.deleteFile(active.id, path, userId).catch(() => {});
           }
         }}
-      />
+      />}
     </div>
   );
 };

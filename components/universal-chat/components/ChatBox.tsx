@@ -1539,7 +1539,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({
   };
 
   return (
-    <main className="relative flex-grow bg-black/20 flex flex-col overflow-hidden z-10">
+    <main className="relative flex-grow min-h-0 min-w-0 bg-black/20 flex flex-col overflow-hidden z-10">
 
 
       <div className="flex-1 flex flex-col relative overflow-hidden bg-black/10 min-h-0">

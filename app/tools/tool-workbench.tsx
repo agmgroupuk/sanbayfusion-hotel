@@ -1066,7 +1066,13 @@ function HashTool() {
   );
 }
 
-export function ToolWorkbench({ toolSlug }: { toolSlug: ToolSlug }) {
+export function ToolWorkbench({
+  toolSlug,
+  embedded = false,
+}: {
+  toolSlug: ToolSlug;
+  embedded?: boolean;
+}) {
   const tool: ToolDefinition = getTool(toolSlug);
   const toolContent = (() => {
     switch (tool.slug) {
@@ -1090,13 +1096,15 @@ export function ToolWorkbench({ toolSlug }: { toolSlug: ToolSlug }) {
   })();
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-5 py-10 sm:px-8 sm:py-14 lg:px-12">
-      <ToolHeading tool={tool} />
-      <div className="mb-5 rounded-lg border border-gold/20 bg-gold/5 px-4 py-3 text-sm text-muted-foreground">
-        No account data or provider credentials are used by this tool. Work stays
-        in your browser and is not saved.
-      </div>
+    <div className={embedded ? "min-w-0" : "mx-auto w-full max-w-7xl px-5 py-10 sm:px-8 sm:py-14 lg:px-12"}>
+      {!embedded && <ToolHeading tool={tool} />}
+      {!embedded && (
+        <div className="mb-5 rounded-lg border border-gold/20 bg-gold/5 px-4 py-3 text-sm text-muted-foreground">
+          No account data or provider credentials are used by this tool. Work stays
+          in your browser and is not saved.
+        </div>
+      )}
       {toolContent}
-    </section>
+    </div>
   );
 }

@@ -13,6 +13,7 @@ export default async function AgentChatPage({
 
   return (
     <App
+      standalone
       initialAgentId={agentId}
       initialAgentName={agent.name}
       initialSystemPrompt={`You are ${agent.name}, an AI assistant focused on ${agent.specialty}.`}
