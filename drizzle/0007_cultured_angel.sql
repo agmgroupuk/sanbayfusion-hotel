@@ -1,1 +1,0 @@
-ALTER TABLE "membership_requests" ADD COLUMN "purchase_snapshot" jsonb;
