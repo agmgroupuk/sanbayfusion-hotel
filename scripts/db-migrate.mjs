@@ -1,9 +1,11 @@
-const { execFileSync } = require("node:child_process");
-const path = require("node:path");
-const { PrismaClient } = require("@prisma/client");
+import { execFileSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { PrismaClient } from "@prisma/client";
 
+const directory = path.dirname(fileURLToPath(import.meta.url));
 const baselineMigration = "20261004000000_legacy_schema_baseline";
-const prismaCli = path.resolve(__dirname, "../node_modules/prisma/build/index.js");
+const prismaCli = path.resolve(directory, "../node_modules/prisma/build/index.js");
 
 async function main() {
   const db = new PrismaClient();
