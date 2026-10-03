@@ -30,7 +30,7 @@ let database: ReturnType<typeof drizzle<typeof schema>>;
 let account: CustomerAccount;
 let setup: Record<string, unknown>;
 let intent: Record<string, unknown>;
-const configuration = { planSlug: "3-month-membership", selectedServiceMonths: ["2027-02", "2027-07", "2027-11"], purchaseMode: "membership_with_package" as const, foodPreferences: [], deliveryArea: "Bangkok" as const, preferredDay: "Monday" as const, preferredTime: membershipPreferredTimes[0], alcoholEnabled: false, selectedProducts: [{ category: "Thai soups", name: "Tom Yum Goong", quantity: 4 }], selectedAddOns: [] };
+const configuration = { planSlug: "3-month-membership", selectedServiceMonths: ["2027-02", "2027-07", "2027-11"], purchaseMode: "membership_with_package" as const, foodPreferences: [], deliveryArea: "Bangkok" as const, preferredDay: "Monday" as const, preferredTime: membershipPreferredTimes[0], selectedProducts: [{ category: "Thai soups", name: "Tom Yum Goong", quantity: 4 }] };
 const differentPlanConfiguration = { ...configuration, planSlug: "1-month-membership", selectedServiceMonths: ["2027-02"] };
 const details = { customer: { fullName: "Calendar Test", phone: "+66812345678" }, billingAddress: { country: "GB", line1: "10 Test Street", line2: "", city: "London", state: "", postalCode: "SW1A 1AA" }, deliveryAddress: { country: "Thailand", line1: "999 Rama I Road", line2: "", subdistrict: "Pathum Wan", district: "Pathum Wan", province: "Bangkok", postalCode: "10330" } };
 

@@ -35,7 +35,7 @@ describe("selected calendar service months", () => {
     expect(hasActiveMembership({ ...term, selectedServiceMonths: null, purchaseSnapshot: { version: 4 } }, new Date("2027-02-15"))).toBe(false);
   });
   it.each(membershipPlans)("includes the correct benefit without increasing $name prices", plan => {
-    const result = validateMembershipConfiguration({ planSlug: plan.slug, selectedServiceMonths: calendarMonths(2027).slice(0, plan.durationMonths), purchaseMode: "membership_only", foodPreferences: [], deliveryArea: "Bangkok", preferredDay: "Monday", preferredTime: "09:00–12:00", alcoholEnabled: false, selectedAddOns: [], selectedProducts: [], includedBenefit: { menuValue: 1000000 } }, now);
+    const result = validateMembershipConfiguration({ planSlug: plan.slug, selectedServiceMonths: calendarMonths(2027).slice(0, plan.durationMonths), purchaseMode: "membership_only", foodPreferences: [], deliveryArea: "Bangkok", preferredDay: "Monday", preferredTime: "09:00–12:00", selectedProducts: [], includedBenefit: { menuValue: 1000000 } }, now);
     expect(result).toMatchObject({ ok: true, total: plan.price, packageSubtotal: 0, purchaseSnapshot: { includedBenefit: { menuValue: [3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12500, 14000, 15000][plan.durationMonths - 1], cashValue: 0, quantityPerServiceMonth: 1 }, products: [], addOns: [] } });
   });
 });

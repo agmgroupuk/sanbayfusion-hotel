@@ -1,10 +1,22 @@
 import type { MembershipPurchaseSnapshot } from "@/lib/membership-request";
+import { catalogueCategories } from "@/lib/catalogue";
+import { containsDiscontinuedProducts, isDiscontinuedProduct } from "@/lib/discontinued-products";
 import { validateServiceMonths } from "@/lib/membership-service-months";
 import { validateStandardMealSlots } from "@/lib/standard-meal";
+
+export function hasInactiveMembershipProducts(quote: MembershipPurchaseSnapshot): boolean {
+  if (!Array.isArray(quote.products) || !Array.isArray(quote.addOns)) return true;
+  if (quote.addOns.length || containsDiscontinuedProducts(quote.products)) return true;
+  if (quote.charges?.some(charge => isDiscontinuedProduct(charge.code, charge.label))) return true;
+  return quote.products.some(item => !catalogueCategories.some(category =>
+    category.name === item.category && category.products.some(product => product.name === item.name),
+  ));
+}
 
 /** Validate the saved arithmetic without substituting today's catalog prices. */
 export function validSavedQuote(quote: MembershipPurchaseSnapshot): boolean {
   const months = quote.plan?.durationMonths;
+  if (!Array.isArray(quote.products) || !Array.isArray(quote.addOns)) return false;
   if (![3, 4].includes(quote.version) || quote.currency !== "thb" || !Number.isInteger(months) || !months || months < 1 || months > 12 || !Number.isSafeInteger(quote.membershipFee) || quote.membershipFee <= 0 || quote.plan.membershipFee !== quote.membershipFee) return false;
   if (quote.version === 4 && (validateServiceMonths(quote.selectedServiceMonths, months) || !quote.includedBenefit?.name || !Number.isSafeInteger(quote.includedBenefit.menuValue) || quote.includedBenefit.menuValue <= 0 || quote.includedBenefit.quantityPerServiceMonth !== 1 || quote.includedBenefit.cashValue !== 0)) return false;
   let subtotal = 0;

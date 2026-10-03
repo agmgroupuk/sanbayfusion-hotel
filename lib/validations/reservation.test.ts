@@ -80,4 +80,9 @@ describe("reservationSchema", () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it("rejects requests for discontinued catalogue items", () => {
+    expect(reservationSchema.safeParse({ ...validInput, meetingPurpose: "Beer delivery" }).success).toBe(false);
+    expect(reservationSchema.safeParse({ ...validInput, specialRequests: "Please provide wine" }).success).toBe(false);
+  });
 });

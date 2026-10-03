@@ -1,10 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { platformHosts, platformTrustedHosts, sharedSessionCookie } from "./lib/platform-hosts";
+import { isPaymentHostEnabled, isPaymentPagePath, mainHost, platformHosts, platformTrustedHosts, sharedSessionCookie } from "./lib/platform-hosts";
 export function proxy(request: NextRequest) {
-  const host = request.headers.get("host") ?? "";
-  const entry = host === platformHosts.account ? "/dashboard" : host === platformHosts.pay ? "/membership/checkout" : host === platformHosts.checkout ? "/dashboard/order" : null;
-  if (entry && request.nextUrl.pathname === "/") {
-    return NextResponse.redirect(new URL(entry, `https://${host}`));
+  const host = (request.headers.get("host") ?? "").toLowerCase().replace(/:\d+$/, "");
+  const pathname = request.nextUrl.pathname;
+  if (host === platformHosts.pay && pathname === "/") {
+    return NextResponse.redirect(new URL("/dashboard/payment-methods", `https://${platformHosts.pay}`));
+  }
+  if (host === platformHosts.pay && (pathname.startsWith("/dashboard") || pathname.startsWith("/membership")) && !isPaymentPagePath(pathname)) {
+    return NextResponse.redirect(new URL(`${pathname}${request.nextUrl.search}`, `https://${mainHost}`));
+  }
+  if (isPaymentHostEnabled() && host === mainHost && isPaymentPagePath(pathname) && ["GET", "HEAD"].includes(request.method)) {
+    return NextResponse.redirect(new URL(`${pathname}${request.nextUrl.search}`, `https://${platformHosts.pay}`), 307);
   }
   const headers = new Headers(request.headers);
   headers.set("x-account-destination", request.nextUrl.pathname + request.nextUrl.search);

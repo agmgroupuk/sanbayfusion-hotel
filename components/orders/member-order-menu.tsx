@@ -9,7 +9,7 @@ type CartItem = { key: string; category: string; name: string; price: number; qu
 const money = (value: number) => `฿${value.toLocaleString("en-US")}`;
 
 export function MemberOrderMenu({ standardMeal, availableCategories }: { availableCategories?: string[]; standardMeal?: { membershipId: string; serviceMonth: string; allowance: number } }) {
-  const categories = catalogueCategories.filter(category => category.group !== "alcohol" && (!standardMeal || category.group === "food") && (!availableCategories || availableCategories.includes(category.name)));
+  const categories = catalogueCategories.filter(category => (!standardMeal || category.group === "food") && (!availableCategories || availableCategories.includes(category.name)));
   const [cart, setCart] = useState<CartItem[]>([]);
   const [notes, setNotes] = useState("");
   const [openCategory, setOpenCategory] = useState(catalogueCategories[0]?.name ?? "");

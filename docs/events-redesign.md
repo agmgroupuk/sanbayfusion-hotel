@@ -8,14 +8,14 @@ Updated 2 October 2026. Scope is the Events page, enquiry presentation and relat
 - Real selections populate Your Event Brief. Desktop uses a sticky sidebar; mobile/tablet use a collapsible summary. No example event, date, guest count, service tier or menu is preselected.
 - The seven steps cover occasion, location, dining, beverages, entertainment, additional requests and contact details. Previous/Continue preserves in-memory selections, validates required fields and moves keyboard focus to the new heading. Refreshing the page does not persist the draft.
 - Event date/time is explicitly Thailand time. Customer-selected guest counts support 1–500; larger events and uncertain dates are directed to personal contact. Venue/area is sufficient for an initial enquiry.
-- Alcohol has two discussion-only options. There is no alcohol catalogue import, product selector, price calculation, cart, Stripe call or invoice creation. Alcohol catalogue data elsewhere is unchanged.
+- The beverage choices are limited to refreshments currently offered on the website. The brief contains no beverage-enquiry option outside those choices, and the event action does not create a booking or payment.
 - Submission and confirmation explicitly describe an enquiry, not a confirmed booking, availability guarantee, final quotation or payment.
 
 ## Existing delivery system
 
 `requestEventProposal` validates a structured brief with `lib/events.ts`, formats it into the existing enquiry message and calls `queueContact`. Staff notification and customer acknowledgement use the existing durable outbox, templates and configured senders. No real test emails were sent during verification.
 
-The old builder used the general Contact action, whose 2,000-character message limit was too small for a complete detailed event brief. The event-specific action applies bounded fields and enum allowlists, then sends the complete formatted brief through the same queue. General Contact validation is unchanged. Unknown fields, alcohol products, prices and payment metadata are rejected. There is no new booking or payment record.
+The old builder used the general Contact action, whose 2,000-character message limit was too small for a complete detailed event brief. The event-specific action applies bounded fields and enum allowlists, then sends the complete formatted brief through the same queue. Free-text event fields reject references to discontinued catalogue offerings. Unknown fields, product prices and payment metadata are rejected. There is no new booking or payment record.
 
 A queued brief receives the existing acknowledgement. Missing delivery configuration or queue failures return an error and retain the customer's form data; the UI no longer claims a successful send when nothing was queued. The queue's existing five-minute deduplication remains in place.
 
@@ -28,7 +28,7 @@ This service is suitable for international visitors, private groups, families an
 ## Verification
 
 - TypeScript and changed-file lint passed.
-- 22 event-action/schema and existing Contact validation tests passed, including injected payment/alcohol data, maximum-length briefs and unavailable/failed delivery.
+- Event action/schema tests cover retired-product requests, injected payment data, maximum-length briefs and unavailable/failed delivery.
 - `scripts/verify-event-builder.mjs` mounts the real builder with an offline action stub, exercising navigation, state, validation, summaries, submission payload, errors and success at mobile, tablet and desktop widths without sending email.
 
 - Production build passed. Offline browser flow: 57 checks passed across 390/768/1440px. Full-page and related-page checks: 24 passed with no browser errors or horizontal overflow. Desktop/mobile visuals reviewed.

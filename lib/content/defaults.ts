@@ -12,9 +12,9 @@ export function toBlocks(paragraphs: string[]): PortableTextBlock[] {
 /** Editorial fallback uses the same products as the current catalogue. */
 export const DEFAULT_MENU: MenuContent = {
   title: "Food for your selected months",
-  intro: "Eligible international visitors can plan food and non-alcoholic drinks around their temporary Thailand stay. Choose a Standard Meal during your selected service month, add a prepaid package when applying, or place a separately paid member order.",
+  intro: "Eligible international visitors can plan food and refreshments around their temporary Thailand stay. Choose a Standard Meal during your selected service month, add a prepaid package when applying, or place a separately paid member order.",
   priceNote: "See the catalogue and your final checkout for current prices in Thai baht. Availability and dietary requests require confirmation.",
-  sections: catalogueCategories.filter(category => category.group !== "alcohol").map(category => ({
+  sections: catalogueCategories.map(category => ({
     name: category.name,
     items: category.products.map(product => ({ name: product.name })),
   })),

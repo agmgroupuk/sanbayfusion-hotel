@@ -15,7 +15,7 @@ if (!event) throw new Error("No payment_intent.succeeded event found for that Pa
 const payload = JSON.stringify(event);
 const timestamp = Math.floor(Date.now() / 1000);
 const signature = createHmac("sha256", webhookSecret).update(`${timestamp}.${payload}`).digest("hex");
-const response = await fetch("https://sanbayfusion.com/api/stripe/webhook", {
+const response = await fetch("https://pay.sanbayfusion.com/api/stripe/webhook", {
   method: "POST",
   headers: { "content-type": "application/json", "stripe-signature": `t=${timestamp},v1=${signature}` },
   body: payload,

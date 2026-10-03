@@ -4,11 +4,11 @@ import { drizzle } from "drizzle-orm/pglite";
 import { readFileSync, readdirSync } from "node:fs";
 import * as schema from "@/lib/db/schema";
 
-const state = vi.hoisted(() => ({ db: null as typeof import("@/lib/db").db, jar: new Map<string, string>(), options: new Map<string, object>() }));
+const state = vi.hoisted(() => ({ db: null as typeof import("@/lib/db").db, jar: new Map<string,string>(), options: new Map<string,object>(), host: "sanbayfusion.com" }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/db", () => ({ get db() { return state.db; } }));
 vi.mock("@/lib/stripe", () => ({ stripe: {} })); // No payment calls are needed before account completion.
-vi.mock("next/headers", () => ({ headers: async () => new Headers({host:"sanbayfusion.com"}), cookies: async () => ({
+vi.mock("next/headers", () => ({ headers: async () => new Headers({host:state.host}), cookies: async () => ({
   get: (name: string) => state.jar.has(name) ? { value: state.jar.get(name)! } : undefined,
   set: (name: string, value: string, options: object) => { state.jar.set(name, value); state.options.set(name, options); },
   delete: (name: string) => state.jar.delete(name),
@@ -26,7 +26,7 @@ import { membershipPreferredTimes } from "@/lib/membership-plans";
 
 let client: PGlite;
 let database: ReturnType<typeof drizzle<typeof schema>>;
-const configuration = { planSlug: "3-month-membership", selectedServiceMonths: ["2027-02", "2027-07", "2027-11"], purchaseMode: "membership_with_package", foodPreferences: ["Thai Food"], deliveryArea: "Bangkok", preferredDay: "Monday", preferredTime: membershipPreferredTimes[0], alcoholEnabled: false, selectedProducts: [{ category: "Thai soups", name: "Tom Yum Goong", quantity: 4 }], selectedAddOns: [] };
+const configuration = { planSlug: "3-month-membership", selectedServiceMonths: ["2027-02", "2027-07", "2027-11"], purchaseMode: "membership_with_package", foodPreferences: ["Thai Food"], deliveryArea: "Bangkok", preferredDay: "Monday", preferredTime: membershipPreferredTimes[0], selectedProducts: [{ category: "Thai soups", name: "Tom Yum Goong", quantity: 4 }] };
 const request = (body: object, origin = "https://sanbayfusion.com") => new Request("http://0.0.0.0:8080/api/test", { method: "POST", headers: { origin, "content-type": "application/json" }, body: JSON.stringify(body) });
 function credentials(next = "/membership/checkout", password = "TestPassword123") {
   const data = new FormData();
@@ -41,6 +41,7 @@ beforeAll(async () => {
   state.db = database as unknown as NonNullable<typeof state.db>;
 }, 60000);
 beforeEach(async () => {
+  state.host = "sanbayfusion.com";
   vi.stubEnv("NODE_ENV", "production"); vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://sanbayfusion.com"); vi.stubEnv("RAILWAY_PUBLIC_DOMAIN", "sanbayfusion.com");
   vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2026-10-02T05:00:00Z"));
   await client.exec("TRUNCATE customer_accounts, account_rate_limits CASCADE");
@@ -60,6 +61,12 @@ describe("membership authentication journey with real sessions and isolated Post
     await destroyCustomerSession();
     expect(await getCurrentAccount()).toBeNull();
     expect(await database.select().from(schema.customerSessions)).toHaveLength(0);
+  });
+  it("issues the same shared session cookie when authentication begins on the payment host", async () => {
+    state.host = "pay.sanbayfusion.com";
+    await expect(signIn(credentials("/dashboard/payment-methods"))).rejects.toThrow("REDIRECT:/dashboard/payment-methods");
+    expect(state.options.get(sharedSessionCookie)).toMatchObject({ domain: "sanbayfusion.com", httpOnly: true, secure: true, sameSite: "lax", path: "/" });
+    expect(await getCurrentAccount()).toMatchObject({ email: "flow@example.invalid" });
   });
   it("preserves the guest cart, signs in to checkout, reprices and identifies missing account details without creating an application", async () => {
     const response = await save(request({ planSlug: configuration.planSlug, configuration: { ...configuration, total: 1, planPrice: 1 } }));

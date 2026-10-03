@@ -15,7 +15,6 @@ import {
   Sparkles,
   UserRoundCheck,
   UtensilsCrossed,
-  Wine,
 } from "lucide-react";
 import { site } from "@/lib/site";
 import { Reveal } from "@/components/motion/reveal";
@@ -39,8 +38,7 @@ const membershipReasons = [
   ["Prepared arrival", "Spend less of your trip organizing arrangements that could have been planned beforehand.", Compass],
 ] as const;
 
-const offerings = ["Thai cuisine", "International cuisine", "Seafood", "Appetizers", "Main courses", "Desserts", "Non-alcoholic beverages"];
-const spirits = ["Beer", "Wine", "Champagne", "Whisky", "Rum", "Vodka", "Gin"];
+const offerings = ["Thai cuisine", "International cuisine", "Seafood", "Appetizers", "Main courses", "Desserts", "Soft drinks & refreshments"];
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return <p className="text-eyebrow text-gold">{children}</p>;
@@ -120,7 +118,7 @@ export default function AboutPage() {
       <section className="border-y border-border/50 bg-card/25">
         <div className="mx-auto grid max-w-7xl gap-12 px-5 py-24 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center lg:gap-24 lg:py-32">
           <Reveal variant="scale" className="relative aspect-[4/5] overflow-hidden">
-            <Image src="/images/fancy-salmon-dish-with-wine-glasses-in-background.jpg" alt="A carefully prepared dish at Sanbay Fusion" fill sizes="(min-width: 1024px) 38vw, 100vw" className="object-cover transition-transform duration-1000 hover:scale-105" />
+            <Image src="/images/fire-from-wok.jpg" alt="A dish being prepared in the Sanbay Fusion kitchen" fill sizes="(min-width: 1024px) 38vw, 100vw" className="object-cover transition-transform duration-1000 hover:scale-105" />
             <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
             <div className="absolute bottom-6 left-6 flex items-center gap-3 text-xs uppercase tracking-[0.22em] text-gold"><UtensilsCrossed className="size-4" /> Prepared with context</div>
           </Reveal>
@@ -206,7 +204,7 @@ export default function AboutPage() {
 
       <section className="border-y border-border/50 bg-card/25">
         <div className="mx-auto grid max-w-7xl gap-12 px-5 py-24 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-32">
-          <Reveal variant="up"><SectionLabel>Food &amp; beverage experience</SectionLabel><KineticText as="h2" text="A broad catalogue, with the right context" className="text-h2 mt-6 max-w-2xl font-display font-light" /><p className="mt-6 max-w-2xl text-base leading-relaxed text-foreground/70">Sanbay Fusion can present a broad catalogue of eligible offerings as availability allows, from Thai and international cooking to drinks and pantry-ready additions.</p><div className="mt-9 flex flex-wrap gap-2">{offerings.map((item) => <span key={item} className="rounded-full border border-border/80 px-4 py-2 text-sm text-foreground/75">{item}</span>)}</div><div className="mt-10 flex items-start gap-4 border-l border-gold/60 pl-5"><Wine className="mt-1 size-5 shrink-0 text-gold" /><div><p className="font-display text-2xl">Where legally permitted and available</p><p className="mt-3 text-sm leading-relaxed text-foreground/70">Alcohol-related products and services are subject to applicable Thai law, age requirements, permitted sales or service conditions, availability, and service-area restrictions.</p><div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">{spirits.map((item) => <span key={item}>{item}</span>)}</div></div></div></Reveal>
+          <Reveal variant="up"><SectionLabel>Food and refreshments</SectionLabel><KineticText as="h2" text="A thoughtful catalogue, with the right context" className="text-h2 mt-6 max-w-2xl font-display font-light" /><p className="mt-6 max-w-2xl text-base leading-relaxed text-foreground/70">Explore Thai and international cooking, refreshments and pantry-ready additions, subject to availability.</p><div className="mt-9 flex flex-wrap gap-2">{offerings.map((item) => <span key={item} className="rounded-full border border-border/80 px-4 py-2 text-sm text-foreground/75">{item}</span>)}</div><div className="mt-10 flex items-start gap-4 border-l border-gold/60 pl-5"><UtensilsCrossed className="mt-1 size-5 shrink-0 text-gold" /><div><p className="font-display text-2xl">Food and hospitality, planned around your visit</p><p className="mt-3 text-sm leading-relaxed text-foreground/70">The current catalogue focuses on food and refreshments. Product, date and service availability are confirmed by the team.</p></div></div></Reveal>
           <Reveal variant="scale" className="relative aspect-[4/5] overflow-hidden"><Image src="/images/chef-preparing-the-plates.jpg" alt="Chef preparing plates at Sanbay Fusion" fill sizes="(min-width: 1024px) 38vw, 100vw" className="object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" /><p className="absolute bottom-7 left-7 max-w-[12rem] font-display text-3xl italic text-foreground">Good planning leaves more room for good food.</p></Reveal>
         </div>
       </section>
@@ -221,7 +219,7 @@ export default function AboutPage() {
       </section>
 
       <section className="mx-auto grid max-w-7xl gap-5 px-5 py-24 sm:px-8 lg:grid-cols-2 lg:py-32">
-        <Reveal variant="up" className="border border-gold/40 bg-gold/[0.05] p-7 sm:p-10"><SectionLabel>Good to know</SectionLabel><h2 className="mt-6 font-display text-4xl font-light">Clear expectations make better arrangements.</h2><p className="mt-6 text-sm leading-relaxed text-foreground/75">Membership does not guarantee that every requested product, date, location, or service will always be available. Requests remain subject to:</p><ul className="mt-6 grid gap-3 text-sm text-foreground/75 sm:grid-cols-2">{["Service-area eligibility", "Product availability", "Advance scheduling", "Successful payment", "Customer / account verification", "Applicable Thai laws and regulations", "Age verification for age-restricted products", "Final confirmation by Sanbay Fusion"].map((item) => <li key={item} className="flex gap-2"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-gold" />{item}</li>)}</ul></Reveal>
+        <Reveal variant="up" className="border border-gold/40 bg-gold/[0.05] p-7 sm:p-10"><SectionLabel>Good to know</SectionLabel><h2 className="mt-6 font-display text-4xl font-light">Clear expectations make better arrangements.</h2><p className="mt-6 text-sm leading-relaxed text-foreground/75">Membership does not guarantee that every requested product, date, location, or service will always be available. Requests remain subject to:</p><ul className="mt-6 grid gap-3 text-sm text-foreground/75 sm:grid-cols-2">{["Service-area eligibility", "Product availability", "Advance scheduling", "Successful payment", "Customer / account verification", "Applicable Thai laws and regulations", "Final confirmation by Sanbay Fusion"].map((item) => <li key={item} className="flex gap-2"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-gold" />{item}</li>)}</ul></Reveal>
         <Reveal variant="up" delay={0.1} className="border border-border/70 bg-card/40 p-7 sm:p-10"><CreditCard className="size-6 text-gold" /><h2 className="mt-6 font-display text-4xl font-light">Your account. Your payment method.</h2><p className="mt-6 text-sm leading-relaxed text-foreground/75">Customers manage personal information, addresses, security settings, and supported payment methods through their Sanbay Fusion account.</p><p className="mt-5 text-sm leading-relaxed text-muted-foreground">Payment information is handled through the site&apos;s secure payment-provider integration. Sanbay Fusion stores safe payment references, card brand, last four digits and expiry; complete card numbers and CVC are handled through Stripe.</p><Link href="/signup" className="mt-8 inline-flex items-center gap-3 rounded-full border border-foreground/30 px-5 py-3 text-eyebrow transition-colors hover:border-gold hover:text-gold">Create an account <ArrowRight className="size-4" /></Link></Reveal>
       </section>
 

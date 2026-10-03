@@ -2,9 +2,9 @@ import { z } from "zod";
 import { validateServiceMonths, serviceMonthPattern, type IncludedMemberBenefit } from "@/lib/membership-service-months";
 import { pricePackageItem } from "@/lib/package-pricing";
 import { catalogueCategories, type CatalogueGroup } from "@/lib/catalogue";
-import { beverageAddOns, membershipDeliveryAreas, membershipPlans, membershipPreferredDays, membershipPreferredTimes } from "@/lib/membership-plans";
+import { membershipDeliveryAreas, membershipPlans, membershipPreferredDays, membershipPreferredTimes } from "@/lib/membership-plans";
 import { validateStandardMealSlots, type StandardMealSlot } from "@/lib/standard-meal";
-import { containsMembershipAlcohol, membershipAlcoholMessage } from "@/lib/membership-food";
+import { containsUnavailableMembershipProducts, unavailableMembershipProductsMessage } from "@/lib/membership-food";
 
 export const membershipRequestStatuses = [
   "pending_review",
@@ -36,12 +36,6 @@ export const membershipConfigurationSchema = z.object({
   deliveryArea: z.enum(membershipDeliveryAreas),
   preferredDay: z.enum(membershipPreferredDays),
   preferredTime: z.enum(membershipPreferredTimes),
-  alcoholEnabled: z.boolean(),
-  selectedAddOns: z.array(z.object({
-    category: z.string().min(1),
-    name: z.string().min(1),
-    quantity: z.number().int().min(1).max(100),
-  })).max(7).default([]),
   selectedProducts: z.array(z.object({
     category: z.string().min(1),
     name: z.string().min(1),
@@ -77,7 +71,6 @@ export const membershipApplicationSchema = z.object({
   agreesTerms: z.boolean().refine((value) => value === true, { message: "Please agree to the Membership Terms & Conditions" }),
   acknowledgesPrivacy: z.boolean().refine((value) => value === true, { message: "Please acknowledge the Privacy Policy" }),
   agreesContact: z.boolean().refine((value) => value === true, { message: "Please agree to be contacted" }),
-  confirmsAlcoholLaw: z.boolean(),
 }).superRefine((data, context) => {
   if (!data.contactPreferences.length) {
     context.addIssue({ code: "custom", path: ["contactPreferences"], message: "Select at least one contact method." });
@@ -140,16 +133,10 @@ export function calculateMembershipQuote(configuration: MembershipConfiguration,
     const priced = pricePackageItem(unitPrice, selected.quantity, plan.durationMonths, "MONTHLY");
     return { category: selected.category, group: category?.group, name: selected.name, ...getProductNameDetails(selected.name), unitPrice, monthlyQuantity: selected.quantity, durationMonths: plan.durationMonths, ...priced, pricingType: "MONTHLY" as const };
   });
-  const selectedAddOns = configuration.selectedAddOns.flatMap((selected) => {
-    const addOn = beverageAddOns.find((item) => item.category === selected.category);
-    if (!addOn) return [];
-    const priced = pricePackageItem(addOn.price, selected.quantity, plan.durationMonths, addOn.pricingType);
-    return [{ category: selected.category, name: selected.name, unitPrice: addOn.price, quantity: selected.quantity, pricingType: addOn.pricingType, monthlyQuantity: addOn.pricingType === "MONTHLY" ? selected.quantity : undefined, durationMonths: plan.durationMonths, ...priced }];
-  });
   const prepaid = configuration.purchaseMode === "membership_with_package";
   const membershipFee = plan.price;
   const packageSubtotal = prepaid
-    ? selectedProducts.reduce((total, item) => total + item.lineTotal, 0) + selectedAddOns.reduce((total, item) => total + item.lineTotal, 0)
+    ? selectedProducts.reduce((total, item) => total + item.lineTotal, 0)
     : 0;
   const purchaseSnapshot: MembershipPurchaseSnapshot = {
     version: 4,
@@ -165,7 +152,7 @@ export function calculateMembershipQuote(configuration: MembershipConfiguration,
     },
     products: prepaid ? selectedProducts : [],
     preferences: prepaid ? [] : selectedProducts.map(({ category, name, productName, variant, monthlyQuantity }) => ({ category, name, productName, variant, monthlyQuantity })),
-    addOns: prepaid ? selectedAddOns : [],
+    addOns: [],
     currency: "thb",
     pricingVersion: 2,
     charges: [],
@@ -173,10 +160,16 @@ export function calculateMembershipQuote(configuration: MembershipConfiguration,
     packageSubtotal,
     total: membershipFee + packageSubtotal,
   };
-  return { membershipFee, selectedProducts, selectedAddOns, packageSubtotal, total: membershipFee + packageSubtotal, purchaseSnapshot };
+  return { membershipFee, selectedProducts, packageSubtotal, total: membershipFee + packageSubtotal, purchaseSnapshot };
 }
 
 export function validateMembershipConfiguration(raw: unknown, now = new Date()) {
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    const legacyFields = raw as Record<string, unknown>;
+    if (legacyFields.alcoholEnabled === true || (Array.isArray(legacyFields.selectedAddOns) && legacyFields.selectedAddOns.length > 0)) {
+      return { ok: false as const, error: unavailableMembershipProductsMessage };
+    }
+  }
   const parsed = membershipConfigurationSchema.safeParse(raw);
   if (!parsed.success) return { ok: false as const, error: "Invalid membership configuration or quantities." };
   const configuration = parsed.data;
@@ -186,25 +179,10 @@ export function validateMembershipConfiguration(raw: unknown, now = new Date()) 
   if (monthError) return { ok: false as const, error: monthError };
   const schedulingError = validateStandardMealSlots(configuration.standardMealSlots, configuration.selectedServiceMonths, now);
   if (schedulingError) return { ok: false as const, error: schedulingError };
-  if (configuration.alcoholEnabled || configuration.selectedAddOns.length || containsMembershipAlcohol(configuration.selectedProducts)) return { ok: false as const, error: membershipAlcoholMessage };
+  if (containsUnavailableMembershipProducts(configuration.selectedProducts)) return { ok: false as const, error: unavailableMembershipProductsMessage };
 
   if (!configuration.foodPreferences.every((preference) => ["Thai Food", "Seafood", "Chicken", "Beef", "Pork", "Vegetarian", "Western Food", "Asian Food"].includes(preference))) {
     return { ok: false as const, error: "One or more food preferences are invalid." };
-  }
-
-  const allowed = new Map<string, (typeof beverageAddOns)[number]>(beverageAddOns.map((addOn) => [addOn.category, addOn]));
-  const selectedAddOnKeys = new Set<string>();
-  for (const selected of configuration.selectedAddOns) {
-    const addOn = allowed.get(selected.category);
-    if (!addOn || !(plan.allowedBeverageCategories as readonly string[]).includes(selected.category) || !addOn.options.includes(selected.name as never)) {
-      return { ok: false as const, error: "One or more beverage selections are not available for this plan." };
-    }
-    const key = `${selected.category}:${selected.name}`;
-    if (selectedAddOnKeys.has(key)) return { ok: false as const, error: "A beverage add-on was selected more than once." };
-    selectedAddOnKeys.add(key);
-    if (!configuration.alcoholEnabled) {
-      return { ok: false as const, error: "Alcohol selections require the beverage option to be enabled." };
-    }
   }
 
   const selectedProductKeys = new Set<string>();
@@ -219,7 +197,7 @@ export function validateMembershipConfiguration(raw: unknown, now = new Date()) 
     selectedProductKeys.add(key);
   }
 
-  if (configuration.purchaseMode === "membership_with_package" && !configuration.selectedProducts.length && !configuration.selectedAddOns.length) {
+  if (configuration.purchaseMode === "membership_with_package" && !configuration.selectedProducts.length) {
     return { ok: false as const, error: "Select at least one product for your prepaid package, or choose membership only." };
   }
 
@@ -228,7 +206,7 @@ export function validateMembershipConfiguration(raw: unknown, now = new Date()) 
     ok: true as const,
     configuration: { ...configuration, selectedServiceMonths: [...configuration.selectedServiceMonths].sort() },
     plan,
-    addOnTotal: quote.packageSubtotal,
+    addOnTotal: 0,
     packageSubtotal: quote.packageSubtotal,
     membershipFee: quote.membershipFee,
     total: quote.total,

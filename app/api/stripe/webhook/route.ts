@@ -7,11 +7,11 @@ import { recordOrderPayment, reconcileOrderPayment } from "@/lib/order-payment";
 import { reconcileApplicationPayment } from "@/lib/membership-application";
 import { reconcileMembershipInvoice } from "@/lib/membership-invoice";
 import { reconcileCardVerification, stripeObjectId } from "@/lib/account/card-verification";
-
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+import { stripeWebhookSecrets, verifyStripeWebhookEvent } from "@/lib/stripe-webhook-signature";
 
 export async function POST(request: Request) {
-  if (!stripe || !webhookSecret || !db) {
+  const secrets = stripeWebhookSecrets(process.env.STRIPE_WEBHOOK_SECRET);
+  if (!stripe || !secrets.length || !db) {
     return NextResponse.json({ error: "Stripe webhook not configured." }, { status: 503 });
   }
 
@@ -19,10 +19,8 @@ export async function POST(request: Request) {
   const signature = request.headers.get("stripe-signature");
   if (!signature) return NextResponse.json({ error: "Missing Stripe signature." }, { status: 400 });
 
-  let event: Stripe.Event;
-  try {
-    event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
-  } catch {
+  const event: Stripe.Event | null = verifyStripeWebhookEvent(stripe, payload, signature, secrets);
+  if (!event) {
     return NextResponse.json({ error: "Invalid Stripe signature." }, { status: 400 });
   }
 

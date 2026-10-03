@@ -12,7 +12,7 @@ import {
 import { KineticText } from "@/components/motion/kinetic-text";
 import { Magnetic } from "@/components/motion/magnetic";
 
-const POSTER = "/images/fancy-salmon-dish-with-wine-glasses-in-background.jpg";
+const POSTER = "/images/fire-from-wok.jpg";
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 export function HomeHero() {

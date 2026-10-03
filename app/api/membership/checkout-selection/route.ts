@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { saveMembershipCheckoutSelection } from "@/lib/membership-checkout";
-import { membershipConfigurationSchema, validateMembershipConfiguration } from "@/lib/membership-request";
+import { validateMembershipConfiguration } from "@/lib/membership-request";
 import { getCurrentAccount } from "@/lib/auth";
 import { membershipPlanStatus } from "@/lib/membership-access";
 import { membershipPlanBlockMessage } from "@/lib/membership-plan-state";
@@ -14,12 +14,10 @@ export async function POST(request: Request) {
     const body = await request.json();
     const planSlug = typeof body?.planSlug === "string" ? body.planSlug : "";
     if (!planSlug) return NextResponse.json({ error: "A membership plan is required." }, { status: 400 });
-    const parsed = membershipConfigurationSchema.safeParse(body?.configuration);
-    if (!parsed.success || parsed.data.planSlug !== planSlug) {
+    const checked = validateMembershipConfiguration(body?.configuration);
+    if (!checked.ok || checked.configuration.planSlug !== planSlug) {
       return NextResponse.json({ error: "Your membership selection is invalid. Please review your package." }, { status: 400 });
     }
-    const checked = validateMembershipConfiguration(parsed.data);
-    if (!checked.ok) return NextResponse.json({ error: checked.error }, { status: 400 });
     const planStatus = account ? await membershipPlanStatus(account, checked.plan.id) : null;
     if (planStatus) {
       return NextResponse.json({ code: "PLAN_ALREADY_REQUESTED", planStatus, error: membershipPlanBlockMessage(planStatus) }, { status: 409 });

@@ -30,8 +30,7 @@ describe("approved membership fee schedule", () => {
     const configuration = {
       planSlug: plan.slug, selectedServiceMonths: months.slice(0, duration), purchaseMode: "membership_only",
       foodPreferences: [], deliveryArea: "Bangkok", preferredDay: "Monday", preferredTime: membershipPreferredTimes[0],
-      alcoholEnabled: false, selectedProducts: [], selectedAddOns: [],
-      price: 1, membershipFee: 1, total: 1,
+      selectedProducts: [], price: 1, membershipFee: 1, total: 1,
     };
     const checked = validateMembershipConfiguration(configuration);
     expect(checked.ok).toBe(true);

@@ -12,13 +12,13 @@ import type { MembershipAccountReview } from "@/lib/membership-review-types";
 import { validateMembershipConfiguration } from "@/lib/membership-request";
 import { validateServiceMonths } from "@/lib/membership-service-months";
 import { hashPurchaseSnapshot } from "@/lib/membership-snapshot-hash";
-import { validSavedQuote } from "@/lib/membership-quote-integrity";
+import { hasInactiveMembershipProducts, validSavedQuote } from "@/lib/membership-quote-integrity";
 import { assertMembershipPurchaseAllowed, lockMembershipAccount, lockMembershipApplication, membershipsForAccount } from "@/lib/membership-access";
 import { ApplicationError } from "@/lib/membership-errors";
 import { activateMembershipRequest } from "@/lib/membership-activation";
 import { deliveryEligibility, declineApplication as declineLegacy } from "@/lib/membership-application";
 import { sendApplicationNotifications } from "@/lib/email/membership-application";
-import { containsMembershipAlcohol, membershipAlcoholMessage } from "@/lib/membership-food";
+import { unavailableMembershipProductsMessage } from "@/lib/membership-food";
 import { membershipEligibilityInput, membershipEligibilityError, membershipEligibilityDeclaration, hasMembershipEligibilityDeclaration } from "@/lib/membership-eligibility";
 
 function services() { if (!db || !stripe) throw new ApplicationError("Membership services are currently unavailable.", 503); return { database: db, payments: stripe }; }
@@ -111,11 +111,11 @@ export async function submitInvoiceApplication(account: CustomerAccount, raw: un
 
 export function invoiceApplicationSnapshot(row: MembershipRequest) {
   const s = row.applicationSnapshot as ApplicationSnapshot | null;
-  if (!s || s.version !== 2 || !validSavedQuote(s.purchase) || s.accountId !== row.customerAccountId || s.reference !== row.requestNumber || s.stripeCustomerId !== row.stripeCustomerId || s.stripePaymentMethodId !== row.stripePaymentMethodId || s.currency !== "thb" || s.expectedAmount !== row.estimatedTotal || s.purchase.total !== row.estimatedTotal || hashPurchaseSnapshot(s.purchase) !== hashPurchaseSnapshot(row.purchaseSnapshot) || JSON.stringify(s.purchase.selectedServiceMonths) !== JSON.stringify(row.selectedServiceMonths) || s.consent.version !== applicationConsentVersion || s.consent.authorization !== chargeAuthorization || !s.consent.terms || !s.consent.privacy || s.consent.amount !== s.expectedAmount || !s.consent.acceptedAt) throw new ApplicationError("Saved invoice agreement is invalid.", 409);
+  if (!s || s.version !== 2 || !validSavedQuote(s.purchase) || hasInactiveMembershipProducts(s.purchase) || s.accountId !== row.customerAccountId || s.reference !== row.requestNumber || s.stripeCustomerId !== row.stripeCustomerId || s.stripePaymentMethodId !== row.stripePaymentMethodId || s.currency !== "thb" || s.expectedAmount !== row.estimatedTotal || s.purchase.total !== row.estimatedTotal || hashPurchaseSnapshot(s.purchase) !== hashPurchaseSnapshot(row.purchaseSnapshot) || JSON.stringify(s.purchase.selectedServiceMonths) !== JSON.stringify(row.selectedServiceMonths) || s.consent.version !== applicationConsentVersion || s.consent.authorization !== chargeAuthorization || !s.consent.terms || !s.consent.privacy || s.consent.amount !== s.expectedAmount || !s.consent.acceptedAt) throw new ApplicationError("Saved invoice agreement is invalid.", 409);
   return s;
 }
 function invoiceLines(s: ApplicationSnapshot) {
-  if (containsMembershipAlcohol([...s.purchase.products, ...s.purchase.addOns])) throw new ApplicationError(membershipAlcoholMessage, 409);
+  if (hasInactiveMembershipProducts(s.purchase)) throw new ApplicationError(unavailableMembershipProductsMessage, 409);
   const lines = [{ description: `${s.purchase.plan.name} — ${s.purchase.selectedServiceMonths!.join(", ")}`, amount: s.purchase.membershipFee * 100 }];
   const products = [...s.purchase.products, ...s.purchase.addOns];
   if (products.length <= 35) for (const item of products) lines.push({ description: `${item.name} — ${item.totalTermQuantity ?? ("quantity" in item ? item.quantity : item.monthlyQuantity) ?? 1} total units${item.pricingType === "MONTHLY" ? ` across ${s.purchase.plan.durationMonths} selected service months` : " (one-time)"}`, amount: item.lineTotal * 100 });
@@ -138,7 +138,7 @@ export async function ensureDraftInvoice(id: string, accountId: string) {
     if (row.applicationState !== "submitting") return row;
     const s = invoiceApplicationSnapshot(row);
     if (!hasMembershipEligibilityDeclaration(s.membershipEligibility)) throw new ApplicationError("A new application with international-visitor eligibility confirmation is required before invoice creation or approval. Contact the team.", 409);
-    if (containsMembershipAlcohol([...s.purchase.products, ...s.purchase.addOns])) throw new ApplicationError(membershipAlcoholMessage, 409);
+    if (hasInactiveMembershipProducts(s.purchase)) throw new ApplicationError(unavailableMembershipProductsMessage, 409);
     let invoice: Stripe.Invoice | null = row.stripeInvoiceId ? await payments.invoices.retrieve(row.stripeInvoiceId) : null;
     if (!invoice) for await (const candidate of payments.invoices.list({ customer: s.stripeCustomerId, limit: 100 })) {
       if (candidate.metadata?.application_id === row.id) { invoice = candidate; break; }
@@ -176,7 +176,7 @@ export async function approveInvoiceApplication(id: string, actor: string) {
     await assertMembershipPurchaseAllowed(tx, account!, row.planId, row.id);
     const s = invoiceApplicationSnapshot(row);
     if (!hasMembershipEligibilityDeclaration(s.membershipEligibility)) throw new ApplicationError("International-visitor eligibility confirmation is missing. Decline this pending application and ask the customer to reapply with the current eligibility declaration.", 409);
-    if (containsMembershipAlcohol([...s.purchase.products, ...s.purchase.addOns])) throw new ApplicationError(membershipAlcoholMessage, 409);
+    if (hasInactiveMembershipProducts(s.purchase)) throw new ApplicationError(unavailableMembershipProductsMessage, 409);
     const monthError = validateServiceMonths(row.selectedServiceMonths, row.durationMonths, new Date());
     if (monthError) throw new ApplicationError(monthError, 409);
     await deliveryEligibility(s.deliveryAddress);

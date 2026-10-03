@@ -19,17 +19,11 @@ export interface MenuSection {
   items: MenuItem[];
 }
 
-export interface WinePairing {
-  title: string;
-  description: string;
-}
-
 export interface MenuContent {
   title: string;
   intro?: string;
   priceNote?: string;
   sections: MenuSection[];
-  winePairing?: WinePairing;
 }
 
 export interface PortraitImage {

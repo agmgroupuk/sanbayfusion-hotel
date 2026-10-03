@@ -23,7 +23,7 @@ let database: NonNullable<typeof state.db>;
 let stripe: Stripe;
 const rollback = new Error("SANDBOX_FIXTURE_ROLLBACK");
 const details = { customer: { fullName: "Sandbox Application Verification", phone: "+66812345678" }, billingAddress: { country: "GB", line1: "10 Test Street", line2: "", city: "London", state: "", postalCode: "SW1A 1AA" }, deliveryAddress: { country: "Thailand", line1: "999 Rama I Road", line2: "", subdistrict: "Pathum Wan", district: "Pathum Wan", province: "Bangkok", postalCode: "10330" } };
-const configuration = { planSlug: "3-month-membership", selectedServiceMonths: calendarMonths(serviceYears()[1]).slice(0, 3), purchaseMode: "membership_with_package", foodPreferences: [], deliveryArea: "Bangkok", preferredDay: "Monday", preferredTime: membershipPreferredTimes[0], alcoholEnabled: false, selectedProducts: [{ category: "Thai soups", name: "Tom Yum Goong", quantity: 4 }], selectedAddOns: [] };
+const configuration = { planSlug: "3-month-membership", selectedServiceMonths: calendarMonths(serviceYears()[1]).slice(0, 3), purchaseMode: "membership_with_package", foodPreferences: [], deliveryArea: "Bangkok", preferredDay: "Monday", preferredTime: membershipPreferredTimes[0], selectedProducts: [{ category: "Thai soups", name: "Tom Yum Goong", quantity: 4 }] };
 async function fixture(work: (account: CustomerAccount) => Promise<void>) {
   try {
     await database.transaction(async tx => {

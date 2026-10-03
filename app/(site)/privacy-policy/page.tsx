@@ -45,7 +45,7 @@ export default function PrivacyPolicyPage() {
         <p>
           This policy covers the website, membership requests and applications, membership
           administration, contact forms, reservations, invoices, payments, food and
-          beverage orders, deliveries, Account Center, customer support, email and telephone enquiries.
+          refreshments orders, deliveries, Account Center, customer support, email and telephone enquiries.
         </p>
       </LegalSection>
 
@@ -185,9 +185,6 @@ export default function PrivacyPolicyPage() {
       <LegalSection title="12. Information you share in enquiries">
         <p>
           Free-text enquiries, dietary notes and event briefs may contain information you choose to share. Provide only details needed for the request. Please do not include identity documents, sensitive information about other people or payment credentials in these fields.
-        </p>
-        <p>
-          Alcohol is excluded from current membership applications. If a separate service requires eligibility information, the team will explain what is needed for that request. Contact us if information about a child has been submitted and needs review.
         </p>
       </LegalSection>
 

@@ -20,7 +20,7 @@ const membershipHighlights = [
   },
   {
     title: "Your package choice",
-    description: "Select membership only or add monthly prepaid food and beverage quantities.",
+    description: "Select membership only or add monthly prepaid food and refreshments.",
     icon: Users,
   },
   {

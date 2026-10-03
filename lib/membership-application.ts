@@ -15,7 +15,7 @@ import { validateServiceMonths } from "@/lib/membership-service-months";
 import { ApplicationError } from "@/lib/membership-errors";
 export { ApplicationError } from "@/lib/membership-errors";
 import { activateMembershipRequest } from "@/lib/membership-activation";
-import { validSavedQuote } from "@/lib/membership-quote-integrity";
+import { hasInactiveMembershipProducts, validSavedQuote } from "@/lib/membership-quote-integrity";
 
 function services() {
   if (!db || !stripe) throw new ApplicationError("Membership application services are unavailable.", 503);
@@ -144,7 +144,7 @@ export async function submitApplication(account: CustomerAccount, raw: unknown) 
     await assertMembershipPurchaseAllowed(tx, profile!, row.planId, row.id);
     if (row.status !== "application_draft" || row.stripePaymentIntentId) throw new ApplicationError("This application cannot be submitted.", 409);
     const purchase = row.purchaseSnapshot as MembershipPurchaseSnapshot;
-    if (!validSavedQuote(purchase) || purchase.version !== 4 || JSON.stringify(row.selectedServiceMonths) !== JSON.stringify(purchase.selectedServiceMonths)) throw new ApplicationError("Review your membership and selected months again.", 409);
+    if (!validSavedQuote(purchase) || hasInactiveMembershipProducts(purchase) || purchase.version !== 4 || JSON.stringify(row.selectedServiceMonths) !== JSON.stringify(purchase.selectedServiceMonths)) throw new ApplicationError("Review your membership and selected months again.", 409);
     const monthError = validateServiceMonths(row.selectedServiceMonths, row.durationMonths, new Date());
     if (monthError) throw new ApplicationError(monthError, 409);
     if (input.data.quoteHash !== hashPurchaseSnapshot(purchase)) throw new ApplicationError("Your quote changed. Review the latest summary and accept the agreements again.", 409);
@@ -168,7 +168,7 @@ export async function submitApplication(account: CustomerAccount, raw: unknown) 
 function approvedSnapshot(row: MembershipRequest): ApplicationSnapshot {
   const snapshot = row.applicationSnapshot as ApplicationSnapshot | null;
   if (snapshot?.purchase.version === 4 && JSON.stringify(row.selectedServiceMonths) !== JSON.stringify(snapshot.purchase.selectedServiceMonths)) throw new ApplicationError("Saved service months do not match the authorized application.", 409);
-  if (!snapshot || !validSavedQuote(snapshot.purchase)) throw new ApplicationError("The saved price calculation is invalid. New customer confirmation is required.", 409);
+  if (!snapshot || !validSavedQuote(snapshot.purchase) || hasInactiveMembershipProducts(snapshot.purchase)) throw new ApplicationError("The saved price calculation is invalid. New customer confirmation is required.", 409);
   if (!snapshot || snapshot.version !== 1 || snapshot.accountId !== row.customerAccountId || snapshot.stripeCustomerId !== row.stripeCustomerId || snapshot.consent.version !== applicationConsentVersion || !snapshot.consent.terms || !snapshot.consent.privacy || snapshot.consent.authorization !== chargeAuthorization || snapshot.consent.amount !== snapshot.expectedAmount || snapshot.currency !== "thb" || snapshot.expectedAmount !== row.estimatedTotal || snapshot.purchase.total !== row.estimatedTotal || snapshot.purchase.plan.durationMonths !== row.durationMonths || hashPurchaseSnapshot(snapshot.purchase) !== hashPurchaseSnapshot(row.purchaseSnapshot) || !Number.isSafeInteger(snapshot.expectedAmount) || snapshot.expectedAmount <= 0 || !snapshot.consent.acceptedAt) throw new ApplicationError("The saved application or authorization is invalid. New customer confirmation is required.", 409);
   return snapshot;
 }

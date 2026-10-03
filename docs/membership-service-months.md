@@ -102,14 +102,15 @@ fully chargeable and never include another membership fee.
 New Standard Meal orders can be marked fulfilled only after confirmation/payment.
 Historical free-meal requests retain their previous fulfillment path.
 
-## Membership food selection
+## Current catalogue and payment restrictions
 
-Only membership purchase selection excludes alcohol. Existing alcohol catalogue
-records, informational pages, permissions and normal ordering remain intact.
-Server membership validation rejects alcohol categories and beverage add-ons even
-when the browser flag is enabled. Draft-invoice creation and approval also reject
-alcohol-bearing snapshots. Non-alcoholic beverages remain eligible prepaid products.
-The separate Standard Meal allowance applies to eligible food only.
+The active catalogue contains food and refreshments only. Historical orders and
+membership snapshots remain unchanged for accounting, but their retired line items
+cannot be selected for a new order or accepted in a new membership quote. Server
+validation prices only products found in the current catalogue. Saved membership
+quotes used for invoice creation or approved charging are checked against the active
+catalogue and reject retired products or legacy add-on lines. The separate Standard
+Meal allowance applies to eligible food only.
 
 ## Migration and verification
 
@@ -150,8 +151,8 @@ Stripe responses; real sandbox suites remain opt-in. Browser verification uses
 selection, unchanged prepaid arithmetic, active-member UI and checkout persistence.
 
 Standard Meal browser checks: `node scripts/verify-standard-meals-browser.mjs`.
-They verify optional slots, saved schedules through Sign In, alcohol exclusion and
-server rejection, plus the unchanged main catalogue at desktop/tablet/mobile widths.
+They verify optional slots, saved schedules through Sign In, retired-product
+rejection, plus the current main catalogue at desktop/tablet/mobile widths.
 
 Latest local verification: 226 tests passed, with 16 opt-in tests skipped. The
 production build and TypeScript checks passed. Lint has no errors; five existing

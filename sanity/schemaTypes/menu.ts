@@ -8,7 +8,7 @@ const dietaryOptions = [
 
 export const menuType = defineType({
   name: "menu",
-  title: "Tasting Menu",
+  title: "Membership Menu",
   type: "document",
   fields: [
     defineField({ name: "title", title: "Title", type: "string", validation: (r) => r.required() }),
@@ -31,7 +31,7 @@ export const menuType = defineType({
             defineField({ name: "name", title: "Section name", type: "string", validation: (r) => r.required() }),
             defineField({
               name: "items",
-              title: "Courses",
+              title: "Menu items",
               type: "array",
               of: [
                 defineArrayMember({
@@ -55,19 +55,10 @@ export const menuType = defineType({
               ],
             }),
           ],
-          preview: { select: { title: "name", items: "items" }, prepare: ({ title, items }) => ({ title, subtitle: `${items?.length ?? 0} courses` }) },
+          preview: { select: { title: "name", items: "items" }, prepare: ({ title, items }) => ({ title, subtitle: `${items?.length ?? 0} menu items` }) },
         }),
       ],
     }),
-    defineField({
-      name: "winePairing",
-      title: "Wine pairing",
-      type: "object",
-      fields: [
-        defineField({ name: "title", title: "Title", type: "string" }),
-        defineField({ name: "description", title: "Description", type: "text", rows: 3 }),
-      ],
-    }),
   ],
-  preview: { prepare: () => ({ title: "Tasting Menu" }) },
+  preview: { prepare: () => ({ title: "Membership Menu" }) },
 });

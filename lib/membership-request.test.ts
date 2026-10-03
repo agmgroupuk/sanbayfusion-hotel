@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { calendarMonths, serviceYears } from "@/lib/membership-service-months";
 const eligibleMonths = calendarMonths(serviceYears()[1]);
-import { beverageAddOns, membershipPlans } from "@/lib/membership-plans";
+import { membershipPlans } from "@/lib/membership-plans";
 import { catalogueCategories } from "@/lib/catalogue";
 import { buildMembershipDeliverySchedule } from "@/lib/membership-delivery";
 import { pricePackageItem } from "@/lib/package-pricing";
@@ -10,7 +10,7 @@ import { calculateMembershipQuote, validateMembershipConfiguration, type Members
 const base: MembershipConfiguration = {
   planSlug: "3-month-membership", selectedServiceMonths: eligibleMonths.slice(0, 3), purchaseMode: "membership_only", foodPreferences: [],
   deliveryArea: "Bangkok", preferredDay: "Monday", preferredTime: "09:00–12:00",
-  alcoholEnabled: false, selectedAddOns: [], selectedProducts: [],
+  selectedProducts: [],
 };
 const soup = { category: "Thai soups", name: "Tom Yum Goong", quantity: 4 };
 
@@ -32,20 +32,16 @@ describe("membership package pricing", () => {
     expect(pricePackageItem(60, 12, 6, "MONTHLY")).toEqual({ totalTermQuantity: 72, lineTotal: 4320 });
     expect(pricePackageItem(1500, 1, 3, "ONE_TIME")).toEqual({ totalTermQuantity: 1, lineTotal: 1500 });
   });
-  it("uses the authoritative add-on pricing type", () => {
-    const addon = beverageAddOns[0];
-    const original = addon.pricingType;
-    try {
-      const config = { ...base, purchaseMode: "membership_with_package" as const, selectedAddOns: [{ category: addon.category, name: addon.options[0], quantity: 2 }] };
-      addon.pricingType = "ONE_TIME";
-      const once = calculateMembershipQuote(config, membershipPlans[2]);
-      expect(once.packageSubtotal).toBe(addon.price * 2);
-      expect(once.purchaseSnapshot.addOns[0]).toMatchObject({ pricingType: "ONE_TIME", totalTermQuantity: 2 });
-      addon.pricingType = "MONTHLY";
-      const monthly = calculateMembershipQuote(config, membershipPlans[2]);
-      expect(monthly.packageSubtotal).toBe(addon.price * 2 * 3);
-      expect(monthly.purchaseSnapshot.addOns[0]).toMatchObject({ pricingType: "MONTHLY", monthlyQuantity: 2, durationMonths: 3, totalTermQuantity: 6 });
-    } finally { addon.pricingType = original; }
+  it("rejects retired products, old add-on payloads and unknown catalogue categories", () => {
+    for (const selected of [
+      { category: "Beer", name: "Imported Beer", quantity: 1 },
+      { category: "Soft drinks, coffee, tea & juices", name: "Wine", quantity: 1 },
+      { category: "Thai soups", name: "Forged", quantity: 1 },
+    ]) {
+      expect(validateMembershipConfiguration({ ...base, purchaseMode: "membership_with_package", selectedProducts: [selected] }).ok).toBe(false);
+    }
+    expect(validateMembershipConfiguration({ ...base, alcoholEnabled: true }).ok).toBe(false);
+    expect(validateMembershipConfiguration({ ...base, selectedAddOns: [{ category: "wine", name: "Red Wine", quantity: 1 }] }).ok).toBe(false);
   });
   it("ignores browser prices, duration and totals", () => {
     const result = validateMembershipConfiguration({ ...base, purchaseMode: "membership_with_package", durationMonths: 99, total: 1, selectedProducts: [{ ...soup, unitPrice: 1, lineTotal: 1, pricingType: "ONE_TIME" }] });

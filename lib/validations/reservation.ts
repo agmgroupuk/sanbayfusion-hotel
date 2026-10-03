@@ -1,11 +1,13 @@
 import { z } from "zod";
 import { reservationConfig } from "@/lib/reservations/config";
+import { isDiscontinuedProduct } from "@/lib/discontinued-products";
 
 export const reservationSchema = z.object({
   name: z.string().trim().min(2, "Please enter your name").max(120),
   email: z.string().trim().email("Enter a valid email").max(200),
   phone: z.string().trim().min(6, "Enter a contact number").max(40),
-  meetingPurpose: z.string().trim().min(1, "Choose a meeting purpose").max(120),
+  meetingPurpose: z.string().trim().min(1, "Choose a meeting purpose").max(120)
+    .refine(value => !isDiscontinuedProduct(undefined, value), "Please choose a service currently offered."),
   partySize: z
     .number()
     .int()
@@ -28,7 +30,8 @@ export const reservationSchema = z.object({
     .trim()
     .max(500, "Please keep requests under 500 characters")
     .optional()
-    .or(z.literal("")),
+    .or(z.literal(""))
+    .refine(value => !isDiscontinuedProduct(undefined, value), "Please keep requests to services currently offered."),
 });
 
 export type ReservationInput = z.infer<typeof reservationSchema>;

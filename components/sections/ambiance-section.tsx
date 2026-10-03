@@ -34,8 +34,8 @@ export function AmbianceSection() {
           <Parallax speed={0.35} className="group aspect-[4/5] w-full overflow-hidden rounded-sm">
             <div className="relative h-[118%] w-full">
               <Image
-                src="/images/fancy-salmon-dish-with-wine-glasses-in-background.jpg"
-                alt="A plated dish with wine glasses glowing in the candlelit dining room"
+                src="/images/fire-from-wok.jpg"
+                alt="Food prepared in the Sanbay Fusion kitchen"
                 fill
                 sizes="(min-width: 1024px) 50vw, 100vw"
                 className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"

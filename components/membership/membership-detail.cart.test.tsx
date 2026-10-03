@@ -23,11 +23,9 @@ function renderCart(productCount: number) {
     deliveryArea: "Bangkok",
     preferredDay: "Monday",
     preferredTime: "09:00–12:00",
-    alcoholEnabled: false,
     standardMealSlots: [],
     selectedProducts: products,
-    selectedAddOns: [],
-  }, plan);
+    }, plan);
   return renderToStaticMarkup(createElement(MembershipSelectionCart, {
     plan,
     selectedServiceMonths,

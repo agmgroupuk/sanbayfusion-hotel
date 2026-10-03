@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { standardMealAmounts, standardMealTimes, validateStandardMealSlots, standardMealStatus } from "./standard-meal";
-import { membershipPlans, membershipPreferredTimes, beverageAddOns } from "./membership-plans";
+import { membershipPlans, membershipPreferredTimes } from "./membership-plans";
 import { validateMembershipConfiguration } from "./membership-request";
 import { catalogueCategories } from "./catalogue";
 
 const now = new Date("2026-10-02T12:00:00+07:00");
 const months = ["2027-02", "2027-07", "2027-11"];
-const config = { planSlug: "3-month-membership", selectedServiceMonths: months, purchaseMode: "membership_only", foodPreferences: [], deliveryArea: "Bangkok", preferredDay: "Monday", preferredTime: membershipPreferredTimes[0], alcoholEnabled: false, selectedProducts: [], selectedAddOns: [] };
+const config = { planSlug: "3-month-membership", selectedServiceMonths: months, purchaseMode: "membership_only", foodPreferences: [], deliveryArea: "Bangkok", preferredDay: "Monday", preferredTime: membershipPreferredTimes[0], selectedProducts: [] };
 describe("Standard Meal allowances and optional scheduling", () => {
   it("matches all approved allowances without changing membership prices", () => {
     expect(membershipPlans.map(plan => plan.includedBenefit.menuValue)).toEqual([3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12500, 14000, 15000]);
@@ -47,14 +47,9 @@ describe("Standard Meal allowances and optional scheduling", () => {
     expect(standardMealStatus({ serviceMonth: "2026-09", status: "available" }, now)).toBe("EXPIRED");
     expect(standardMealStatus({ serviceMonth: "2026-09", status: "redeemed" }, now)).toBe("REDEEMED");
   });
-  it("rejects alcohol injection regardless of mode, flags or fake client prices, without removing the main catalogue", () => {
-    const alcohol = catalogueCategories.filter(category => category.group === "alcohol");
-    expect(alcohol.length).toBeGreaterThan(0);
-    for (const category of alcohol) for (const alcoholEnabled of [false, true]) {
-      const result = validateMembershipConfiguration({ ...config, alcoholEnabled, purchaseMode: "membership_with_package", selectedProducts: [{ category: category.name, name: category.products[0].name, quantity: 1, group: "food", unitPrice: 0 }] }, now);
-      expect(result).toMatchObject({ ok: false, error: expect.stringContaining("Alcohol cannot") });
-    }
-    for (const addOn of beverageAddOns) expect(validateMembershipConfiguration({ ...config, selectedAddOns: [{ category: addOn.category, name: addOn.options[0], quantity: 1 }] }, now)).toMatchObject({ ok: false });
+  it("rejects retired product IDs and legacy payment fields while allowing current drinks", () => {
+    expect(validateMembershipConfiguration({ ...config, alcoholEnabled: true, purchaseMode: "membership_with_package", selectedProducts: [{ category: "Beer", name: "Imported Beer", quantity: 1 }] }, now).ok).toBe(false);
+    expect(validateMembershipConfiguration({ ...config, selectedAddOns: [{ category: "wine", name: "Red Wine", quantity: 1 }] }, now).ok).toBe(false);
     const drink = catalogueCategories.find(category => category.group === "drinks")!;
     expect(validateMembershipConfiguration({ ...config, purchaseMode: "membership_with_package", selectedProducts: [{ category: drink.name, name: drink.products[0].name, quantity: 2 }] }, now)).toMatchObject({ ok: true });
   });

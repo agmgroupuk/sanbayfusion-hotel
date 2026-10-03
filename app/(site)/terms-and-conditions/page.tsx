@@ -43,7 +43,7 @@ export default function TermsPage() {
           Selecting a plan does not activate membership. Complete your personal information, billing and eligible delivery addresses in Account Center, verify a saved payment method and set a default card before applying. Application checkout records your authorization
           for the displayed membership and package amount. Submission places the application
           in pending review status without charging the membership fee.
-          We may request identity, contact, delivery, age-verification, dietary, or
+          We may request identity, contact, delivery, dietary, or
           product information before deciding whether to accept it.
         </p>
         <p>
@@ -107,7 +107,6 @@ export default function TermsPage() {
         <p>
           Selected prepaid product quantities are monthly quantities. Each product is priced
           at its unit price multiplied by its monthly quantity and the membership duration.
-          Monthly add-ons follow the same rule; one-time add-ons are charged once.
           Package quantities do not specify delivery counts. Scheduling and distribution
           are arranged separately within the selected service months.
         </p>
@@ -155,21 +154,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="8. Alcohol and regulated products">
-        <p>
-          Alcohol is excluded from the current membership application and prepaid package flow. Catalogue references do not constitute permission to purchase or deliver a regulated product. Any separate offering depends on
-          applicable Thai licensing, age and identity verification, permitted sales
-          conditions, advertising, import, premises, and delivery requirements. An
-          option shown on the website does not override a legal restriction.
-        </p>
-        <p>
-          We may refuse or withhold a regulated product when required verification cannot
-          be completed. Food or other lawful parts of an order may be handled separately
-          where operationally possible.
-        </p>
-      </LegalSection>
-
-      <LegalSection title="9. Fees, cancellation, and expiry">
+      <LegalSection title="8. Fees, cancellation, and expiry">
         <p>
           Once the membership fee has been paid and the membership activated, the fee is
           non-refundable except where a refund or other remedy is required by applicable
@@ -184,7 +169,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="10. Website, communications, and privacy">
+      <LegalSection title="9. Website, communications, and privacy">
         <p>
           Menus, products, prices, imagery, availability, and delivery information may
           change. We may correct genuine technical or typographical errors before
@@ -201,7 +186,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="11. Service availability and conduct">
+      <LegalSection title="10. Service availability and conduct">
         <p>
           Weather, transport disruption, supplier failure, government restrictions,
           emergencies, utilities, systems, or other events outside reasonable control may
@@ -215,7 +200,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="12. Electronic acceptance and governing law">
+      <LegalSection title="11. Electronic acceptance and governing law">
         <p>
           Applications and related transactions may be completed electronically. We may
           retain the terms version, acceptance time, request reference, and confirmation
@@ -229,7 +214,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="13. Private events and bespoke hospitality enquiries"><p>Event briefs are requests for a tailored proposal, separate from membership purchases. Submission does not confirm an event, guarantee availability, create a final quotation or authorize a charge. We review the proposed date, venue, guests, menu, staffing, entertainment, equipment, logistics and special requirements before preparing the applicable proposal and next steps.</p><p>Final pricing depends on the agreed scope, including duration, transport, taxes and applicable service charges. Any event-specific confirmation, payment, cancellation or refund terms must be set out and agreed separately; membership fee rules do not automatically apply to an event enquiry. Alcohol-related requirements are discussed separately with the events team and are subject to availability, applicable law, licensing requirements and event circumstances. No alcohol products are purchased or automatically invoiced through the event form.</p></LegalSection>
+      <LegalSection title="12. Private events and bespoke hospitality enquiries"><p>Event briefs are requests for a tailored proposal, separate from membership purchases. Submission does not confirm an event, guarantee availability, create a final quotation or authorize a charge. We review the proposed date, venue, guests, menu, staffing, entertainment, equipment, logistics and special requirements before preparing the applicable proposal and next steps.</p><p>Final pricing depends on the agreed scope, including duration, transport, taxes and applicable service charges. Any event-specific confirmation, payment, cancellation or refund terms must be set out and agreed separately; membership fee rules do not automatically apply to an event enquiry.</p></LegalSection>
 
       <LegalSection title="Contact and complaints">
         <p>

@@ -61,7 +61,7 @@
   --text-lead: clamp(1.375rem, 1.1rem + 0.95vw, 2rem);
 }
 
-/* ---- Maison Noir — warm noir palette, champagne-gold accent ---- */
+/* ---- Maison Noir — warm noir palette, gold accent ---- */
 :root {
   --radius: 0.5rem;
 
@@ -73,7 +73,7 @@
   --popover: oklch(0.17 0.008 56);
   --popover-foreground: oklch(0.965 0.01 88);
 
-  /* primary action = champagne gold */
+  /* primary action = gold */
   --primary: oklch(0.84 0.11 82);
   --primary-foreground: oklch(0.16 0.012 60);
 

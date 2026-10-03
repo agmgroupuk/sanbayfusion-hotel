@@ -1,4 +1,4 @@
-import { platformUrl } from "./platform-hosts";
+import { paymentUrl } from "./platform-hosts";
 /** Accept only internal account and membership destinations, never a caller's host. */
 export function getSafeRedirectPath(value: unknown): string {
   if (typeof value !== "string" || !value.startsWith("/") || /[\\\s\u0000-\u001f\u007f]/.test(value)) return "/dashboard";
@@ -11,5 +11,5 @@ export function getSafeRedirectPath(value: unknown): string {
   } catch { return "/dashboard"; }
 }
 
-export const membershipApplicationPath = platformUrl("pay", "/membership/checkout");
-export const membershipSignInPath = platformUrl("pay", `/signin?next=${encodeURIComponent("/membership/checkout")}`);
+export const membershipApplicationPath = paymentUrl("/membership/checkout");
+export const membershipSignInPath = paymentUrl(`/signin?next=${encodeURIComponent("/membership/checkout")}`);

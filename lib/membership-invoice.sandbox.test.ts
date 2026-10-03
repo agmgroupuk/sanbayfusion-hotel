@@ -27,7 +27,7 @@ import { hasActiveMembership } from "@/lib/membership-term";
 
 const enabled = process.env.RUN_INVOICE_SANDBOX_E2E === "true";
 const stripe = provider!;
-const configuration = { planSlug: "3-month-membership", selectedServiceMonths: ["2027-02", "2027-07", "2027-11"], purchaseMode: "membership_with_package", foodPreferences: [], deliveryArea: "Bangkok", preferredDay: "Monday", preferredTime: membershipPreferredTimes[0], alcoholEnabled: false, selectedProducts: [{ category: "Thai soups", name: "Tom Yum Goong", quantity: 4 }], selectedAddOns: [] };
+const configuration = { planSlug: "3-month-membership", selectedServiceMonths: ["2027-02", "2027-07", "2027-11"], purchaseMode: "membership_with_package", foodPreferences: [], deliveryArea: "Bangkok", preferredDay: "Monday", preferredTime: membershipPreferredTimes[0], selectedProducts: [{ category: "Thai soups", name: "Tom Yum Goong", quantity: 4 }] };
 let client: PGlite, database: ReturnType<typeof drizzle<typeof schema>>, server: Server, listener: ChildProcess;
 let webhook: typeof import("@/app/api/stripe/webhook/route").POST;
 const received: { id: string; type: string; objectId: string; status: number }[] = [];

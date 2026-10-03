@@ -11,7 +11,7 @@ await mkdir(folder, { recursive: true });
 await build({ stdin: { contents: `import React from 'react'; import {createRoot} from 'react-dom/client';
 import {MembershipCheckoutForm} from './components/membership/membership-checkout-form';
 import {membershipPlans} from './lib/membership-plans'; import {calculateMembershipQuote} from './lib/membership-request';
-const plan=membershipPlans[0];const configuration={planSlug:plan.slug,selectedServiceMonths:[(new Date().getFullYear()+1)+'-02'],purchaseMode:'membership_only',foodPreferences:[],deliveryArea:'Bangkok',preferredDay:'Monday',preferredTime:'09:00\u201312:00',alcoholEnabled:false,selectedProducts:[],selectedAddOns:[]};
+const plan=membershipPlans[0];const configuration={planSlug:plan.slug,selectedServiceMonths:[(new Date().getFullYear()+1)+'-02'],purchaseMode:'membership_only',foodPreferences:[],deliveryArea:'Bangkok',preferredDay:'Monday',preferredTime:'09:00\u201312:00',selectedProducts:[]};
 const snapshot=calculateMembershipQuote(configuration,plan).purchaseSnapshot;
 window.__prepared={review:{complete:true,customer:{fullName:'Visitor Example',email:'visitor@example.invalid',phone:'+441234567890'},billingAddress:{line1:'10 Test Road',city:'London',country:'GB'},deliveryAddress:{line1:'Bangkok accommodation',country:'Thailand'},cards:[{id:'pm_fixture',brand:'visa',last4:'4242',expMonth:12,expYear:2030,isDefault:true,verificationStatus:'verified'}],requirements:[]},applicationId:'7a198e0b-4a1e-4d01-8b24-80f471fa8bc1',purchaseSnapshot:snapshot,quoteHash:'a'.repeat(64),reviewHash:'b'.repeat(64)};
 createRoot(document.getElementById('app')).render(<MembershipCheckoutForm plan={plan} purchaseSnapshot={snapshot}/>);`, resolveDir: process.cwd(), loader: "tsx" },

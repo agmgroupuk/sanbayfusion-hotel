@@ -20,7 +20,6 @@ export const membershipConfigurationStorageKey = "sbf-membership-configuration";
 const preferenceOptions = ["Thai Food", "Seafood", "Chicken", "Beef", "Pork", "Vegetarian", "Western Food", "Asian Food"];
 const foodCategories = catalogueCategories.filter((category) => category.group === "food");
 const drinkCategories = catalogueCategories.filter((category) => category.group === "drinks");
-const alcoholCategories = catalogueCategories.filter((category) => category.group === "alcohol");
 type SelectedProduct = { category: string; name: string; quantity: number };
 
 function productKey(category: string, name: string) {
@@ -65,14 +64,6 @@ export function MembershipSelectionCart({
       unitPrice: item.unitPrice,
       lineTotal: item.lineTotal,
       quantityLabel: `${item.monthlyQuantity} / month · ${item.totalTermQuantity} total`,
-    })),
-    ...quote.selectedAddOns.map(item => ({
-      category: item.category,
-      name: item.name,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      lineTotal: item.lineTotal,
-      quantityLabel: `${item.quantity} · ${item.pricingType === "MONTHLY" ? "per month" : "one time"}`,
     })),
   ];
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
@@ -187,7 +178,6 @@ export function MembershipDetail({ plan, blockedStatus = null, today }: { plan: 
   const [standardMealSlots, setStandardMealSlots] = useState<StandardMealSlot[]>([]);
   const [openCategories, setOpenCategories] = useState<string[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
-  const selectedAddOns: SelectedProduct[] = [];
 
   useEffect(() => {
     try {
@@ -208,7 +198,10 @@ export function MembershipDetail({ plan, blockedStatus = null, today }: { plan: 
         const savedMode = configuration.purchaseMode ?? "membership_only";
         setPurchaseMode(savedMode);
         setSelectedProducts(savedMode === "membership_with_package"
-          ? (configuration.selectedProducts ?? []).filter((product) => !alcoholCategories.some((category) => category.name === product.category))
+          ? (configuration.selectedProducts ?? []).filter((product) => {
+            const category = catalogueCategories.find(item => item.name === product.category);
+            return category?.products.some(item => item.name === product.name) ?? false;
+          })
           : []);
         setOpenCategories(savedMode === "membership_with_package"
           ? [...foodCategories, ...drinkCategories].map((category) => category.name)
@@ -227,9 +220,7 @@ export function MembershipDetail({ plan, blockedStatus = null, today }: { plan: 
     deliveryArea: area,
     preferredDay: day,
     preferredTime: time,
-    alcoholEnabled: false,
     standardMealSlots: standardMealSlots.filter(slot => selectedServiceMonths.includes(slot.serviceMonth)),
-    selectedAddOns,
     selectedProducts,
   };
   const quote = calculateMembershipQuote(configuration, plan);
@@ -287,9 +278,7 @@ export function MembershipDetail({ plan, blockedStatus = null, today }: { plan: 
       deliveryArea: area,
       preferredDay: day,
       preferredTime: time,
-      alcoholEnabled: false,
-    standardMealSlots: standardMealSlots.filter(slot => selectedServiceMonths.includes(slot.serviceMonth)),
-      selectedAddOns,
+      standardMealSlots: standardMealSlots.filter(slot => selectedServiceMonths.includes(slot.serviceMonth)),
       selectedProducts,
     };
     // The server cookie preserves the cart even when browser storage is unavailable.

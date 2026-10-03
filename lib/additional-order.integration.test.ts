@@ -45,6 +45,16 @@ describe("connected additional orders",()=>{
     expect((await database.select().from(schema.emailOutbox)).filter(row=>row.template==="sanbay-order-confirmation")).toHaveLength(1);
   });
   it("accepts an alternate verified card",async()=>{await createAdditionalOrder(account,membership.id,{...input(),paymentMethodId:"pm_alternate"});expect([...intents.values()][0].payment_method).toBe("pm_alternate");});
+  it("rejects retired products from a manipulated request before creating a PaymentIntent",async()=>{
+    for (const item of [
+      {category:"Beer",name:"Imported Beer",quantity:1},
+      {category:"Soft drinks, coffee, tea & juices",name:"Vodka",quantity:1},
+    ]) {
+      await expect(createAdditionalOrder(account,membership.id,{...input(),cart:[item]})).rejects.toThrow();
+    }
+    expect(state.create).not.toHaveBeenCalled();
+    expect(await database.select().from(schema.customerOrders)).toHaveLength(0);
+  });
   it.each(["pm_otheruser","pm_unverified"])("rejects %s before creating a payment",async paymentMethodId=>{await expect(createAdditionalOrder(account,membership.id,{...input(),paymentMethodId})).rejects.toThrow("verified saved card");expect(state.create).not.toHaveBeenCalled();});
   it("rejects another user's address",async()=>{await expect(createAdditionalOrder(account,membership.id,{...input(),addressId:crypto.randomUUID()})).rejects.toThrow("saved delivery address");});
   it.each([{cart:[]},{cart:[{category:"bad",name:"invalid",quantity:1}]},{cart:[{category:"Thai soups",name:"Tom Yum Goong",quantity:51}]}])("rejects invalid carts",async ({cart})=>{await expect(createAdditionalOrder(account,membership.id,{...input(),cart})).rejects.toThrow();expect(state.create).not.toHaveBeenCalled();});

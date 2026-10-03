@@ -39,7 +39,7 @@ const meetingPurposes = [
   "Membership information",
   "Membership consultation",
   "Food & catering services",
-  "Alcohol / beverage packages",
+  "Food and refreshments",
   "Corporate or private event planning",
   "Partnership or business enquiry",
   "General consultation",

@@ -3,8 +3,6 @@ import { existsSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { inflateRawSync } from "node:zlib";
 import assert from "node:assert/strict";
-import { tsImport } from "tsx/esm/api";
-const { catalogueCategories } = await tsImport("../lib/catalogue.ts", import.meta.url);
 const origin = process.env.VERIFY_ORIGIN ?? "http://localhost:3102";
 const edge = "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe";
 const browser = await chromium.launch({ ...(existsSync(edge) ? { executablePath: edge } : {}), headless: true });
@@ -30,8 +28,7 @@ try {
     assert.equal(await time.locator('option[value="11:00"]').count(), 1);
     assert.equal(await time.locator('option[value="24:00"]').count(), 1);
     await page.getByRole("radio", { name: /Membership \+ prepaid package/ }).check();
-    assert.equal(await page.getByRole("button", { name: /Add Alcohol|Alcohol · unavailable/ }).count(), 0);
-    for (const category of catalogueCategories.filter(category => category.group === "alcohol")) assert.equal(await page.getByRole("button", { name: new RegExp(`^${category.name}\\b`) }).count(), 0);
+    assert.doesNotMatch(await page.locator("body").innerText(), /\b(?:beer|wine|spirits?)\b/i);
     await page.getByRole("checkbox", { name: /^Tom Yum Goong/ }).check();
     await schedule.screenshot({ path: `.next/verification/standard-meals-${width}.png` });
     assert.match(await page.locator("aside").innerText(), /15,960/);
@@ -42,9 +39,9 @@ try {
     const encoded = Array.from({ length: parts }, (_, i) => cookies.find(cookie => cookie.name === `sbf_membership_checkout_${i}`).value).join("");
     const saved = JSON.parse(inflateRawSync(Buffer.from(encoded, "base64url")).toString()).configuration;
     assert.deepEqual(saved.standardMealSlots, [{ serviceMonth: `${year}-02`, deliveryDate: `${year}-02-14`, deliveryTime: "19:30" }]);
-    const alcohol = catalogueCategories.find(category => category.group === "alcohol");
-    const injected = await page.request.post(`${origin}/api/membership/checkout-selection`, { headers: { Origin: origin }, data: { planSlug: saved.planSlug, configuration: { ...saved, alcoholEnabled: true, selectedProducts: [{ category: alcohol.name, name: alcohol.products[0].name, quantity: 1, price: 0 }] } } });
-    assert.equal(injected.status(), 400); assert.match((await injected.json()).error, /Alcohol cannot/);
+    const injected = await page.request.post(`${origin}/api/membership/checkout-selection`, { headers: { Origin: origin }, data: { planSlug: saved.planSlug, configuration: { ...saved, selectedProducts: [{ category: "Beer", name: "Imported Beer", quantity: 1, price: 0 }] } } });
+    assert.equal(injected.status(), 400);
+    assert.match((await injected.json()).error, /Invalid membership configuration|no longer available/);
     await page.goto(`${origin}/plans/3-month-membership`); await page.waitForLoadState("networkidle");
     assert.equal(await page.getByLabel(`February ${year} delivery date`).inputValue(), `${year}-02-14`);
     assert.equal(await page.getByLabel(`February ${year} delivery time`).inputValue(), "19:30");
@@ -55,7 +52,7 @@ try {
   assert.equal(await page.locator("#standard-meal-schedule-title").locator("..").locator("fieldset").count(), 12);
   await page.getByRole("button", { name: "Continue to Application" }).click(); await page.waitForURL(/\/signin/);
   await page.goto(`${origin}/catalogue`);
-  assert.match(await page.locator("body").innerText(), /Beer|Wine/);
+  assert.doesNotMatch(await page.locator("body").innerText(), /\b(?:beer|wine|spirits?)\b/i);
   assert.deepEqual(errors, []);
-  console.log("Verified optional monthly slots, blank time defaults, 11 AM–midnight options, saved schedules through sign-in, twelve unscheduled slots, membership alcohol exclusion, server rejection, and unchanged main catalogue on desktop/tablet/mobile.");
+  console.log("Verified optional monthly slots, blank time defaults, 11 AM–midnight options, saved schedules through sign-in, twelve unscheduled slots, retired-product rejection, and current catalogue content on desktop/tablet/mobile.");
 } finally { await browser.close(); }

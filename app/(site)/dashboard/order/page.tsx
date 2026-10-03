@@ -12,7 +12,7 @@ import { priceCart } from "@/lib/order";
 
 
 
-export const metadata: Metadata = { title: "Member Order", description: "Build a Sanbay Fusion food and beverage order.", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Member Order", description: "Build a Sanbay Fusion food and refreshments order.", robots: { index: false, follow: false } };
 
 export default async function MemberOrderPage({ searchParams }: { searchParams: Promise<{ standardMeal?: string; membership?: string }> }) {
   const params = await searchParams;
