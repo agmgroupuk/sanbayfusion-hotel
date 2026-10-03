@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useSyncExternalStore } from "react";
+import { useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -15,48 +15,8 @@ import { Magnetic } from "@/components/motion/magnetic";
 const POSTER = "/images/fancy-salmon-dish-with-wine-glasses-in-background.jpg";
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-/** Narrowing for the non-standard, partially-supported Network Information API. */
-type NetworkInformation = {
-  saveData?: boolean;
-  effectiveType?: string;
-};
-
-const DESKTOP_QUERY = "(min-width: 768px)";
-
-/**
- * True only when the hero video is worth its ~7 MB: a roomy screen on a
- * connection that isn't metered or slow. Reads browser state via
- * useSyncExternalStore so SSR renders the poster (server snapshot = false) and
- * the value re-evaluates when the viewport crosses the breakpoint.
- */
-function useHeavyMediaAllowed(enabled: boolean): boolean {
-  return useSyncExternalStore(
-    (onChange) => {
-      if (!enabled || typeof window === "undefined") return () => {};
-      const mq = window.matchMedia(DESKTOP_QUERY);
-      mq.addEventListener("change", onChange);
-      return () => mq.removeEventListener("change", onChange);
-    },
-    () => {
-      if (!enabled) return false;
-      const connection = (
-        navigator as Navigator & { connection?: NetworkInformation }
-      ).connection;
-      const saveData = connection?.saveData === true;
-      const slow =
-        connection?.effectiveType === "2g" ||
-        connection?.effectiveType === "slow-2g";
-      return window.matchMedia(DESKTOP_QUERY).matches && !saveData && !slow;
-    },
-    () => false,
-  );
-}
-
 export function HomeHero() {
   const reduce = useReducedMotion();
-  // Default to the poster (what SSR renders) and upgrade to video only on
-  // capable clients, so mobile / metered loads never pay for the download.
-  const showVideo = useHeavyMediaAllowed(!reduce);
 
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
@@ -75,11 +35,12 @@ export function HomeHero() {
         style={reduce ? undefined : { y: mediaY, scale: mediaScale }}
         className="absolute inset-0 will-change-transform"
       >
-        {!showVideo ? (
+        {reduce ? (
           <Image src={POSTER} alt="" fill priority sizes="100vw" className="object-cover" />
         ) : (
           <video
-            className="absolute inset-0 h-full w-full object-cover"
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover object-[center_58%] sm:object-center"
             autoPlay
             muted
             loop
