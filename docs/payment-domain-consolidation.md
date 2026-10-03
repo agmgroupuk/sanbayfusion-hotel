@@ -1,39 +1,25 @@
-# Sanbay Fusion payment-domain architecture
+# Temporary Railway production host
 
-## Hosts
+The existing application, database, membership/order flows and Stripe integration use one configured production origin:
 
-- `https://sanbayfusion.com` is the canonical public website and customer account host.
-- `https://pay.sanbayfusion.com` is the single host for customer-facing Stripe and payment interfaces. It uses the existing Railway application and database.
+`NEXT_PUBLIC_SITE_URL=https://sanbayfusion-hotel-production.up.railway.app`
 
-Payment page routing is controlled by `NEXT_PUBLIC_PAYMENT_HOST_ENABLED`. It is enabled in production after verifying host redirects, shared sessions, payment return paths, and the Sandbox webhook. `.env.example` keeps it `false` for local development unless the developer is testing the pay host.
+The origin is centralized so the future domain migration requires changing deployment configuration rather than application routes. Membership review, application, food selection, saved payment methods, member ordering and checkout remain distinct workflows at same-origin paths.
 
-## Customer route mapping
+## Sessions, origins and redirects
 
-| Flow | Main-domain entry | Payment-host interface |
-| --- | --- | --- |
-| Membership selection | `/plans` and plan pages | `/membership/checkout` for application and payment preparation |
-| Approved membership payment/recovery | Dashboard membership status | `/membership/payment` |
-| Membership payment result | Main-domain fallback | `/membership/success`, `/membership/payment-failed`, `/membership/thank-you` |
-| Saved payment methods | Dashboard link | `/dashboard/payment-methods` |
-| Additional member order | `/dashboard/order` for menu and scheduling | `/dashboard/checkout` for checkout and payment |
-| Order history and account details | `/dashboard/*` | Redirects back to the main host when entered from the payment host |
+Production sessions and membership-selection cookies are host-only and secure; they are not scoped to a custom parent domain. API mutation origins and Server Action `allowedOrigins` use only the exact `NEXT_PUBLIC_SITE_URL` origin. Railway's `RAILWAY_PUBLIC_DOMAIN` is not an origin allowlist source. No middleware redirect targets the former custom website or payment hosts.
 
-The app, account, membership, and order workflows remain separate. They continue using the same session database, account-to-Stripe-Customer mapping, eligibility checks, pricing, order records, and idempotency controls.
+Payment return paths use the browser's current origin; server-generated password-reset, account-action and membership email links use `NEXT_PUBLIC_SITE_URL`. The same-origin webhook path remains `/api/stripe/webhook`.
 
-## Session and origin security
+## Temporary SEO handling
 
-The existing `HttpOnly`, `Secure` production cookie is scoped to `sanbayfusion.com`, so it is shared only by the apex website and its payment subdomain. Database expiry and revocation remain authoritative. API origin checks and Server Action `allowedOrigins` include only the explicit public website, payment host, and exact Railway service domain.
+The Railway host is an application endpoint, not the permanent SEO identity. Leave `NEXT_PUBLIC_CANONICAL_URL` empty until the future public domain has been configured. With no canonical URL, public pages are marked `noindex`, structured business data and canonical alternates are omitted, and robots/sitemap do not publish the temporary Railway host as an indexing destination. Set the canonical variable only during the future domain migration.
 
-## Stripe Sandbox webhook
+## Stripe Sandbox
 
-The existing webhook implementation remains at `/api/stripe/webhook`. The only active Sandbox endpoint is `https://pay.sanbayfusion.com/api/stripe/webhook` (`we_1UMPlQEfllgi0bMkIbMMZJr`, API version `2026-08-26.dahlia`). It subscribes to the same 15 events as the former main-host endpoint: `payment_intent.succeeded`, `payment_intent.payment_failed`, `payment_intent.requires_action`, `payment_intent.processing`, `payment_intent.canceled`, `refund.created`, `refund.updated`, `refund.failed`, `invoice.finalized`, `invoice.updated`, `invoice.paid`, `invoice.payment_succeeded`, `invoice.payment_failed`, `invoice.payment_action_required`, and `invoice.voided`.
+The current webhook handler is `/api/stripe/webhook`; its temporary Sandbox destination is `https://sanbayfusion-hotel-production.up.railway.app/api/stripe/webhook`. Stripe Live Mode is not part of this configuration. Store the endpoint signing secret in Railway's `STRIPE_WEBHOOK_SECRET`; do not put secrets in source or documentation.
 
-The previous Sandbox endpoint (`we_1UJfL6Efllgi0bMk8hzX76Gr`, main-host URL) is disabled. Railway's `STRIPE_WEBHOOK_SECRET` contains only the pay endpoint's Sandbox secret; the value is not stored in this document. Live Mode was not modified. Verification used a harmless Sandbox `payment_intent.succeeded` event; Stripe reported `pending_webhooks: 0`, and direct valid/invalid signature requests to the pay endpoint returned HTTP 200/400 respectively.
+When creating a new Sandbox destination, first keep the existing endpoint active, copy its event subscriptions, configure both signing secrets briefly, deploy and verify a real harmless Sandbox delivery plus valid/invalid signatures, then disable the old endpoint and retain only the new signing secret. Verify the deployment source after Railway variable changes; use a deployment of the reviewed workspace if an automatic deployment selected a stale repository commit.
 
-When changing Railway variables, verify the resulting deployment source as well as the variable values. A variable-triggered deploy can use the repository-linked source rather than the local upload; deploy the verified workspace snapshot when needed, then recheck host routing and webhook verification.
-
-## Railway domain status
-
-Railway reports the `pay` CNAME's `currentValue` as blank and its DNS status as `REQUIRES_UPDATE`, although the domain is active, verified, has a valid complete TLS certificate, and the public pay host responds over HTTPS. No DNS or Cloudflare changes were made; investigate that status discrepancy before changing DNS.
-
-The app continues rejecting Live Mode webhook events.
+Update `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_CANONICAL_URL`, the Sandbox endpoint URL/secret, and transactional email template URLs when the future `.co.th` domain is ready.

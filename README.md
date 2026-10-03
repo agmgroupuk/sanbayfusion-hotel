@@ -17,7 +17,7 @@
 
 > Operated by Sanbay Fusion Foods Company Limited. Current business information is maintained in `lib/site.ts`. See [the content review](docs/website-content-review.md) for the current service flow and outstanding policy decisions.
 
-**Website:** [sanbayfusion.com](https://sanbayfusion.com/)
+**Production application URL:** Configure `NEXT_PUBLIC_SITE_URL` in the deployment environment. Temporary hosting is not the permanent SEO domain.
 
 ![Sanbay Fusion Bar & Restaurant — cinematic home page](docs/screenshot.jpg)
 
@@ -119,8 +119,10 @@ Each service is independent and optional — connect them in any order. Until yo
 do, the relevant feature falls back to demo behaviour.
 
 ### Site URL & social previews
-Set `NEXT_PUBLIC_SITE_URL` to your canonical production URL — it drives
-`metadataBase`, Open Graph, the sitemap, robots, and JSON-LD. The share images
+Set `NEXT_PUBLIC_SITE_URL` to the active application URL — it drives
+redirects, email links, payment returns, and trusted origins. Set
+`NEXT_PUBLIC_CANONICAL_URL` only when the permanent public domain is configured.
+The share images
 are generated automatically at build time (`app/opengraph-image.tsx` and
 `app/twitter-image.tsx`) — no asset to manage. Preview the Open Graph image at
 `/opengraph-image`.

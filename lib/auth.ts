@@ -4,7 +4,7 @@ import { createHash, randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { cookies, headers } from "next/headers";
-import { platformTrustedHosts, sharedSessionCookie } from "./platform-hosts";
+import { isConfiguredPublicHost, sharedSessionCookie } from "./platform-hosts";
 import { db } from "@/lib/db";
 import { customerAccounts, customerSessions, passwordResetTokens, type CustomerAccount } from "@/lib/db/schema";
 
@@ -37,8 +37,8 @@ export async function createCustomerSession(accountId: string) {
   const token = randomBytes(32).toString("base64url");
   await db.insert(customerSessions).values({ accountId, tokenHash: hashToken(token), expiresAt: new Date(Date.now() + sessionLifetimeMs) });
   (await cookies()).set(sessionCookie, token, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: sessionLifetimeMs / 1000 });
-  if (process.env.NODE_ENV === "production" && platformTrustedHosts.includes((await headers()).get("host") ?? "")) {
-    (await cookies()).set(sharedSessionCookie, token, { domain: "sanbayfusion.com", httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: sessionLifetimeMs / 1000 });
+  if (process.env.NODE_ENV === "production" && isConfiguredPublicHost((await headers()).get("host") ?? "")) {
+    (await cookies()).set(sharedSessionCookie, token, { httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: sessionLifetimeMs / 1000 });
   }
   return true;
 }
@@ -64,7 +64,7 @@ export async function destroyCustomerSession() {
     const token = cookieStore.get(name)?.value;
     if (token) await db.delete(customerSessions).where(eq(customerSessions.tokenHash, hashToken(token)));
   }
-  cookieStore.set(sharedSessionCookie, "", { domain: "sanbayfusion.com", httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 0 });
+  cookieStore.set(sharedSessionCookie, "", { httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 0 });
   cookieStore.delete(sessionCookie);
 }
 

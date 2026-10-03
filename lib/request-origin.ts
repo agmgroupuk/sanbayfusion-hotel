@@ -1,15 +1,7 @@
-import { platformHosts } from "./platform-hosts";
+import { publicSiteUrl } from "./platform-hosts";
 /** Only deployment configuration can add public origins; request host headers cannot. */
 export function trustedPublicOrigins() {
-  const values = [process.env.NEXT_PUBLIC_SITE_URL || "https://sanbayfusion.com", ...Object.values(platformHosts).map(host => `https://${host}`)];
-  const railwayDomain = process.env.RAILWAY_PUBLIC_DOMAIN;
-  if (railwayDomain && /^[a-z0-9.-]+(?::\d+)?$/i.test(railwayDomain)) values.push(`https://${railwayDomain}`);
-  return values.flatMap(value => {
-    try {
-      const url = new URL(value);
-      return ["https:", "http:"].includes(url.protocol) && !url.username && !url.password ? [url.origin] : [];
-    } catch { return []; }
-  });
+  return [publicSiteUrl()];
 }
 
 export function hasValidRequestOrigin(request: Request) {

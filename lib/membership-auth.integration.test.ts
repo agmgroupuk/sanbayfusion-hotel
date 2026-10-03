@@ -4,7 +4,7 @@ import { drizzle } from "drizzle-orm/pglite";
 import { readFileSync, readdirSync } from "node:fs";
 import * as schema from "@/lib/db/schema";
 
-const state = vi.hoisted(() => ({ db: null as typeof import("@/lib/db").db, jar: new Map<string,string>(), options: new Map<string,object>(), host: "sanbayfusion.com" }));
+const state = vi.hoisted(() => ({ db: null as typeof import("@/lib/db").db, jar: new Map<string,string>(), options: new Map<string,object>(), host: "sanbayfusion-hotel-production.up.railway.app" }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/db", () => ({ get db() { return state.db; } }));
 vi.mock("@/lib/stripe", () => ({ stripe: {} })); // No payment calls are needed before account completion.
@@ -27,7 +27,7 @@ import { membershipPreferredTimes } from "@/lib/membership-plans";
 let client: PGlite;
 let database: ReturnType<typeof drizzle<typeof schema>>;
 const configuration = { planSlug: "3-month-membership", selectedServiceMonths: ["2027-02", "2027-07", "2027-11"], purchaseMode: "membership_with_package", foodPreferences: ["Thai Food"], deliveryArea: "Bangkok", preferredDay: "Monday", preferredTime: membershipPreferredTimes[0], selectedProducts: [{ category: "Thai soups", name: "Tom Yum Goong", quantity: 4 }] };
-const request = (body: object, origin = "https://sanbayfusion.com") => new Request("http://0.0.0.0:8080/api/test", { method: "POST", headers: { origin, "content-type": "application/json" }, body: JSON.stringify(body) });
+const request = (body: object, origin = "https://sanbayfusion-hotel-production.up.railway.app") => new Request("http://0.0.0.0:8080/api/test", { method: "POST", headers: { origin, "content-type": "application/json" }, body: JSON.stringify(body) });
 function credentials(next = "/membership/checkout", password = "TestPassword123") {
   const data = new FormData();
   for (const [key, value] of Object.entries({ email: "flow@example.invalid", password, next })) data.set(key, value);
@@ -41,8 +41,8 @@ beforeAll(async () => {
   state.db = database as unknown as NonNullable<typeof state.db>;
 }, 60000);
 beforeEach(async () => {
-  state.host = "sanbayfusion.com";
-  vi.stubEnv("NODE_ENV", "production"); vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://sanbayfusion.com"); vi.stubEnv("RAILWAY_PUBLIC_DOMAIN", "sanbayfusion.com");
+  state.host = "sanbayfusion-hotel-production.up.railway.app";
+  vi.stubEnv("NODE_ENV", "production"); vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://sanbayfusion-hotel-production.up.railway.app"); vi.stubEnv("RAILWAY_PUBLIC_DOMAIN", "pay.sanbayfusion.com");
   vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2026-10-02T05:00:00Z"));
   await client.exec("TRUNCATE customer_accounts, account_rate_limits CASCADE");
   state.jar.clear(); state.options.clear();
@@ -55,17 +55,18 @@ describe("membership authentication journey with real sessions and isolated Post
   it("resolves the same account using only the shared cookie and revokes it on sign out", async () => {
     await expect(signIn(credentials())).rejects.toThrow("REDIRECT:/membership/checkout");
     const first = await getCurrentAccount();
-    state.jar.delete(sessionCookie); // A sibling host never receives the old host-only cookie.
+    state.jar.delete(sessionCookie); // The configured host still receives the same-origin session cookie.
     expect((await getCurrentAccount())?.id).toBe(first?.id);
     const {destroyCustomerSession} = await import("./auth");
     await destroyCustomerSession();
     expect(await getCurrentAccount()).toBeNull();
     expect(await database.select().from(schema.customerSessions)).toHaveLength(0);
   });
-  it("issues the same shared session cookie when authentication begins on the payment host", async () => {
-    state.host = "pay.sanbayfusion.com";
+  it("issues a host-only production session cookie on the configured Railway domain", async () => {
+    state.host = "sanbayfusion-hotel-production.up.railway.app";
     await expect(signIn(credentials("/dashboard/payment-methods"))).rejects.toThrow("REDIRECT:/dashboard/payment-methods");
-    expect(state.options.get(sharedSessionCookie)).toMatchObject({ domain: "sanbayfusion.com", httpOnly: true, secure: true, sameSite: "lax", path: "/" });
+    expect(state.options.get(sharedSessionCookie)).toMatchObject({ httpOnly: true, secure: true, sameSite: "lax", path: "/" });
+    expect(state.options.get(sharedSessionCookie)).not.toHaveProperty("domain");
     expect(await getCurrentAccount()).toMatchObject({ email: "flow@example.invalid" });
   });
   it("preserves the guest cart, signs in to checkout, reprices and identifies missing account details without creating an application", async () => {
@@ -73,13 +74,14 @@ describe("membership authentication journey with real sessions and isolated Post
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ next: "/signin?next=%2Fmembership%2Fcheckout" });
     expect((await readMembershipCheckoutSelection())?.configuration).toEqual(configuration);
-    expect(state.options.get(sharedCheckoutCookie)).toMatchObject({ httpOnly: true, secure: true, sameSite: "lax", path: "/", domain:"sanbayfusion.com" });
+    expect(state.options.get(sharedCheckoutCookie)).toMatchObject({ httpOnly: true, secure: true, sameSite: "lax", path: "/" });
+    expect(state.options.get(sharedCheckoutCookie)).not.toHaveProperty("domain");
     expect(await database.select().from(schema.membershipRequests)).toHaveLength(0);
     expect((await apply(request({ action: "prepare" }))).status).toBe(401);
     expect((await apply(request({ action: "submit", applicationId: crypto.randomUUID() }))).status).toBe(401);
     await expect(signIn(credentials())).rejects.toThrow("REDIRECT:/membership/checkout");
     expect(await getCurrentAccount()).toMatchObject({ email: "flow@example.invalid" });
-    expect(state.options.get(sharedSessionCookie)).toMatchObject({domain:"sanbayfusion.com",httpOnly:true,secure:true,sameSite:"lax"});
+    expect(state.options.get(sharedSessionCookie)).toMatchObject({httpOnly:true,secure:true,sameSite:"lax"});
     expect((await readMembershipCheckoutSelection())?.configuration).toEqual(configuration);
     const reviewResponse = await apply(request({ action: "prepare", amount: 1, accountId: "attacker" }));
     expect(reviewResponse.status).toBe(200);

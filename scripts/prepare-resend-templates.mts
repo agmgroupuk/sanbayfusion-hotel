@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { managedEmailTemplates, managedTemplateContent, renderManagedEmail } from "../lib/email/managed-templates.js";
 import { emailSender, templatePurpose } from "../lib/email/senders.js";
+import { site } from "../lib/site.js";
 import { readFile } from "node:fs/promises";
 
 const folder = process.env.EMAIL_PREVIEW_DIR || ".next/resend-setup";
@@ -12,7 +13,7 @@ const exampleValues: Record<string, string> = {
   REQUEST_NUMBER: "SBF-PREVIEW-ONLY", PLAN_NAME: "3-Month Membership", SERVICE_MONTHS: "January, April and July 2027",
   PURCHASE_MODE: "Membership only", TOTAL_AMOUNT: "THB 15,000", MEETING_DATE: "15 January 2027",
   MEETING_TIME: "14:00 (Bangkok)", ATTENDEES: "2", NOTES: "Template preview only. No meeting or membership was created.",
-  MESSAGE: "This is a template preview, not a real customer enquiry.", SECURE_URL: "https://sanbayfusion.com/signin",
+  MESSAGE: "This is a template preview, not a real customer enquiry.", SECURE_URL: `${site.url}/signin`,
   UPDATE_MESSAGE: "Preview only: two-factor authentication enabled.", MEMBER_ID: "SBF-PREVIEW-ONLY",
   EXPIRY_DATE: "2027-08-01", MEAL_NAME: "Included Standard Meal", DELIVERY_DATE: "2027-01-15", DELIVERY_TIME: "19:30",
   ORDER_NUMBER: "SBF-PREVIEW-ONLY", ORDER_STATUS: "confirmed (preview only)", PAYMENT_STATUS: "paid (preview only)",

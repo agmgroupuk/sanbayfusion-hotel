@@ -19,6 +19,7 @@ export const metadata: Metadata = {
   description: site.description,
   // Public pages declare their own canonical; private routes must not inherit '/'.
   alternates: undefined,
+  robots: site.canonicalUrl ? undefined : { index: false, follow: false },
   verification: process.env.GOOGLE_SITE_VERIFICATION
     ? { google: process.env.GOOGLE_SITE_VERIFICATION.trim() }
     : undefined,

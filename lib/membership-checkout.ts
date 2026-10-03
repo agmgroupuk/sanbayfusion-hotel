@@ -1,7 +1,7 @@
 import "server-only";
 import { deflateRawSync, inflateRawSync } from "node:zlib";
 import { cookies, headers } from "next/headers";
-import { platformTrustedHosts } from "./platform-hosts";
+import { isConfiguredPublicHost } from "./platform-hosts";
 import { z } from "zod";
 import { membershipConfigurationSchema } from "@/lib/membership-request";
 export const membershipCheckoutCookie = "sbf_membership_checkout";
@@ -12,9 +12,9 @@ export async function saveMembershipCheckoutSelection(planSlug: string, configur
   const value = deflateRawSync(Buffer.from(JSON.stringify(membershipCheckoutSelectionSchema.parse({ planSlug, configuration })))).toString("base64url");
   const chunks = value.match(/.{1,2800}/g) ?? [];
   if (!chunks.length || chunks.length > 4) throw new Error("Membership selection is too large");
-  const shared = process.env.NODE_ENV === "production" && platformTrustedHosts.includes((await headers()).get("host") ?? "");
+  const shared = process.env.NODE_ENV === "production" && isConfiguredPublicHost((await headers()).get("host") ?? "");
   const prefix = shared ? sharedCheckoutCookie : membershipCheckoutCookie;
-  const options = { httpOnly: true, sameSite: "lax" as const, secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24, ...(shared ? {domain:"sanbayfusion.com"} : {}) };
+  const options = { httpOnly: true, sameSite: "lax" as const, secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 };
   store.set(prefix, `v2:${chunks.length}`, options);
   for (let index = 0; index < 4; index++) {
     const name = `${prefix}_${index}`;
@@ -44,5 +44,5 @@ export async function readMembershipCheckoutSelection() {
 export async function clearMembershipCheckoutSelection() {
   const store = await cookies(); store.delete(membershipCheckoutCookie);
   for (let i = 0; i < 4; i++) store.delete(`${membershipCheckoutCookie}_${i}`);
-  for (const name of [sharedCheckoutCookie,...Array.from({length:4},(_,i)=>`${sharedCheckoutCookie}_${i}`)]) store.set(name,"",{domain:"sanbayfusion.com",path:"/",httpOnly:true,secure:true,sameSite:"lax",maxAge:0});
+  for (const name of [sharedCheckoutCookie,...Array.from({length:4},(_,i)=>`${sharedCheckoutCookie}_${i}`)]) store.set(name,"",{path:"/",httpOnly:true,secure:true,sameSite:"lax",maxAge:0});
 }

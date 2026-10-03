@@ -27,12 +27,12 @@ export type PublicPagePath = keyof typeof publicPageSeo;
 
 export function createPageMetadata(path: string, title: string, description: string): Metadata {
   const fullTitle = `${title} | ${site.name}`;
-  const url = new URL(path, site.url).href;
+  const url = site.canonicalUrl ? new URL(path, site.canonicalUrl).href : undefined;
   const image = { url: `${site.url}/opengraph-image`, width: 1200, height: 630, alt: `${site.name} — memberships for international visitors and bespoke hospitality` };
   return {
     title: { absolute: fullTitle },
     description,
-    alternates: { canonical: url },
+    alternates: url ? { canonical: url } : undefined,
     openGraph: { type: "website", locale: "en_US", title: fullTitle, description, siteName: site.name, url, images: [image] },
     twitter: { card: "summary_large_image", title: fullTitle, description, images: [{ ...image, url: `${site.url}/twitter-image` }] },
   };

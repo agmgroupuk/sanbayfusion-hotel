@@ -28,7 +28,7 @@ unversioned URL as well as metadata links after deployment to detect stale CDN
 responses rather than relying only on a cache-busting query.
 
 Run `node scripts/verify-brand-icons.mjs` against the production build locally.
-Set `VERIFY_ORIGIN=https://sanbayfusion.com` to check the public deployment. The
+Set `VERIFY_ORIGIN` to the active `NEXT_PUBLIC_SITE_URL` to check the public deployment. The
 script checks exact asset hashes, all aliases, manifest dimensions, rendered icon
 metadata, share image responses and robots rules. It saves a response audit at
 `.next/branding-audit/verification.json`. Run from a network permitted by the
@@ -39,7 +39,7 @@ domain's Cloudflare rules; an HTML challenge response must not pass verification
 Railway deployment `29e505dc-68e3-4dbf-a98d-6e16ec90ec9e` completed successfully.
 The production build, TypeScript checks and focused lint checks passed (the share
 card retains its existing ImageResponse-specific img lint warning). All 23 HTTP
-checks passed locally and against `https://sanbayfusion.com` from the production
+checks passed locally and against the then-configured public host from the production
 server's network. This includes the exact previous deployment's icon query URLs,
 not only newly versioned URLs. The public unversioned ICO and previous ICO URL
 both returned SHA-256

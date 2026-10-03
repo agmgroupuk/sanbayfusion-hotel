@@ -1,4 +1,15 @@
+import { publicSiteUrl } from "./platform-hosts";
+
 const emails = { general: "info@sanbayfusion.com", support: "support@sanbayfusion.com", account: "account@sanbayfusion.com", reservation: "reservation@sanbayfusion.com" } as const;
+const configuredCanonicalUrl = process.env.NEXT_PUBLIC_CANONICAL_URL?.trim();
+let canonicalUrl: string | null = null;
+if (configuredCanonicalUrl) {
+  const url = new URL(configuredCanonicalUrl);
+  if (url.protocol !== "https:" || url.username || url.password || url.pathname !== "/" || url.search || url.hash) {
+    throw new Error("NEXT_PUBLIC_CANONICAL_URL must be an HTTPS origin without credentials, path, query, or fragment.");
+  }
+  canonicalUrl = url.origin;
+}
 
 export const site = {
   name: "Sanbay Fusion",
@@ -8,7 +19,8 @@ export const site = {
   tagline: "Food memberships for international visitors",
   description:
     "Food memberships for eligible international visitors travelling to Thailand, plus private events and bespoke hospitality from Sanbay Fusion.",
-  url: (process.env.NEXT_PUBLIC_SITE_URL || "https://sanbayfusion.com").replace(/\/+$/, ""),
+  url: publicSiteUrl(),
+  canonicalUrl,
   address: {
     line1: "395/2 Sathu Pradit Rd",
     line2: "Chong Nonsi, Yan Nawa",

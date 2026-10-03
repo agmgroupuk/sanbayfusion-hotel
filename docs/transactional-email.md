@@ -64,7 +64,7 @@ Worker logs contain queue counts, template names and outbox IDs, not email bodie
 | `SUPPORT_FROM_EMAIL` | `Sanbay Fusion <support@sanbayfusion.com>` |
 | `RESERVATION_FROM_EMAIL` | `Sanbay Fusion <reservation@sanbayfusion.com>` |
 | `RESTAURANT_NOTIFY_EMAIL` | `support@sanbayfusion.com` |
-| `NEXT_PUBLIC_SITE_URL` | `https://sanbayfusion.com` |
+| `NEXT_PUBLIC_SITE_URL` | Active application origin from deployment configuration; currently the temporary Railway production URL. |
 | `EMAIL_WORKER_ENABLED` | `true` |
 
 Resend MCP confirmed the domain, DKIM and SPF verified, sending enabled, Receiving disabled, and no existing webhooks. Observed account limits: 100 messages/day and 3,000/month. This implementation does not change the subscription or enable inbound processing.

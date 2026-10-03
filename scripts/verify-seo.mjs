@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 
 const origin = process.env.VERIFY_ORIGIN || "http://127.0.0.1:3107";
-const canonicalOrigin = "https://sanbayfusion.com";
+const canonicalOrigin = process.env.NEXT_PUBLIC_CANONICAL_URL?.replace(/\/+$/, "");
+if (!canonicalOrigin || !canonicalOrigin.startsWith("https://")) throw new Error("Set NEXT_PUBLIC_CANONICAL_URL to the intended permanent SEO domain before running this verifier.");
 const decode = text => text.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
 const attributes = tag => Object.fromEntries([...tag.matchAll(/([\w:-]+)="([^"]*)"/g)].map(m => [m[1], decode(m[2])]));
 const results = [];

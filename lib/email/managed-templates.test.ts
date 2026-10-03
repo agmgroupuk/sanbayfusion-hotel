@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderManagedEmail } from "./managed-templates";
+import { site } from "@/lib/site";
 
 const transport = vi.hoisted(() => ({ send: vi.fn() }));
 vi.mock("./client", () => ({
@@ -31,7 +32,7 @@ describe("transactional email safety and delivery results", () => {
   });
 
   it("preserves reset tokens in plain text and escapes URL attributes in HTML", async () => {
-    const url = "https://sanbayfusion.com/reset-password?token=sample&source=account";
+    const url = `${site.url}/reset-password?token=sample&source=account`;
     await sendPasswordResetEmail("test@example.invalid", url);
     const sent = transport.send.mock.calls[0][0];
     expect(sent.text).toContain(url);
@@ -41,7 +42,7 @@ describe("transactional email safety and delivery results", () => {
 
   it("reports provider rejection instead of claiming password or enquiry email success", async () => {
     transport.send.mockResolvedValue({ data: null, error: { message: "Rejected" } });
-    await expect(sendPasswordResetEmail("test@example.invalid", "https://sanbayfusion.com/reset-password?token=sample")).rejects.toThrow("delivery failed");
+    await expect(sendPasswordResetEmail("test@example.invalid", `${site.url}/reset-password?token=sample`)).rejects.toThrow("delivery failed");
     await expect(sendContactEmail({ name: "Customer", email: "test@example.invalid", message: "Hello" })).rejects.toThrow("delivery failed");
   });
 

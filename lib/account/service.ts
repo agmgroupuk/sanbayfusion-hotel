@@ -12,6 +12,7 @@ import { renderManagedEmail } from "@/lib/email/managed-templates";
 import { AccountError, addressSchema, profileSchema, type SavedAddress, type SafeCard } from "./types";
 import { audit, digest, rateLimit, reauthenticate } from "./security";
 import { isMembershipAdmin } from "@/lib/membership-admin";
+import { publicSiteUrl } from "@/lib/platform-hosts";
 const payments = () => { if (!stripe) throw new AccountError("Sandbox payment methods are currently unavailable.", 503); return stripe; };
 const ownerId = (value: string | { id: string } | null) => typeof value === "string" ? value : value?.id;
 export async function stripeCustomer(accountId: string, create = false) {
@@ -148,7 +149,7 @@ export async function requestEmailChange(accountId: string, rawEmail: string, pa
   const token = randomBytes(32).toString("base64url");
   const change = { newEmail: parsed.data, tokenHash: digest(token), expiresAt: new Date(Date.now() + 30 * 60_000) };
   await db!.insert(accountEmailChanges).values({ accountId, ...change }).onConflictDoUpdate({ target: accountEmailChanges.accountId, set: change });
-  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sanbayfusion.com";
+  const origin = publicSiteUrl();
   const message = renderManagedEmail("sanbay-email-verification", { SECURE_URL: `${origin}/dashboard/personal?emailToken=${encodeURIComponent(token)}` });
   const result = await resend.emails.send({ from: ACCOUNT_FROM_EMAIL, to: parsed.data, ...message, ...inlineEmailLogo(message.html) });
   if (result.error) throw new AccountError("Verification email could not be sent. Your email has not changed.", 503);

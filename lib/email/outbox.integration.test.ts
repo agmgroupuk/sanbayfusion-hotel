@@ -5,6 +5,7 @@ import { dispatchOne, type OutgoingEmail } from "./worker";
 import { reminderSql } from "./reminders";
 import { managedEmailTemplates, managedTemplateContent, renderManagedEmail } from "./managed-templates";
 import { templatePurpose } from "./senders";
+import { site } from "@/lib/site";
 
 let client: PGlite;
 let accountId: string;
@@ -130,7 +131,7 @@ describe("transactional email events, delivery and scheduling", () => {
   it("renders every published template without unresolved variables or legacy branding", () => {
     expect(new Set(managedEmailTemplates.map(t => t.alias)).size).toBe(managedEmailTemplates.length);
     for (const template of managedEmailTemplates) {
-      const values = Object.fromEntries(managedTemplateContent(template).variables.map(v => [v.key, v.key === "SECURE_URL" ? "https://sanbayfusion.com/signin" : "Preview & sample"]));
+      const values = Object.fromEntries(managedTemplateContent(template).variables.map(v => [v.key, v.key === "SECURE_URL" ? `${site.url}/signin` : "Preview & sample"]));
       const email = renderManagedEmail(template.alias, values);
       expect(email.html).not.toMatch(/\{\{\{|maula|mola[ .-]?ai|<script/i);
       expect(email.html).toContain("sanbayfusion-logo.png");

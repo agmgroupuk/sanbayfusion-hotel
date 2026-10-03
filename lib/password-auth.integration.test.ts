@@ -37,7 +37,7 @@ beforeEach(async () => {
   accountId = account.id;
   token = (await createPasswordResetToken(accountId))!;
   state.jar.clear(); state.send.mockReset().mockResolvedValue({ sent: true });
-  vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://sanbayfusion.com");
+  vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://sanbayfusion-hotel-production.up.railway.app");
 });
 afterEach(() => vi.unstubAllEnvs());
 afterAll(async () => { await client.close(); });
@@ -62,7 +62,7 @@ describe("server-enforced password creation and recovery", () => {
     await expect(signIn(data({ email: "existing@example.invalid", password: "LegacyPassword123", next: "/membership/checkout" }))).rejects.toThrow("REDIRECT:/membership/checkout");
     await expect(requestPasswordReset(data({ email: "existing@example.invalid" }))).rejects.toThrow("REDIRECT:/signin?reset=requested");
     const link = new URL(state.send.mock.calls[0][1]);
-    expect(link.origin).toBe("https://sanbayfusion.com");
+    expect(link.origin).toBe("https://sanbayfusion-hotel-production.up.railway.app");
     token = link.searchParams.get("token")!;
     const page = await ResetPasswordPage({ searchParams: Promise.resolve({ token }) });
     expect(page.props.children[1].props.tokenExpiresAt).toBeGreaterThan(Date.now());

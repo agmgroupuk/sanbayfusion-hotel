@@ -25,8 +25,8 @@ const meetingDetails: Array<[string, string]> = [
   ["Purpose / notes", "{{{NOTES}}}"],
 ];
 
-const accountAction = { label: "Open Account Center", url: "https://sanbayfusion.com/dashboard" };
-const membershipAction = { label: "View your membership", url: "https://sanbayfusion.com/dashboard/membership" };
+const accountAction = { label: "Open Account Center", url: `${site.url}/dashboard` };
+const membershipAction = { label: "View your membership", url: `${site.url}/dashboard/membership` };
 const securityNote = `If you did not make this change, contact ${site.emails.account} immediately. We will never ask you to email your password, authentication codes or card details.`;
 const membershipReference: Array<[string, string]> = [["Reference", "{{{REQUEST_NUMBER}}}"], ["Membership", "{{{PLAN_NAME}}}"]];
 const deliveryDetails: Array<[string, string]> = [["Reference", "{{{REQUEST_NUMBER}}}"], ["Service", "{{{MEAL_NAME}}}"], ["Delivery date", "{{{DELIVERY_DATE}}}"], ["Delivery time", "{{{DELIVERY_TIME}}} (Bangkok)"]];
@@ -140,7 +140,7 @@ export const managedEmailTemplates: ManagedEmailTemplate[] = [
     subject: "Your Sanbay Fusion membership application was received", heading: "Application received",
     introduction: "Hello {{{CUSTOMER_NAME}}}, thank you for submitting your membership application. Our team will review your information and may contact you before approval.",
     details: applicationDetails,
-    action: { label: "View your application", url: "https://sanbayfusion.com/dashboard/membership" },
+    action: { label: "View your application", url: `${site.url}/dashboard/membership` },
     note: "Status: Pending review. The membership amount has not been charged and your membership is not active. Your saved application shows the agreed amount and selected service months.",
   },
   {
@@ -148,7 +148,7 @@ export const managedEmailTemplates: ManagedEmailTemplate[] = [
     subject: "Sanbay Fusion membership application requires review", heading: "Membership review required",
     introduction: "A customer has submitted a membership application. Review the saved account information, payment verification and agreement before approving it.",
     details: [["Customer", "{{{CUSTOMER_NAME}}}"], ["Email", "{{{CUSTOMER_EMAIL}}}"], ["Phone", "{{{CUSTOMER_PHONE}}}"], ...applicationDetails],
-    action: { label: "Open staff review", url: "https://sanbayfusion.com/admin/activate-membership" },
+    action: { label: "Open staff review", url: `${site.url}/admin/activate-membership` },
     note: "Status: Pending review. The membership amount has not been charged and the membership is not active. Only authorized staff can approve the application.",
   },
   {

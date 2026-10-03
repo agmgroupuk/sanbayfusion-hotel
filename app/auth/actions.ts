@@ -14,6 +14,7 @@ import { isMembershipAdmin } from "@/lib/membership-admin";
 import { getSafeRedirectPath } from "@/lib/auth-redirect";
 import { passwordConfirmationSchema } from "@/lib/password-policy";
 import { signUpSchema } from "@/lib/signup-validation";
+import { publicSiteUrl } from "@/lib/platform-hosts";
 
 export type AuthResult = { ok: true; message?: string } | { ok: false; error: string; resetLinkInvalid?: boolean };
 
@@ -67,10 +68,8 @@ export async function requestPasswordReset(formData: FormData): Promise<AuthResu
   const account = (await db.select().from(customerAccounts).where(eq(customerAccounts.email, email)).limit(1))[0];
   if (account) {
     const token = await createPasswordResetToken(account.id);
-    const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sanbayfusion.com";
-    if (token) {
-      await sendPasswordResetEmail(account.email, `${origin}/reset-password?token=${encodeURIComponent(token)}`).catch(() => console.error("[auth] password reset email failed"));
-    }
+    const origin = publicSiteUrl();
+    if (token) await sendPasswordResetEmail(account.email, `${origin}/reset-password?token=${encodeURIComponent(token)}`).catch(() => console.error("[auth] password reset email failed"));
   }
   redirect("/signin?reset=requested");
 }

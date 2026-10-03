@@ -1,35 +1,35 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { isPaymentPagePath, paymentUrl, platformTrustedHosts } from "./platform-hosts";
+import { isConfiguredPublicHost, paymentUrl, publicSiteUrl, sharedSessionCookie } from "./platform-hosts";
 
-beforeEach(() => vi.stubEnv("NEXT_PUBLIC_PAYMENT_HOST_ENABLED", "false"));
+const railwayOrigin = "https://sanbayfusion-hotel-production.up.railway.app";
+
+beforeEach(() => vi.stubEnv("NEXT_PUBLIC_SITE_URL", railwayOrigin));
 afterEach(() => vi.unstubAllEnvs());
 
-describe("single payment-host routing", () => {
-  it("keeps main-domain fallback URLs until the pay host is enabled", () => {
-    expect(paymentUrl("/dashboard/payment-methods")).toBe("/dashboard/payment-methods");
+describe("single-origin production configuration", () => {
+  it("uses the configured public origin for all payment interfaces", () => {
+    expect(paymentUrl("/dashboard/payment-methods?returnTo=membership")).toBe("/dashboard/payment-methods?returnTo=membership");
+    expect(paymentUrl("/membership/checkout")).toBe("/membership/checkout");
   });
 
-  it("builds payment links on the dedicated payment host when enabled", () => {
-    vi.stubEnv("NEXT_PUBLIC_PAYMENT_HOST_ENABLED", "true");
-    expect(paymentUrl("/dashboard/payment-methods?returnTo=membership")).toBe("https://pay.sanbayfusion.com/dashboard/payment-methods?returnTo=membership");
-  });
-
-  it("rejects non-path destinations", () => {
-    vi.stubEnv("NEXT_PUBLIC_PAYMENT_HOST_ENABLED", "true");
+  it("rejects external and malformed link destinations", () => {
     expect(paymentUrl("//attacker.invalid")).toBe("/dashboard");
     expect(paymentUrl("https://attacker.invalid")).toBe("/dashboard");
+    expect(paymentUrl("/\\attacker.invalid")).toBe("/dashboard");
   });
 
-  it("recognizes only customer payment interfaces as payment-host pages", () => {
-    expect(isPaymentPagePath("/membership/checkout")).toBe(true);
-    expect(isPaymentPagePath("/dashboard/checkout")).toBe(true);
-    expect(isPaymentPagePath("/dashboard/payment-methods")).toBe(true);
-    expect(isPaymentPagePath("/membership/payment")).toBe(true);
-    expect(isPaymentPagePath("/dashboard/orders")).toBe(false);
-    expect(isPaymentPagePath("/dashboard/checkout-preview")).toBe(false);
+  it("accepts only the configured host and keeps authentication cookies host-only", () => {
+    expect(isConfiguredPublicHost("sanbayfusion-hotel-production.up.railway.app")).toBe(true);
+    expect(isConfiguredPublicHost("pay.sanbayfusion.com")).toBe(false);
+    expect(isConfiguredPublicHost("sanbayfusion.com")).toBe(false);
+    expect(sharedSessionCookie).toBe("__Secure-sbf_platform_session");
   });
 
-  it("trusts only the public website and payment host", () => {
-    expect(platformTrustedHosts).toEqual(["sanbayfusion.com", "pay.sanbayfusion.com"]);
+  it("requires an HTTPS production origin with no path or credentials", () => {
+    expect(() => publicSiteUrl()).not.toThrow();
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "http://public.example");
+    expect(() => publicSiteUrl()).toThrow("must use HTTPS");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://user:pass@example.com/path");
+    expect(() => publicSiteUrl()).toThrow("must be an origin");
   });
 });

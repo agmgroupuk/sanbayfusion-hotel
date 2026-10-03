@@ -2,36 +2,41 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { hasValidRequestOrigin, trustedPublicOrigins } from "./request-origin";
 import { getSafeRedirectPath } from "./auth-redirect";
 
+const productionOrigin = "https://sanbayfusion-hotel-production.up.railway.app";
+
 beforeEach(() => {
   vi.stubEnv("NODE_ENV", "production");
-  vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://sanbayfusion.com");
-  vi.stubEnv("RAILWAY_PUBLIC_DOMAIN", "sanbayfusion.com");
+  vi.stubEnv("NEXT_PUBLIC_SITE_URL", productionOrigin);
+  vi.stubEnv("RAILWAY_PUBLIC_DOMAIN", "pay.sanbayfusion.com");
 });
 afterEach(() => vi.unstubAllEnvs());
 const request = (origin: string, headers: Record<string, string> = {}) => new Request("http://0.0.0.0:8080/api/membership/checkout-selection", { headers: { origin, ...headers } });
 
 describe("public origin validation behind Railway", () => {
-  it("accepts the explicit payment subdomain without wildcard origins", () => {
-    expect(hasValidRequestOrigin(request("https://pay.sanbayfusion.com"))).toBe(true);
-    expect(hasValidRequestOrigin(request("https://pay.sanbayfusion.com.attacker.invalid"))).toBe(false);
-    expect(hasValidRequestOrigin(request("https://untrusted.sanbayfusion.com"))).toBe(false);
+  it("accepts only the configured Railway production origin", () => {
+    expect(hasValidRequestOrigin(request(productionOrigin))).toBe(true);
+    expect(trustedPublicOrigins()).toEqual([productionOrigin]);
   });
-  it("accepts the configured HTTPS origin despite an internal HTTP request URL", () => {
-    expect(hasValidRequestOrigin(request("https://sanbayfusion.com"))).toBe(true);
-  });
-  it.each(["https://attacker.invalid", "null", "http://sanbayfusion.com", "https://sanbayfusion.com.attacker.invalid", "https://sanbayfusion.com/", "http://0.0.0.0:8080", "https://other.up.railway.app"])("rejects %s even with forged proxy headers", origin => {
+  it.each([
+    "https://attacker.invalid",
+    "null",
+    "https://sanbayfusion.com",
+    "https://pay.sanbayfusion.com",
+    "https://sanbayfusion-hotel-production.up.railway.app.attacker.invalid",
+    "https://other.up.railway.app",
+    "http://sanbayfusion-hotel-production.up.railway.app",
+    "https://sanbayfusion-hotel-production.up.railway.app/",
+    "http://0.0.0.0:8080",
+  ])("rejects %s even with forged proxy headers", origin => {
     expect(hasValidRequestOrigin(request(origin, { host: "attacker.invalid", "x-forwarded-host": "attacker.invalid", "x-forwarded-proto": "https" }))).toBe(false);
   });
-  it("rejects browser cross-site requests including ones without Origin", () => {
-    expect(hasValidRequestOrigin(request("https://sanbayfusion.com", { "sec-fetch-site": "cross-site" }))).toBe(false);
-    expect(hasValidRequestOrigin(new Request("https://sanbayfusion.com", { headers: { "sec-fetch-site": "cross-site" } }))).toBe(false);
-  });
-  it("trusts only the exact deployment domain, never a Railway wildcard", () => {
-    vi.stubEnv("RAILWAY_PUBLIC_DOMAIN", "owned.up.railway.app");
-    expect(hasValidRequestOrigin(request("https://owned.up.railway.app"))).toBe(true);
-    expect(hasValidRequestOrigin(request("https://other.up.railway.app"))).toBe(false);
+  it("does not trust Railway's stale custom-domain variable over explicit configuration", () => {
     vi.stubEnv("RAILWAY_PUBLIC_DOMAIN", "sanbayfusion.com@attacker.invalid");
-    expect(trustedPublicOrigins()).toEqual(["https://sanbayfusion.com", "https://pay.sanbayfusion.com"]);
+    expect(trustedPublicOrigins()).toEqual([productionOrigin]);
+  });
+  it("rejects browser cross-site requests including ones without Origin", () => {
+    expect(hasValidRequestOrigin(request(productionOrigin, { "sec-fetch-site": "cross-site" }))).toBe(false);
+    expect(hasValidRequestOrigin(new Request(productionOrigin, { headers: { "sec-fetch-site": "cross-site" } }))).toBe(false);
   });
   it("supports same-origin local development without trusting arbitrary hosts", () => {
     vi.stubEnv("NODE_ENV", "development");

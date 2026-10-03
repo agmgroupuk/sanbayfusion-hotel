@@ -1,34 +1,26 @@
-export const mainHost = "sanbayfusion.com";
-export const platformHosts = { pay: "pay.sanbayfusion.com" } as const;
-export const platformTrustedHosts = [mainHost, platformHosts.pay];
 export const sharedSessionCookie = "__Secure-sbf_platform_session";
 
-const paymentPagePaths = [
-  "/membership/checkout",
-  "/membership/payment",
-  "/membership/payment-failed",
-  "/membership/success",
-  "/membership/thank-you",
-  "/dashboard/checkout",
-  "/dashboard/payment-methods",
-];
+export function publicSiteUrl() {
+  const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "http://localhost:3000";
+  const url = new URL(configuredUrl);
+  const isLocalHttp = url.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+  if (url.protocol !== "https:" && !isLocalHttp) throw new Error("NEXT_PUBLIC_SITE_URL must use HTTPS outside local development.");
+  if (url.username || url.password || url.pathname !== "/" || url.search || url.hash) throw new Error("NEXT_PUBLIC_SITE_URL must be an origin without credentials, path, query, or fragment.");
+  return url.origin;
+}
 
-export function isPaymentHostEnabled() {
-  return process.env.NEXT_PUBLIC_PAYMENT_HOST_ENABLED === "true";
+export function isConfiguredPublicHost(host: string) {
+  const normalizedHost = host.toLowerCase().replace(/:\d+$/, "").replace(/\.$/, "");
+  return normalizedHost === new URL(publicSiteUrl()).hostname.toLowerCase();
 }
 
 export function paymentUrl(path: string) {
-  if (!path.startsWith("/")) return "/dashboard";
+  if (!path.startsWith("/") || path.startsWith("//")) return "/dashboard";
   try {
-    const destination = new URL(path, `https://${mainHost}`);
-    if (destination.origin !== `https://${mainHost}` || destination.username || destination.password) return "/dashboard";
-    const safePath = `${destination.pathname}${destination.search}${destination.hash}`;
-    return isPaymentHostEnabled() ? `https://${platformHosts.pay}${safePath}` : safePath;
+    const destination = new URL(path, publicSiteUrl());
+    if (destination.origin !== publicSiteUrl() || destination.username || destination.password) return "/dashboard";
+    return `${destination.pathname}${destination.search}${destination.hash}`;
   } catch {
     return "/dashboard";
   }
-}
-
-export function isPaymentPagePath(pathname: string) {
-  return paymentPagePaths.some(path => pathname === path || pathname.startsWith(`${path}/`));
 }
