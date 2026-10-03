@@ -155,7 +155,9 @@ export function SiteNav({ authenticated, onSignOut }: { authenticated: boolean; 
         open
           ? "bg-background text-gold"
           : scrolled
-          ? "border-b border-border/60 bg-background/80 backdrop-blur-md"
+          ? "border-b border-border/60 bg-background/90 shadow-[0_8px_30px_rgba(0,0,0,0.18)] backdrop-blur-md"
+          : pathname === "/"
+          ? "border-b border-gold/20 bg-background/40 backdrop-blur-sm"
           : "border-b border-transparent bg-transparent",
       )}
     >
@@ -169,12 +171,12 @@ export function SiteNav({ authenticated, onSignOut }: { authenticated: boolean; 
         </Link>
 
         <div className="hidden min-w-0 items-center gap-2 md:flex">
-          <button type="button" aria-label="Scroll navigation left" onClick={() => scrollDesktopNav(-1)} className="flex size-8 shrink-0 items-center justify-center rounded-full border border-foreground/20 text-foreground transition-colors hover:border-gold hover:text-gold"><ChevronLeft className="size-4" /></button>
+          <button type="button" aria-label="Scroll navigation left" onClick={() => scrollDesktopNav(-1)} className="flex size-8 shrink-0 items-center justify-center rounded-full border border-gold/30 bg-background/25 text-gold/90 transition-colors hover:border-gold hover:bg-gold/10 hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"><ChevronLeft className="size-4" /></button>
           <div ref={desktopNavRef} className="flex max-w-[min(42vw,32rem)] min-w-0 snap-x gap-7 overflow-x-auto scroll-smooth px-2 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" onPointerDown={pauseDesktopMovement} onPointerUp={resumeDesktopMovement}>
-            {[...navLinks, ...navLinks].map((link, index) => <div key={`${link.href}-${index}`} className="shrink-0"><Link data-nav-path={link.href} href={link.href} className={cn("group relative block whitespace-nowrap text-sm transition-colors", pathname === link.href ? "text-gold" : "text-foreground/85 hover:text-gold")}><span>{link.label}</span><span className={cn("absolute -bottom-1.5 left-0 h-px w-full origin-left bg-gold transition-transform duration-300 ease-out", pathname === link.href ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100")} /></Link></div>)}
+            {[...navLinks, ...navLinks].map((link, index) => <div key={`${link.href}-${index}`} className="shrink-0"><Link data-nav-path={link.href} href={link.href} className={cn("group relative block whitespace-nowrap text-sm tracking-[0.02em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-4 focus-visible:ring-offset-background", pathname === link.href ? "text-gold" : "text-foreground/90 hover:text-gold")}><span>{link.label}</span><span className={cn("absolute -bottom-1.5 left-0 h-px w-full origin-left bg-gold transition-transform duration-300 ease-out", pathname === link.href ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100")} /></Link></div>)}
           </div>
-          <button type="button" aria-label="Scroll navigation right" onClick={() => scrollDesktopNav(1)} className="flex size-8 shrink-0 items-center justify-center rounded-full border border-foreground/20 text-foreground transition-colors hover:border-gold hover:text-gold"><ChevronRight className="size-4" /></button>
-          <Magnetic strength={0.4}><Link href={accountAction.href} className="inline-flex rounded-full bg-gold px-5 py-2 text-eyebrow text-gold-foreground transition-colors hover:bg-gold/85">{accountAction.label}</Link></Magnetic>
+          <button type="button" aria-label="Scroll navigation right" onClick={() => scrollDesktopNav(1)} className="flex size-8 shrink-0 items-center justify-center rounded-full border border-gold/30 bg-background/25 text-gold/90 transition-colors hover:border-gold hover:bg-gold/10 hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"><ChevronRight className="size-4" /></button>
+          <Magnetic strength={0.4}><Link href={accountAction.href} className="inline-flex rounded-full bg-gold px-5 py-2 text-eyebrow text-gold-foreground shadow-sm shadow-background/40 transition-all hover:-translate-y-0.5 hover:bg-gold/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-background">{accountAction.label}</Link></Magnetic>
           {authenticated && <form action={onSignOut}><button type="submit" className="inline-flex rounded-full border border-foreground/30 px-4 py-2 text-eyebrow transition-colors hover:border-gold hover:text-gold">Sign Out</button></form>}
         </div>
 

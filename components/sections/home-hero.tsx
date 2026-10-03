@@ -11,7 +11,6 @@ import {
 } from "motion/react";
 import { KineticText } from "@/components/motion/kinetic-text";
 import { Magnetic } from "@/components/motion/magnetic";
-import { site } from "@/lib/site";
 
 const POSTER = "/images/fancy-salmon-dish-with-wine-glasses-in-background.jpg";
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -71,7 +70,7 @@ export function HomeHero() {
   const mediaScale = useTransform(scrollYProgress, [0, 1], [1, 1.18]);
 
   return (
-    <section ref={ref} className="relative h-[100svh] min-h-[640px] w-full overflow-hidden">
+    <section ref={ref} className="relative min-h-[100svh] w-full overflow-hidden">
       <motion.div
         style={reduce ? undefined : { y: mediaY, scale: mediaScale }}
         className="absolute inset-0 will-change-transform"
@@ -93,11 +92,12 @@ export function HomeHero() {
         )}
       </motion.div>
 
-      <div className="absolute inset-0 overlay-cinematic" />
+      <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/75 to-background/35" />
+      <div className="absolute inset-0 bg-gradient-to-t from-background/75 via-transparent to-background/45" />
 
       <motion.div
         style={reduce ? undefined : { y: contentY, opacity: contentOpacity }}
-        className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-5 pb-24 sm:px-8 sm:pb-32"
+        className="relative z-10 mx-auto flex min-h-[100svh] max-w-7xl flex-col justify-center px-5 pb-14 pt-24 sm:px-8 sm:pb-12 sm:pt-32"
       >
         <motion.p
           initial={{ y: 12 }}
@@ -105,44 +105,53 @@ export function HomeHero() {
           transition={{ duration: 0.9, ease: EASE, delay: 0.2 }}
           className="text-eyebrow text-gold"
         >
-          For international visitors to Thailand
+          Private hospitality in Thailand
         </motion.p>
 
         <KineticText
           as="h1"
-          text="Your Thailand Visit. Your Meals. Planned Ahead."
+          text={"Visit.\nYour Meals.\nPlanned Ahead."}
           delay={0.35}
           stagger={0.12}
-          className="text-display mt-5 font-display font-light"
+          className="mt-5 max-w-5xl font-display text-[clamp(3rem,5.5vw,6rem)] font-light leading-[0.96] tracking-[-0.045em] sm:mt-6 sm:text-[clamp(3.5rem,6.2vw,6rem)]"
         />
 
         <motion.p
           initial={{ y: 16 }}
           animate={{ y: 0 }}
           transition={{ duration: 1, ease: EASE, delay: 0.9 }}
-          className="lead measure mt-7 text-foreground/90"
+          className="measure mt-5 max-w-[62ch] text-base leading-relaxed text-foreground/90 sm:mt-6 sm:text-lg sm:leading-relaxed"
         >
-          Exclusively for foreign visitors who normally live outside Thailand and visit temporarily. Plan selected service months and meals before travelling or during your stay. This program is not available to domestic Thai customers.
+          Membership dining designed for eligible international visitors staying temporarily in Thailand. Plan selected service months and meals before travelling or during your stay.
         </motion.p>
 
         <motion.div
           initial={{ y: 16 }}
           animate={{ y: 0 }}
           transition={{ duration: 1, ease: EASE, delay: 1.05 }}
-          className="mt-10 flex flex-wrap items-center gap-4"
+          className="mt-5 max-w-[62ch] border-l border-gold/60 pl-4 text-sm leading-relaxed text-foreground/75 sm:mt-6 sm:pl-5"
+        >
+          Available to eligible international visitors who normally reside outside Thailand. Membership applications are reviewed before activation.
+        </motion.div>
+
+        <motion.div
+          initial={{ y: 16 }}
+          animate={{ y: 0 }}
+          transition={{ duration: 1, ease: EASE, delay: 1.15 }}
+          className="mt-7 flex flex-col items-stretch gap-3 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4"
         >
           <Magnetic strength={0.3}>
             <Link
               href="/join"
-              className="inline-flex items-center justify-center rounded-full bg-gold px-8 py-3.5 text-eyebrow text-gold-foreground"
+              className="inline-flex min-h-12 items-center justify-center rounded-full bg-gold px-7 py-3 text-center text-eyebrow text-gold-foreground transition-colors hover:bg-gold/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:px-8"
             >
               Become a Member
             </Link>
           </Magnetic>
           <Magnetic strength={0.3}>
             <Link
-              href="/plans"
-              className="inline-flex items-center justify-center rounded-full border border-foreground/40 px-8 py-3.5 text-eyebrow text-foreground transition-colors hover:border-foreground/80"
+              href="/catalogue"
+              className="inline-flex min-h-12 items-center justify-center rounded-full border border-gold/45 bg-background/20 px-7 py-3 text-center text-eyebrow text-foreground transition-colors hover:border-gold hover:bg-gold/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:px-8"
             >
               Explore Menu & Catalogue
             </Link>

@@ -3,6 +3,7 @@ import { HomeHero } from "@/components/sections/home-hero";
 import { HeatSection } from "@/components/sections/heat-section";
 import { CraftSection } from "@/components/sections/craft-section";
 import { DishSection } from "@/components/sections/dish-section";
+import { FoodPlanningSection } from "@/components/sections/food-planning-section";
 import { AmbianceSection } from "@/components/sections/ambiance-section";
 import { ExperienceSection } from "@/components/sections/experience-section";
 import { ArrivalSection } from "@/components/sections/arrival-section";
@@ -19,6 +20,7 @@ export default function Home() {
       <HeatSection />
       <CraftSection />
       <DishSection />
+      <FoodPlanningSection />
       <AmbianceSection />
       <MembershipSection />
       <ExperienceSection />
